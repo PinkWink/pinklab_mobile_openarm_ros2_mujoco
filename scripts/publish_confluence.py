@@ -1,7 +1,7 @@
 """Publish a simple markdown file as a Confluence child page (storage format), with optional attachments."""
 # 사용: set -a; source ../confluence_token.txt; set +a; python3 scripts/publish_confluence.py <md> "<제목>" <parentId> <spaceId> [첨부 png...]
 #       갱신: python3 scripts/publish_confluence.py <md> "<제목>" --update <pageId> [첨부 png...]
-# 부모 페이지 3683418127 (MuJoCo + ROS2 패키지 구성), spaceId 3419570180 (PD). 지원 문법: ##~#### 제목, 단락, - 목록, 1. 목록, | 표 |, ``` 코드, ![..](png), **굵게**, `코드`
+# 부모 페이지 3683418127 (MuJoCo + ROS2 패키지 구성), spaceId 3419570180 (PD). 지원 문법: ##~#### 제목, 단락, - 목록, 1. 목록, | 표 |, ``` 코드, ![..](png){width=900}, **굵게**, `코드`,\n#   :::info|tip|note|warning|panel 제목 ... ::: (패널), :::cards(2|3) ::card 제목 ... ::: (카드 다단)
 import html
 import json
 import os
@@ -31,10 +31,71 @@ def inline(text):
     return text
 
 
+PANELS = {"info": "info", "tip": "tip", "note": "note", "warning": "warning", "panel": "panel"}
+
+
+def panel(kind, title, body_html, bg=None):
+    """Confluence panel macro (info/tip/note/warning) or a titled 'panel' box."""
+    params = ""
+    if title:
+        params += f'<ac:parameter ac:name="title">{html.escape(title, quote=False)}</ac:parameter>'
+    if kind == "panel":
+        params += f'<ac:parameter ac:name="bgColor">{bg or "#F4F5F7"}</ac:parameter><ac:parameter ac:name="borderColor">#DFE1E6</ac:parameter>'
+    return f'<ac:structured-macro ac:name="{PANELS[kind]}">{params}<ac:rich-text-body>{body_html}</ac:rich-text-body></ac:structured-macro>'
+
+
+def block_end(lines, i, marker=":::"):
+    """Index of the closing ':::' for a block opened at i (nesting-aware)."""
+    depth, j = 1, i + 1
+    while j < len(lines):
+        if lines[j].startswith(":::"):
+            if lines[j].strip() == ":::":
+                depth -= 1
+                if depth == 0:
+                    return j
+            else:
+                depth += 1
+        j += 1
+    raise ValueError(f"unclosed block at line {i + 1}: {lines[i]}")
+
+
+def cards(body_lines, columns=None):
+    """'::card Title' sub-blocks -> a layout section with one panel per cell (2-3 per row)."""
+    items, cur = [], None
+    for line in body_lines:
+        if line.startswith("::card"):
+            cur = [line[6:].strip(), []]
+            items.append(cur)
+        elif cur is not None:
+            cur[1].append(line)
+    n = columns or (3 if len(items) % 3 == 0 and len(items) >= 3 else 2)
+    kind = {2: "two_equal", 3: "three_equal"}[n]
+    out = ["<ac:layout>"]
+    for k in range(0, len(items), n):
+        row = items[k:k + n]
+        out.append(f'<ac:layout-section ac:type="{kind}">')
+        for title, body in row:
+            out.append("<ac:layout-cell>" + panel("panel", title, md_to_storage(chr(10).join(body))) + "</ac:layout-cell>")
+        for _ in range(n - len(row)):
+            out.append("<ac:layout-cell><p/></ac:layout-cell>")
+        out.append("</ac:layout-section>")
+    out.append("</ac:layout>")
+    return "".join(out)
+
+
 def md_to_storage(md):
     out, lines, i = [], md.splitlines(), 0
     while i < len(lines):
         line = lines[i]
+        m = re.match(r"^:::(info|tip|note|warning|panel|cards)(?:\((\d)\))?\s*(.*)$", line)
+        if m:
+            end = block_end(lines, i)
+            body = lines[i + 1:end]
+            if m.group(1) == "cards":
+                out.append(cards(body, int(m.group(2)) if m.group(2) else None))
+            else:
+                out.append(panel(m.group(1), m.group(3).strip(), md_to_storage(chr(10).join(body))))
+            i = end + 1; continue
         if line.startswith("```"):
             lang = line[3:].strip() or "bash"
             code, i = [], i + 1
@@ -69,13 +130,13 @@ def md_to_storage(md):
             while i < len(lines) and re.match(r"^\d+\. ", lines[i]):
                 items.append(re.sub(r"^\d+\. ", "", lines[i])); i += 1
             out.append("<ol>" + "".join(f"<li>{inline(x)}</li>" for x in items) + "</ol>"); continue
-        m = re.match(r"^!\[[^\]]*\]\(([^)]+)\)", line)
+        m = re.match(r"^!\[[^\]]*\]\(([^)]+)\)(?:\{width=(\d+)\})?", line)
         if m:
             name = Path(m.group(1)).name
-            out.append(f'<ac:image ac:width="640"><ri:attachment ri:filename="{name}"/></ac:image>'); i += 1; continue
+            out.append(f'<ac:image ac:width="{m.group(2) or 640}"><ri:attachment ri:filename="{name}"/></ac:image>'); i += 1; continue
         if line.strip():
             para = [line]; i += 1
-            while i < len(lines) and lines[i].strip() and not re.match(r"^(#|\||- |\d+\. |```|!\[)", lines[i]):
+            while i < len(lines) and lines[i].strip() and not re.match(r"^(#|\||- |\d+\. |```|!\[|:::|::card)", lines[i]):
                 para.append(lines[i]); i += 1
             out.append(f"<p>{inline(' '.join(para))}</p>"); continue
         i += 1

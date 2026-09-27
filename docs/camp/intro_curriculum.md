@@ -23,7 +23,7 @@
 
 ## 2. 수업 형식: 단기 과정
 
-이 자료는 **단기 집중 수업**용이다. 수강생이 처음부터 코드를 짜는 수업이 아니라, GitHub에 배포된 완성 코드를 단계별로 실행하면서 각 단계의 핵심 코드와 ROS / MuJoCo 연결 구조를 이해하고, 마지막에 전체 시스템을 연결해 보는 과정이다.
+이 자료는 **단기 집중 수업**용이다. 수강생이 처음부터 코드를 짜는 수업이 아니라, GitHub에 배포된 완성 코드(https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco)를 단계별로 실행하면서 각 단계의 핵심 코드와 ROS / MuJoCo 연결 구조를 이해하고, 마지막에 전체 시스템을 연결해 보는 과정이다.
 
 - 대상: ROS 2 기초를 아는 학부·대학원생.
 - 진행: 모듈마다 개념 설명 → 핵심 코드 설명 → 따라 실행 → 결과 확인·문제 해결. 각 모듈은 `ros2 launch` 또는 스크립트 명령 하나로 실행된다.
@@ -82,3 +82,11 @@
 | 개발 도구 | Ubuntu 24.04, Python 3.12 venv, colcon, git, 설치·점검 스크립트 | 완성 코드를 clone 하고 빌드·점검해 실행한다. 저사양 노트북에서 실시간을 유지하는 설정(카메라 2대 320×240 2 FPS, CPU 추론)을 다룬다 | 전체 |
 
 정리하면 **시뮬레이션 → ROS 2 → 주행 → Manipulation → 인지 → LMM → 통합**의 순서로 쌓이며, 각 층의 코드가 위 블록선도의 한 상자에 대응한다.
+
+## 5. 코드 저장소
+
+완성 코드는 GitHub 공개 저장소에 있다: **https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco**
+
+- `src/` ROS 2 패키지 10개(로봇 description, MuJoCo 브리지, bringup, navigation, moveit_config, warehouse_interfaces / skills / lecture), `lessons/` 모듈별 실습 안내, `examples/` 단계별 예제, `weights/` 배포용 검출 가중치, `scripts/` 실행·설치 스크립트, `docs/` 사용 설명서와 검증 기록, `tests/` 단위 테스트.
+- 설치는 저장소의 README와 `docs/lecture/00_setup.md`를 따른다. Ubuntu 24.04 + ROS 2 Jazzy(native) 기준이며 도커·VM은 지원하지 않는다.
+- 교육과 협업 문의: contact@pinklab.art (https://pinklab.art)
