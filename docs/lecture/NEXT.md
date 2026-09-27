@@ -1,6 +1,16 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-09-27 저녁 (M5 RobotPlan + Task Manager 완료). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-09-27 밤 (hand-off). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+
+## 0-1. 배포 채널 (2026-09-27 저녁에 만든 것)
+
+- **GitHub (public)**: https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco — 이 워크스페이스가 그대로 저장소(`main`). `gh` CLI가 PinkWink 계정으로 로그인돼 있다. 커밋·push는 사용자가 요청할 때만. 제외 규칙은 `.gitignore`(build/install/log, `.venv*`, `.env`, `confluence_token.txt`, artifacts/logs/runs/datasets, 가중치는 OpenVINO 320 하나만).
+- **Confluence EDU 공간** (spaceId 2517565443, 부모 페이지 3692396550 "주행형 양팔로봇 수업자료 (mujoco + ROS2)"):
+  - 3692331022 "패키지 소개와 단기 과정 커리큘럼" ← `docs/camp/intro_curriculum.md` + `architecture.png`
+  - 3692331054 "환경 설정과 패키지 사용법" ← `docs/camp/setup_usage.md` + 그림 4장 (`draw_setup_figures.py`)
+  - 갱신: `set -a; source ../confluence_token.txt; set +a; python3 scripts/publish_confluence.py <md> "<제목>" --update <pageId> [png...]`. 문법: `:::tip|info|note|warning|panel 제목 … :::`, `:::cards(2|3)` + `::card 제목`, `![..](x.png){width=1000}`.
+- **Confluence PD 공간** (개발 기록, 부모 3683418127): Phase 0 3684663302, M1 3687055362, M2 3687776258, M3 3687251977, M4 3692527619, M5 3692527659.
+- **학회 전달용 커리큘럼**: Claude Doc https://claude.ai/code/artifact/5d2472b7-3ceb-4be2-9ee2-2da6dbddba30 + 로컬 `../CAMP_CURRICULUM.md`. 강사 개발 계획은 `../LECTURE_PLAN.md`(v4).
 
 ## 0. 컨셉 변경 (2026-09-27)
 
@@ -42,12 +52,13 @@ M4 전체 데모(시뮬레이터 + 실행기 + 텍스트 대화)는 `docs/lectur
 
 ## 3. 다음 작업 (2일 과정 기준)
 
-1. `LECTURE_PLAN.md`를 v4(2일 과정)로 다시 쓰고 시간표를 확정해 학회 전달 문서를 만든다 (9/29 마감).
+1. (완료 09-27) `LECTURE_PLAN.md` v4, 학회 전달 문서(Claude Doc + `CAMP_CURRICULUM.md`). 9/29 학회 전달은 사용자가 한다.
 2. (완료 2026-09-27) 계획 수준 스키마 + Task Manager + PickPlace `phase`. 남은 것: 06_pick_place 실습 시나리오(`pick red --phase pick` → `pick red pick_table --phase place` 로 같은 작업대에 다시 놓기) 문서화·검증.
 3. (완료) EE 제어 예제 → `lessons/05_moveit/`.
 4. 09 웹 대시보드: 카메라 프레임은 핸들러 프로세스 안에 있으므로 핸들러가 JPEG를 websocket으로 내보내는 방식 또는 rosbridge + roslibjs. 로봇 상태(/odom, /joint_states, 스킬 phase) 표시 + 자연어 명령 입력(→ /warehouse/utterance).
 4. GitHub 저장소: `git init`, `src/`는 하나(완성 코드), `lessons/01~10/README.md`에 실행 명령·핵심 코드 포인터. 설치 스크립트 + 사전 환경 점검 스크립트 강화(수강생 직접 설치).
-5. Gazebo vs MuJoCo 강의자료, 최소 브리지 예제(01_mujoco_ros2).
+5. Gazebo vs MuJoCo 강의자료, 최소 브리지 예제(01_mujoco_ros2). **다음 세션은 여기서 시작**: `lessons/01_mujoco_ros2/minimal_bridge.py`(관절 1~2개 MJCF를 MuJoCo로 스텝하며 /joint_states 발행·/cmd 구독, 60줄 이내) + README, 이어서 `lessons/02~04`, `07~10` README, 수강생용 `INSTALL.md`와 `scripts/check_env.sh`(PASS/FAIL 표), 마지막에 09 웹 대시보드.
+6. lessons README 틀은 `lessons/05_moveit/README.md`, `lessons/06_pick_place/README.md`를 따른다(목표 → 실행 → 화면에서 볼 것 → 핵심 코드 → 해 볼 것 → 문제 해결).
 
 ## 4. 개발용 도구
 
