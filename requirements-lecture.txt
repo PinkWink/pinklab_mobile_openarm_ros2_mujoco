@@ -1,0 +1,21 @@
+# 강좌 추가 의존성 (수강생 PC: GPU 없음, OpenAI API 사용, 음성 없음: 텍스트 입출력)
+# torch는 CPU 빌드만 설치한다. CUDA 휠을 받지 않도록 index를 지정한다.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.5,<3
+torchvision>=0.20,<1
+ultralytics>=8.3,<9
+onnx>=1.16,<2
+onnxruntime>=1.19,<2
+openvino>=2024.4
+openai>=1.50,<2
+pydantic>=2.8,<3
+python-dotenv>=1.0,<2
+lap>=0.5
+# colcon-core 0.20이 setuptools<80을 요구하므로 고정한다.
+setuptools>=70,<80
+# ROS Jazzy의 Python 스택(scipy, cv_bridge 등)은 numpy 1.26 기준으로 빌드되어 numpy 2를 쓰면 깨진다.
+numpy>=1.26,<2
+# opencv-python 4.11 이상은 numpy 2를 요구하므로 4.10으로 고정한다.
+opencv-python>=4.10,<4.11
+# onnx가 끌어오는 ml-dtypes 0.6은 numpy 2 전용이다.
+ml-dtypes<0.6

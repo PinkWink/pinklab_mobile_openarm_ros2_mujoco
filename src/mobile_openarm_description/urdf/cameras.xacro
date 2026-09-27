@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="camera_config" value="${xacro.load_yaml('$(find mobile_openarm_description)/config/cameras.yaml')}"/>
+  <xacro:macro name="mounted_camera" params="name">
+    <xacro:property name="camera" value="${camera_config['cameras'][name]}"/>
+    <link name="${name}_link">
+      <visual>
+        <origin xyz="-0.0225 0 0"/>
+        <geometry><box size="0.035 0.050 0.028"/></geometry>
+        <material name="camera_housing"><color rgba="0.12 0.16 0.20 1"/></material>
+      </visual>
+      <visual>
+        <origin xyz="-0.004 0 0" rpy="0 ${pi/2} 0"/>
+        <geometry><cylinder radius="0.009" length="0.002"/></geometry>
+        <material name="camera_lens"><color rgba="0.12 0.55 0.85 1"/></material>
+      </visual>
+    </link>
+    <joint name="${name}_mount_joint" type="fixed">
+      <parent link="${camera['parent']}"/><child link="${name}_link"/>
+      <origin xyz="${camera['xyz']}" rpy="${camera['rpy']}"/>
+    </joint>
+    <link name="${name}_optical_frame"/>
+    <joint name="${name}_optical_joint" type="fixed">
+      <parent link="${name}_link"/><child link="${name}_optical_frame"/>
+      <origin rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
+  </xacro:macro>
+  <xacro:mounted_camera name="base_camera"/>
+  <xacro:mounted_camera name="head_camera"/>
+  <xacro:mounted_camera name="left_wrist_camera"/>
+  <xacro:mounted_camera name="right_wrist_camera"/>
+  <!-- A small visual mast supports the head-position sensor; there is no head. -->
+  <link name="head_camera_support">
+    <visual>
+      <origin xyz="0 0 0.09"/>
+      <geometry><box size="0.025 0.025 0.18"/></geometry>
+      <material name="camera_support"><color rgba="0.3 0.35 0.4 1"/></material>
+    </visual>
+  </link>
+  <joint name="head_camera_support_joint" type="fixed">
+    <parent link="openarm_body_link0"/><child link="head_camera_support"/>
+    <origin xyz="0.035 0 0.69"/>
+  </joint>
+</robot>

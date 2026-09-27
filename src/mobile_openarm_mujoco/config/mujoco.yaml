@@ -1,0 +1,51 @@
+physics:
+  timestep: 0.002
+  gravity:
+  - 0
+  - 0
+  - -9.81
+  integrator: implicitfast
+  iterations: 80
+  noslip_iterations: 5   # 파지한 물체가 손가락 사이에서 서서히 미끄러지는(creep) 현상 억제
+rates:
+  bridge_hz: 100
+  state_hz: 50
+  scan_hz: 10
+  ros_callbacks_per_tick: 8   # in-process handlers subscribe to /tf; one callback per tick lags
+control:
+  max_linear: 0.35
+  max_angular: 0.7
+  command_timeout: 0.5
+  acceleration: 0.45
+  angular_acceleration: 1.0
+  transport_tolerance: 0.15
+motors:
+  velocity_gain: 10.0
+  max_speed: 8.0
+  max_torque: 18.0
+  contact_shape: ellipsoid
+lidar:
+  samples: 360
+  range_min: 0.05
+  range_max: 20.0
+spawn:
+  position:
+  - 0
+  - 0
+  - 0.002
+arm:
+  kp: 500.0
+  kv: 35.0
+  goal_tolerance: 0.035
+  goal_time_tolerance: 3.0
+  bias_compensation: true
+gripper:
+  kp: 1800.0
+  kv: 15.0
+  max_force: 30.0
+  goal_tolerance: 0.002
+convex_contact_exclusions:
+- - openarm_left_link5
+  - openarm_left_link7
+- - openarm_right_link5
+  - openarm_right_link7

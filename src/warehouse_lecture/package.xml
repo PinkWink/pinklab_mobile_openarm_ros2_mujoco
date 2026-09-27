@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>warehouse_lecture</name>
+  <version>0.1.0</version>
+  <description>Shared lecture code: in-process camera handlers, OpenAI client, speech, encounter memory, launch files.</description>
+  <maintainer email="maintainer@example.com">Workspace maintainer</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>mobile_openarm_mujoco</exec_depend>
+  <exec_depend>mobile_openarm_navigation</exec_depend>
+  <exec_depend>warehouse_interfaces</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>vision_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf2_geometry_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

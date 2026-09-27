@@ -1,0 +1,50 @@
+# Derived from Enactic OpenArm v1.0, Apache-2.0.
+# Preserve masses/diagonals; remove invalid finger products of inertia.
+hand:
+  origin:
+    x: 1.0e-06
+    y: 0.0
+    z: -0.000549
+    roll: 0
+    pitch: 0
+    yaw: 0
+  mass: 0.127
+  inertia:
+    xx: 0.000165558
+    yy: 1.7466e-05
+    zz: 0.000173524
+    xy: 0.0
+    xz: 0.0
+    yz: 0.0
+left_finger:
+  origin:
+    x: 0.0064528
+    y: 0.01702
+    z: 0.0219685
+    roll: 0
+    pitch: 0
+    yaw: 0
+  mass: 0.03602545343277134
+  inertia:
+    xx: 2.3749999999999997e-06
+    yy: 2.3749999999999997e-06
+    zz: 7.5e-07
+    xy: 0.0
+    xz: 0.0
+    yz: 0.0
+right_finger:
+  origin:
+    x: 0.0064528
+    y: -0.01702
+    z: 0.0219685
+    roll: 0
+    pitch: 0
+    yaw: 0
+  mass: 0.03602545343277134
+  inertia:
+    xx: 2.3749999999999997e-06
+    yy: 2.3749999999999997e-06
+    zz: 7.5e-07
+    xy: 0.0
+    xz: 0.0
+    yz: 0.0

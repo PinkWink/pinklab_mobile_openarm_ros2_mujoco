@@ -1,0 +1,29 @@
+# Mount poses use the parent URDF frame. Camera link: +X forward, +Y left, +Z up.
+# Optical frame: +X right, +Y down, +Z forward. Ideal sensors; visual housings only.
+render:
+  width: 640
+  height: 480
+  fps: 5.0
+  near_m: 0.01
+  far_m: 50.0
+cameras:
+  base_camera:
+    parent: base_link
+    xyz: "0.33 0 0.12"
+    rpy: "0 0 0"
+    fovy: 65.0
+  head_camera:
+    parent: openarm_body_link0
+    xyz: "0.06 0 0.88"
+    rpy: "0 0.25 0"
+    fovy: 60.0
+  left_wrist_camera:
+    parent: openarm_left_hand
+    xyz: "0.06 0 0.015"
+    rpy: "3.141592653589793 -1.7707963267948966 0"
+    fovy: 75.0
+  right_wrist_camera:
+    parent: openarm_right_hand
+    xyz: "0.06 0 0.015"
+    rpy: "3.141592653589793 -1.7707963267948966 0"
+    fovy: 75.0

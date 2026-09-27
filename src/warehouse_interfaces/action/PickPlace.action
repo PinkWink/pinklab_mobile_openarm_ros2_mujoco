@@ -1,0 +1,15 @@
+# 운반 스킬: from_station에서 object를 집어 to_station에 놓는다
+string object            # 이름(parcel_1) 또는 색(red|blue|yellow)
+string from_station      # locations.yaml의 station 이름
+string to_station
+string arm               # left | right | 비우면 자동
+string phase             # '' 또는 all: 전체 | pick: 주행·도킹·집기·운반 자세까지 (물체를 든 채 끝남) | place: 든 물체를 to_station 에 놓기
+---
+bool success
+string message
+string phase_reached
+float32 duration_s
+---
+string phase             # navigate_pick | locate | pre_grasp | grasp | lift | carry | navigate_place | place | retreat
+float32 progress         # 0..1
+string detail

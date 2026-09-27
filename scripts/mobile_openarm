@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -e
+MOBILE_WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MOBILE_ENV_MODE="${MOBILE_ENV_MODE:-auto}"
+if [[ "$MOBILE_ENV_MODE" == auto ]]; then
+  if [[ "$(uname -s)" == Linux && "${ROS_DISTRO:-}" == jazzy ]]; then MOBILE_ENV_MODE=native; else MOBILE_ENV_MODE=conda; fi
+fi
+if [[ "$MOBILE_ENV_MODE" == conda ]]; then
+  unset PYTHONPATH
+  source "${PINKY_CONDA:-/opt/miniconda3}/etc/profile.d/conda.sh"
+  conda activate pinky-jazzy
+elif [[ "$MOBILE_ENV_MODE" == native ]]; then
+  [[ "${ROS_DISTRO:-}" == jazzy ]] || { echo 'Source ROS 2 Jazzy first.' >&2; exit 1; }
+else echo 'MOBILE_ENV_MODE must be auto, conda, or native.' >&2; exit 1; fi
+export ROS_DOMAIN_ID="${MOBILE_ROS_DOMAIN_ID:-43}" ROS_LOCALHOST_ONLY=1 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST ROS_STATIC_PEERS=''
+# CycloneDDS when installed (recommended); otherwise fall back to the default RMW so the
+# lecture runs on a plain ros-jazzy-desktop install.
+if [[ -d "${AMENT_PREFIX_PATH%%:*}/../share/rmw_cyclonedds_cpp" || -d /opt/ros/jazzy/share/rmw_cyclonedds_cpp || -n "$(ls -d ${CONDA_PREFIX:-/nonexistent}/share/rmw_cyclonedds_cpp 2>/dev/null)" ]]; then
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+  export CYCLONEDDS_URI="$(cat "$MOBILE_WORKSPACE/src/mobile_openarm_bringup/config/cyclonedds.xml")"
+else
+  echo "rmw_cyclonedds_cpp not installed; using the default RMW (sudo apt install ros-jazzy-rmw-cyclonedds-cpp to enable it)" >&2
+fi
+export ROS_HOME="$MOBILE_WORKSPACE/.ros/mobile_openarm" ROS_LOG_DIR="$MOBILE_WORKSPACE/.ros/mobile_openarm/log"
+export MOBILE_OPENARM_MODEL_DIR="$MOBILE_WORKSPACE/artifacts/mobile_generated" PYTHONNOUSERSITE=1
+mkdir -p "$ROS_LOG_DIR" "$MOBILE_OPENARM_MODEL_DIR"
+cd "$MOBILE_WORKSPACE"
+MOBILE_PYTHON="$(command -v python3)"
+MOBILE_ROS2="$(command -v ros2)"
+command="${1:-start}";if [[ $# -gt 0 ]]; then shift;fi
+if [[ "$command" == build ]]; then
+  exec "$MOBILE_PYTHON" -m colcon build --symlink-install --base-paths src --packages-up-to mobile_openarm_bringup warehouse_lecture warehouse_skills --event-handlers desktop_notification- "$@"
+fi
+[[ -f install/local_setup.bash ]] || { echo 'Run ./scripts/mobile_openarm build first.' >&2; exit 1; }
+source install/local_setup.bash
+case "$command" in
+  start|nav) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" launch mobile_openarm_bringup warehouse.launch.py mode:=nav "$@";;
+  drive) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" launch mobile_openarm_bringup warehouse.launch.py mode:=drive moveit:=false "$@";;
+  slam) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" launch mobile_openarm_bringup warehouse.launch.py mode:=slam moveit:=false "$@";;
+  moveit) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" launch mobile_openarm_bringup warehouse.launch.py mode:=drive moveit:=true "$@";;
+  teleop) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p speed:=0.25 -p turn:=0.5 "$@";;
+  goal) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" run mobile_openarm_navigation goal "$@";;
+  arm) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" run mobile_openarm_moveit_config joint_goal "$@";;
+  pick) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" run warehouse_skills pick_place "$@";;
+  display) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" launch mobile_openarm_description display.launch.py "$@";;
+  exec) exec "$@";;
+  shell) exec bash --noprofile --norc;;
+  *) echo 'Usage: mobile_openarm {build|start|drive|slam|nav|moveit|teleop|goal|arm|pick|display|exec|shell}';exit 2;;
+esac

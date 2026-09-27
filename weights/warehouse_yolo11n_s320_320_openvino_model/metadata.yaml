@@ -1,0 +1,33 @@
+description: Ultralytics YOLO11n model trained on datasets/warehouse/data.yaml
+author: Ultralytics
+date: '2026-09-22T12:08:26.080225+09:00'
+version: 8.4.157
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+head: Detect
+batch: 1
+imgsz:
+- 320
+- 320
+names:
+  0: person
+  1: helmet
+  2: safety_vest
+  3: parcel_red
+  4: parcel_blue
+  5: parcel_yellow
+  6: forklift
+  7: pallet
+  8: cone
+  9: extinguisher
+args:
+  data: null
+  batch: 1
+  fraction: 1.0
+  quantize: null
+  nms: null
+  dynamic: false
+channels: 3
+end2end: false

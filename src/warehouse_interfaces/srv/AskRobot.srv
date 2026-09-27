@@ -1,0 +1,4 @@
+string question
+---
+string answer
+RobotCommand[] commands      # 답변과 함께 실행을 제안한 명령 (없을 수 있음)

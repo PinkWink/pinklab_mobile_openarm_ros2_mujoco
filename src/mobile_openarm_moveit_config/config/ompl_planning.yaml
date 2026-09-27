@@ -1,0 +1,44 @@
+planning_plugins:
+- ompl_interface/OMPLPlanner
+request_adapters:
+- default_planning_request_adapters/ResolveConstraintFrames
+- default_planning_request_adapters/ValidateWorkspaceBounds
+- default_planning_request_adapters/CheckStartStateBounds
+- default_planning_request_adapters/CheckStartStateCollision
+response_adapters:
+- default_planning_response_adapters/AddTimeOptimalParameterization
+- default_planning_response_adapters/ValidateSolution
+- default_planning_response_adapters/DisplayMotionPath
+start_state_max_bounds_error: 0.1
+# NOTE: MoveIt 2.12 에서 fix_start_state 는 continuous/planar/floating 관절 정규화만 한다. 일반 관절의 한계 초과는
+# joint_limits.yaml 의 넓힌 위치 한계로 막는다. start_state_max_bounds_error 는 2.12 에서 읽지 않는다.
+fix_start_state: true
+planner_configs:
+  RRTConnect:
+    type: geometric::RRTConnect
+    range: 0.0
+left_arm:
+  planner_configs:
+  - RRTConnect
+  default_planner_config: RRTConnect
+  longest_valid_segment_fraction: 0.005
+right_arm:
+  planner_configs:
+  - RRTConnect
+  default_planner_config: RRTConnect
+  longest_valid_segment_fraction: 0.005
+both_arms:
+  planner_configs:
+  - RRTConnect
+  default_planner_config: RRTConnect
+  longest_valid_segment_fraction: 0.005
+left_gripper:
+  planner_configs:
+  - RRTConnect
+  default_planner_config: RRTConnect
+  longest_valid_segment_fraction: 0.005
+right_gripper:
+  planner_configs:
+  - RRTConnect
+  default_planner_config: RRTConnect
+  longest_valid_segment_fraction: 0.005

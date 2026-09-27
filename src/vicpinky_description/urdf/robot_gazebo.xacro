@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<robot name="pinky" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:arg name="namespace" default=""/>
+    <xacro:property name="prefix" value="$(arg namespace)"/>
+
+    <gazebo reference="${prefix}left_wheel">
+        <selfCollide>false</selfCollide>
+        <mu1 value="1.2" />
+        <mu2 value="1.2" />
+    </gazebo>
+
+    <gazebo reference="${prefix}right_wheel">
+        <selfCollide>false</selfCollide>
+        <mu1 value="1.2" />
+        <mu2 value="1.2" />
+    </gazebo>
+
+    <gazebo reference="${prefix}base_link">
+        <selfCollide>false</selfCollide>
+        <mu1 value="0.01" />
+        <mu2 value="0.01" />
+    </gazebo>
+
+    <gazebo reference="${prefix}left_caster">
+      <mu1 value="0.01" />
+      <mu2 value="0.01" />
+    </gazebo>
+
+    <gazebo reference="${prefix}right_caster">
+      <mu1 value="0.01" />
+      <mu2 value="0.01" />
+    </gazebo>
+
+</robot>

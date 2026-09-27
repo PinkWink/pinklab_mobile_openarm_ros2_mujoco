@@ -1,0 +1,31 @@
+# --- build products -------------------------------------------------------
+build/
+install/
+log/
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.ros/
+.DS_Store
+
+# --- local environments (students create them with scripts/install_lecture.sh)
+.venv*/
+vendor/
+
+# --- secrets --------------------------------------------------------------
+.env
+confluence_token.txt
+
+# --- runtime outputs ------------------------------------------------------
+artifacts/
+logs/
+runs/
+datasets/
+*.log
+*.pid
+
+# --- weights: only the OpenVINO 320 model used in class is distributed ------
+yolo11n.pt
+weights/*
+!weights/warehouse_yolo11n_s320_320_openvino_model/
+!weights/warehouse_yolo11n_s320_320_openvino_model/**

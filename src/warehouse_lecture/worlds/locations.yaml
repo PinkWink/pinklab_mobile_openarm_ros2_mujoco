@@ -1,0 +1,70 @@
+# 이름 있는 장소. 조우 기억의 "어디서"와 명령의 "어디로"를 잇는 사전.
+# base_goal: [x, y, yaw] map 좌표의 도킹/정지 목표. radius: 이 장소로 부르는 반경(m).
+locations:
+  pick_table:
+    aliases: [픽업 작업대, 픽업대, 집기 작업대, pick station]
+    center: [2.6, -3.6]
+    base_goal: [1.2, -3.6, 0.0]
+    radius: 1.6
+    station: pick
+  place_table:
+    aliases: [적재 작업대, 적재대, 놓기 작업대, place station]
+    center: [2.6, 3.6]
+    base_goal: [1.2, 3.6, 0.0]
+    radius: 1.6
+    station: place
+  rack_a:
+    aliases: [랙 A, A 랙, 서쪽 남쪽 랙]
+    center: [-5.5, -2.7]
+    base_goal: [-4.0, -2.7, 3.14]
+    radius: 2.0
+  rack_b:
+    aliases: [랙 B, B 랙, 서쪽 북쪽 랙]
+    center: [-5.5, 2.7]
+    base_goal: [-4.0, 2.7, 3.14]
+    radius: 2.0
+  rack_c:
+    aliases: [랙 C, C 랙, 가운데 남쪽 랙]
+    center: [-2.6, -2.7]
+    base_goal: [-1.1, -2.7, 3.14]
+    radius: 2.0
+  rack_d:
+    aliases: [랙 D, D 랙, 가운데 북쪽 랙]
+    center: [-2.6, 2.7]
+    base_goal: [-1.1, 2.7, 3.14]
+    radius: 2.0
+  rack_e:
+    aliases: [랙 E, E 랙, 동쪽 남쪽 랙]
+    center: [5.5, -2.7]
+    base_goal: [4.0, -2.7, 0.0]
+    radius: 2.0
+  rack_f:
+    aliases: [랙 F, F 랙, 동쪽 북쪽 랙]
+    center: [5.5, 2.7]
+    base_goal: [4.0, 2.7, 0.0]
+    radius: 2.0
+  center_aisle:
+    aliases: [중앙 통로, 가운데 통로, 홈, 대기 위치]
+    center: [0.0, 0.0]
+    base_goal: [0.0, 0.0, 0.0]
+    radius: 1.5
+  east_wall:
+    aliases: [동쪽 벽, 지게차 주차 구역]
+    center: [6.6, -0.5]
+    base_goal: [5.0, 0.0, 0.0]
+    radius: 2.0
+  west_wall:
+    aliases: [서쪽 벽, 소화기 앞]
+    center: [-7.0, 2.0]
+    base_goal: [-6.5, 0.0, 3.14]
+    radius: 2.0
+patrol:
+  # 순찰 경로 (M5). 통로를 따라 창고를 한 바퀴 돈다.
+  waypoints:
+    - [0.0, -4.6, 0.0]
+    - [4.0, -1.0, 1.57]
+    - [4.0, 4.6, 3.14]
+    - [0.0, 4.6, 3.14]
+    - [-4.0, 4.6, -1.57]
+    - [-4.0, -4.6, 0.0]
+    - [0.0, 0.0, 0.0]

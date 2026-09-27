@@ -1,0 +1,50 @@
+# 주행이 허용되는 팔 자세. bridge는 양팔이 이 중 하나에 (control.transport_tolerance 이내로) 있어야 /cmd_vel을 받는다.
+# 모든 자세의 hand_tcp는 Nav2 footprint(0.76 x 0.64 m) 안에 있어야 한다.
+#   transport: tcp (0.295, ±0.153, 0.551) - 기본 주행 자세
+#   ready:     tcp (0.321, ±0.153, 0.729) - 팔 준비 자세
+#   hands_up:  tcp (0.286, ±0.153, 0.864) - 물체 운반 자세 (상자가 베이스 상판과 작업대 상판 위를 지난다)
+transport:
+  openarm_left_joint1: 0.0
+  openarm_left_joint2: 0.0
+  openarm_left_joint3: 0.0
+  openarm_left_joint4: 1.2
+  openarm_left_joint5: 0.0
+  openarm_left_joint6: 0.0
+  openarm_left_joint7: 0.0
+  openarm_right_joint1: 0.0
+  openarm_right_joint2: 0.0
+  openarm_right_joint3: 0.0
+  openarm_right_joint4: 1.2
+  openarm_right_joint5: 0.0
+  openarm_right_joint6: 0.0
+  openarm_right_joint7: 0.0
+ready:
+  openarm_left_joint1: 0.0
+  openarm_left_joint2: 0.0
+  openarm_left_joint3: 0.0
+  openarm_left_joint4: 1.65
+  openarm_left_joint5: 0.0
+  openarm_left_joint6: 0.0
+  openarm_left_joint7: 0.0
+  openarm_right_joint1: 0.0
+  openarm_right_joint2: 0.0
+  openarm_right_joint3: 0.0
+  openarm_right_joint4: 1.65
+  openarm_right_joint5: 0.0
+  openarm_right_joint6: 0.0
+  openarm_right_joint7: 0.0
+hands_up:
+  openarm_left_joint1: 0.0
+  openarm_left_joint2: 0.0
+  openarm_left_joint3: 0.0
+  openarm_left_joint4: 2.0
+  openarm_left_joint5: 0.0
+  openarm_left_joint6: 0.0
+  openarm_left_joint7: 0.0
+  openarm_right_joint1: 0.0
+  openarm_right_joint2: 0.0
+  openarm_right_joint3: 0.0
+  openarm_right_joint4: 2.0
+  openarm_right_joint5: 0.0
+  openarm_right_joint6: 0.0
+  openarm_right_joint7: 0.0

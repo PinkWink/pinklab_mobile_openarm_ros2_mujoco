@@ -1,0 +1,33 @@
+name: pinky-jazzy
+channels:
+- robostack-jazzy
+- conda-forge
+- nodefaults
+dependencies:
+- python=3.12
+- ros-jazzy-ros-base
+- ros-jazzy-rviz2
+- ros-jazzy-robot-state-publisher
+- ros-jazzy-xacro
+- ros-jazzy-slam-toolbox
+- ros-jazzy-navigation2
+- ros-jazzy-nav2-bringup
+- ros-jazzy-teleop-twist-keyboard
+- ros-jazzy-rmw-cyclonedds-cpp
+- colcon-common-extensions
+- pyyaml
+- pytest=8.4.2
+- setuptools=78.1.1
+- pip
+- ros-jazzy-moveit-ros-move-group
+- ros-jazzy-moveit-kinematics
+- ros-jazzy-moveit-planners-ompl
+- ros-jazzy-moveit-simple-controller-manager
+- ros-jazzy-moveit-ros-visualization
+- ros-jazzy-moveit-configs-utils
+- pip:
+  - colcon-notification==0.3.3
+  - pillow>=11,<13
+  - mujoco==3.6.0
+  - trimesh>=4.0,<5
+  - pycollada>=0.9,<1

@@ -1,0 +1,8 @@
+RobotCommand command
+---
+bool success
+string message
+string spoken            # TTS로 읽어 줄 결과 문장
+---
+string phase
+string detail

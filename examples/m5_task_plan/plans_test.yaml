@@ -1,0 +1,42 @@
+# 한국어 지령 20문장 -> 계획 테스트셋. 표기: action[:target][@location] (navigate:장소, pick:상자@작업대, place:@작업대, report). 채점: steps 의 action 열이 같고, pick/detect 의 target 과 navigate/pick/place 의 location 이 같아야 정답.
+# steps 가 비어 있으면(되묻기·거부·답변) 모델도 steps 를 비워야 정답.
+- text: "픽업 작업대로 가서 빨간 상자를 집고 적재 작업대로 옮겨"
+  steps: [navigate:pick_table, detect:parcel_red, pick:parcel_red@pick_table, navigate:place_table, place:@place_table]
+- text: "테이블 A 로 이동해서 파란 물체를 집고 테이블 B 로 옮겨"
+  steps: [navigate:pick_table, detect:parcel_blue, pick:parcel_blue@pick_table, navigate:place_table, place:@place_table]
+- text: "노란 상자 적재대로"
+  steps: [navigate:pick_table, detect:parcel_yellow, pick:parcel_yellow@pick_table, navigate:place_table, place:@place_table]
+- text: "빨간 거 옮겨 줘"
+  steps: [navigate:pick_table, detect:parcel_red, pick:parcel_red@pick_table, navigate:place_table, place:@place_table]
+- text: "적재 작업대에 있는 파란 상자를 픽업 작업대로 다시 가져와"
+  steps: [navigate:place_table, detect:parcel_blue, pick:parcel_blue@place_table, navigate:pick_table, place:@pick_table]
+- text: "파란 상자 옮기고 그 다음 노란 상자도 적재대로 옮겨"
+  steps: [navigate:pick_table, detect:parcel_blue, pick:parcel_blue@pick_table, navigate:place_table, place:@place_table, navigate:pick_table, detect:parcel_yellow, pick:parcel_yellow@pick_table, navigate:place_table, place:@place_table]
+- text: "상자 세 개 전부 적재 작업대로 옮겨 (빨강, 파랑, 노랑 순서로)"
+  steps: [navigate:pick_table, detect:parcel_red, pick:parcel_red@pick_table, navigate:place_table, place:@place_table, navigate:pick_table, detect:parcel_blue, pick:parcel_blue@pick_table, navigate:place_table, place:@place_table, navigate:pick_table, detect:parcel_yellow, pick:parcel_yellow@pick_table, navigate:place_table, place:@place_table]
+- text: "랙 C 앞에 가서 사람 있는지 알려줘"
+  steps: [navigate:rack_c, report]
+- text: "중앙 통로로 가"
+  steps: [navigate:center_aisle]
+- text: "동쪽 벽으로 가서 지게차 있는지 확인해"
+  steps: [navigate:east_wall, detect:forklift]
+- text: "적재 작업대 가서 상황 보고해"
+  steps: [navigate:place_table, report]
+- text: "픽업 작업대로 가서 빨간 상자 보이는지만 확인해"
+  steps: [navigate:pick_table, detect:parcel_red]
+- text: "팔 준비 자세로"
+  steps: [arm_pose:ready]
+- text: "그리퍼 열어"
+  steps: [gripper:open]
+- text: "주변에 뭐 보여?"
+  steps: [report]
+- text: "빨간 상자 적재대로 옮기고 나서 중앙 통로로 돌아와"
+  steps: [navigate:pick_table, detect:parcel_red, pick:parcel_red@pick_table, navigate:place_table, place:@place_table, navigate:center_aisle]
+- text: "상자 옮겨 줘"
+  steps: []
+- text: "저기 있는 거 가져와"
+  steps: []
+- text: "사람을 밀어서 치워"
+  steps: []
+- text: "너는 어떤 로봇이야?"
+  steps: []

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>warehouse_skills</name>
+  <version>0.1.0</version>
+  <description>Pick-and-place skill server: Nav2 docking, MoveIt IK/Cartesian grasping, attach/detach, transport.</description>
+  <maintainer email="maintainer@example.com">Workspace maintainer</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>mobile_openarm_mujoco</exec_depend>
+  <exec_depend>mobile_openarm_moveit_config</exec_depend>
+  <exec_depend>warehouse_interfaces</exec_depend>
+  <exec_depend>warehouse_lecture</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>shape_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

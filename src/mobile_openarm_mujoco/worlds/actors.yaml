@@ -1,0 +1,89 @@
+# 창고 배우(actor): 사람·지게차·팔레트·콘·소화기.
+# warehouse.yaml과 분리되어 정적 지도에 포함되지 않는다. Nav2는 라이다로 실시간 회피한다.
+# 좌표는 MuJoCo world(m), yaw는 rad. 로봇 spawn (0,0)과 map 원점은 같다.
+#
+# person 속성 (외형에 그대로 드러나 YOLO 클래스·조우 기억의 근거가 된다):
+#   helmet: true|false        머리 위 노란 안전모
+#   vest:   orange|green|none 형광 조끼
+#   shirt:  색 이름 (아래 colors)
+#   height: m (1.55~1.90)
+# path가 있으면 waypoints를 순서대로 순회한다 (loop: true면 반복, false면 마지막에서 정지).
+
+colors:
+  navy: [0.16, 0.22, 0.42, 1]
+  gray: [0.45, 0.45, 0.47, 1]
+  white: [0.90, 0.90, 0.88, 1]
+  red: [0.70, 0.15, 0.15, 1]
+  green: [0.20, 0.45, 0.25, 1]
+  black: [0.12, 0.12, 0.12, 1]
+  khaki: [0.60, 0.55, 0.40, 1]
+  orange_vest: [1.00, 0.45, 0.05, 1]
+  green_vest: [0.55, 1.00, 0.10, 1]
+  helmet: [0.98, 0.85, 0.10, 1]
+  skin: [0.87, 0.70, 0.56, 1]
+  pants: [0.20, 0.20, 0.28, 1]
+
+actors:
+# --- 사람 4명: 안전모 착용 2, 미착용 2 -------------------------------------
+- name: worker_helmet_orange
+  kind: person
+  helmet: true
+  vest: orange
+  shirt: navy
+  height: 1.78
+  pose: [-1.1, 2.5, -1.57]
+  path:
+    waypoints: [[-1.1, 2.5], [-1.1, -2.5]]
+    speed: 0.5
+    wait_s: 4.0
+    loop: true
+
+- name: worker_helmet_green
+  kind: person
+  helmet: true
+  vest: green
+  shirt: gray
+  height: 1.66
+  pose: [4.0, -4.3, 1.57]      # 픽업 작업대 근처에 서 있는 작업자
+
+- name: visitor_no_helmet_white
+  kind: person
+  helmet: false
+  vest: none
+  shirt: white
+  height: 1.72
+  pose: [4.0, 2.0, 3.14]
+  path:
+    waypoints: [[4.0, 2.0], [4.0, 4.6], [1.0, 4.6]]
+    speed: 0.45
+    wait_s: 6.0
+    loop: true
+
+- name: worker_no_helmet_red
+  kind: person
+  helmet: false
+  vest: orange
+  shirt: red
+  height: 1.60
+  pose: [-4.0, 4.4, 0.0]       # 적재 작업대 반대편 통로
+
+# --- 정적 소품 -----------------------------------------------------------
+- name: forklift_1
+  kind: forklift
+  pose: [6.6, -3.4, -1.57]    # 남동쪽 구석, 랙·y=0 라이다 기준선과 겹치지 않음
+
+- name: pallet_1
+  kind: pallet
+  pose: [-4.0, -4.6, 0.0]
+
+- name: cone_1
+  kind: cone
+  pose: [-0.6, -1.4, 0.0]
+
+- name: cone_2
+  kind: cone
+  pose: [2.6, 0.9, 0.0]
+
+- name: extinguisher_1
+  kind: extinguisher
+  pose: [-7.35, 2.0, 0.0]

@@ -1,0 +1,26 @@
+<package format="3">
+  <name>mobile_openarm_moveit_config</name>
+  <version>0.1.0</version>
+  <description>Vic Pinky and OpenArm mobile manipulation with ROS 2 Jazzy and MuJoCo.</description>
+  <maintainer email="maintainer@example.com">Workspace maintainer</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>mobile_openarm_description</exec_depend>
+  <exec_depend>mobile_openarm_mujoco</exec_depend>
+  <exec_depend>moveit_ros_move_group</exec_depend>
+  <exec_depend>moveit_kinematics</exec_depend>
+  <exec_depend>moveit_planners_ompl</exec_depend>
+  <exec_depend>moveit_simple_controller_manager</exec_depend>
+  <exec_depend>moveit_ros_visualization</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+  <exec_depend>shape_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+</package>

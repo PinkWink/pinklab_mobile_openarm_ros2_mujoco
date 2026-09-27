@@ -1,0 +1,10 @@
+# 배우 런타임 제어 (데이터셋 랜덤화, 시나리오 전환)
+string name
+string operation                 # teleport | set_path | set_attributes | pause | resume
+geometry_msgs/Pose pose          # teleport
+geometry_msgs/Point[] waypoints  # set_path
+float32 speed                    # set_path (m/s), 0이면 유지
+KeyValue[] attributes            # set_attributes (외형 즉시 반영)
+---
+bool success
+string message

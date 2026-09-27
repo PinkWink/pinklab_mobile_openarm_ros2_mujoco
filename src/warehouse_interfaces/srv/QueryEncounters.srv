@@ -1,0 +1,8 @@
+# 조우 기억 검색 (LLM tool 호출의 백엔드)
+string kind                  # 비우면 전체
+KeyValue[] attributes        # 모두 일치해야 함 (예: helmet=false)
+float64 since_seconds        # 0이면 전체 기간, 아니면 최근 N초
+string place                 # 비우면 전체
+int32 limit                  # 0이면 제한 없음
+---
+Encounter[] encounters

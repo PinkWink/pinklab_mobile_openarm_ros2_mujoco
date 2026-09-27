@@ -1,0 +1,14 @@
+{
+  "urdf/lidar.xacro": "0a0605c8e66b2e0a0e2759df346f6f14a5ff89590f119f69167ed81f057e8a9f",
+  "urdf/robot_core.xacro": "66bc2cf128cf98b41509ad3759ee9b1b1d52e955202c3adfcab721f690baa9b1",
+  "urdf/robot.urdf.xacro": "0b44f35b615183edad69bfedeafe6d980de49dd5376105a35e2336589cbdc267",
+  "urdf/gazebo_control.xacro": "fdf5f84eec5dd3ef00d1c16fc61e9fa4bc713792ca866a2c2ccf87f74ec9d560",
+  "urdf/inertial_macros.xacro": "aad89ca48d7f11ed6f5f05e1bfdeda06c2ad40c2f77646ab37c174194bd53707",
+  "urdf/robot_gazebo.xacro": "0c5ba99507d594746113ba90d266db08d053ca1d33bb69b1cd116c08cfedf6d7",
+  "urdf/camera.xacro": "95867108c940bb373f0bb5600f5f4074468f26b338c6eca1e29b2138c172da16",
+  "meshes/visual/wheel.stl": "f2094feb04b4699e1386ea1fea1dcff89e662409a815fdf776b0ccd61b6d1a69",
+  "meshes/visual/caster.stl": "b3844742a98250897ba6589078e045378c5fcf791a2ed6174d80856f7eb8a5e9",
+  "meshes/visual/base_link.stl": "e95a4c468b843793f4cdb1195a8a092d88372d9200a0abb7d8279e7d236764db",
+  "meshes/visual/lidar.dae": "45dddc70916cadee34ab63cac3b1cec8f3bb9c8c55a015fea1bc8a414014164c",
+  "meshes/collision/lidar.stl": "7f6e8e5e02d2dd483710098567fcde9be67fd312f381fcecf80e47dfc5f5578d"
+}

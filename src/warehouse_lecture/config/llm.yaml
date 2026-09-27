@@ -1,0 +1,16 @@
+# OpenAI 모델·비용 설정. 예제 코드는 이 파일만 읽으므로 모델 교체 시 코드 수정이 없다.
+# 모델 이름은 강좌 시작 전에 https://platform.openai.com/docs/models 에서 최신 이름으로 확인한다.
+models:
+  chat: gpt-4.1-mini          # 대화·구조화 출력·tool calling 기본
+  reasoning: gpt-4.1          # 어려운 계획·보고서 (선택)
+  vision: gpt-4.1-mini        # 카메라 프레임 이해
+defaults:
+  temperature: 0.2
+  max_output_tokens: 800
+  timeout_s: 30
+  max_retries: 2
+# USD per 1M tokens. 비용 로그의 추정치에만 사용하며 실제 청구와 다를 수 있다.
+pricing:
+  gpt-4.1-mini: {input: 0.40, output: 1.60}
+  gpt-4.1: {input: 2.00, output: 8.00}
+usage_log: logs/openai_usage.jsonl

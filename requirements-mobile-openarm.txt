@@ -1,0 +1,6 @@
+mujoco==3.6.0
+numpy>=1.26,<3
+PyYAML>=6,<7
+trimesh>=4,<5
+pycollada>=0.9,<1
+Pillow>=11,<13
