@@ -1,6 +1,6 @@
 # pinklab_mobile_openarm_ros2_mujoco
 
-MuJoCo + ROS 2 Jazzy 기반 **주행형 양팔 로봇(Vic Pinky 베이스 + OpenARM 양팔) & LMM Robotics** 단기 과정의 완성 코드입니다.
+MuJoCo + ROS 2 Jazzy 기반 **주행형 양팔 로봇(Vic Pinky 베이스 + OpenARM 양팔) & LMM Robotics** 단기 과정의 완성 코드입니다. [PinkLAB](https://pinklab.art)이 만들고 운영합니다.
 로봇이 창고를 자율주행하고, 작업대에서 상자를 집어 옮기고, 자연어 지령을 LMM이 작업 단계로 바꿔 ROS 2 Task Manager가 실행하는 파이프라인이 하나의 워크스페이스에 들어 있습니다.
 
 ```
@@ -62,6 +62,10 @@ scripts/            wrapper(mobile_openarm), 설치·정리·검증 스크립트
 docs/               사용 설명서, 카메라 API, 모듈별 검증 기록
 tests/              시뮬레이터 없이 도는 단위 테스트 (python -m pytest tests -q)
 ```
+
+## PinkLAB
+
+이 과정과 코드는 [PinkLAB](https://pinklab.art)에서 만들었습니다. 교육과 협업 문의는 contact@pinklab.art 로 보내 주세요.
 
 ## 라이선스와 출처
 
