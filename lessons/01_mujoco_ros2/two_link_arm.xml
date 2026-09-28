@@ -1,0 +1,46 @@
+<!-- 2-link planar arm with a camera on the tip. Joint 1 = shoulder (pitch), joint 2 = elbow (pitch).
+     Position actuators hold the joints at data.ctrl[0:2] (rad). Two coloured boxes in front give the camera
+     something to look at. -->
+<mujoco model="two_link_arm">
+  <compiler angle="radian"/>
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+  <visual>
+    <global offwidth="640" offheight="480"/>
+  </visual>
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.85 0.85 0.85" rgb2="0.65 0.65 0.65" width="256" height="256"/>
+    <material name="floor" texture="grid" texrepeat="6 6" reflectance="0.1"/>
+  </asset>
+  <default>
+    <!-- arm geoms do not collide with each other (capsules overlap at the joints) -->
+    <default class="arm"><geom contype="0" conaffinity="0"/></default>
+  </default>
+  <worldbody>
+    <light pos="0.5 -0.5 2.0" dir="-0.3 0.3 -1"/>
+    <geom name="floor" type="plane" size="2 2 0.05" material="floor"/>
+    <geom name="red_box" type="box" pos="0.55 0.08 0.04" size="0.04 0.04 0.04" rgba="0.9 0.2 0.2 1"/>
+    <geom name="blue_box" type="box" pos="0.62 -0.10 0.03" size="0.03 0.03 0.03" rgba="0.2 0.3 0.9 1"/>
+
+    <body name="base_link" pos="0 0 0">
+      <geom class="arm" name="base" type="cylinder" size="0.05 0.03" pos="0 0 0.03" rgba="0.3 0.3 0.3 1"/>
+      <body name="link1" pos="0 0 0.06">
+        <joint name="joint1" type="hinge" axis="0 1 0" range="-1.57 1.57" damping="0.5"/>
+        <geom class="arm" name="link1_geom" type="capsule" fromto="0 0 0 0 0 0.30" size="0.02" rgba="0.2 0.5 0.9 1"/>
+        <body name="link2" pos="0 0 0.30">
+          <joint name="joint2" type="hinge" axis="0 1 0" range="-2.0 2.0" damping="0.5"/>
+          <geom class="arm" name="link2_geom" type="capsule" fromto="0 0 0 0 0 0.25" size="0.018" rgba="0.9 0.6 0.2 1"/>
+          <body name="camera_link" pos="0 0 0.26">
+            <geom class="arm" name="camera_body" type="box" size="0.015 0.02 0.01" rgba="0.1 0.1 0.1 1"/>
+            <!-- MuJoCo cameras look along their -z axis. xyaxes = (right, up) of the image: right = body -y, up = body -x,
+                 so the camera looks along +z of link2 (the link direction) with the image upright. -->
+            <camera name="tip_camera" pos="0 0 0.01" xyaxes="0 -1 0 -1 0 0" fovy="60"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator>
+    <position name="joint1_pos" joint="joint1" kp="30" ctrlrange="-1.57 1.57"/>
+    <position name="joint2_pos" joint="joint2" kp="20" ctrlrange="-2.0 2.0"/>
+  </actuator>
+</mujoco>
