@@ -190,7 +190,68 @@ def try_it():
     save(fig, "lesson01_try.png")
 
 
+# ================================================================ 3. code structure diagrams (one per function)
+def fn_init():
+    fig, ax = fig_ax(14, 4.6)
+    note(ax, 0.3, 4.3, "__init__: 모델을 읽고 ROS 2 입출력을 만든다", bold=True, fs=12)
+    rbox(ax, 0.3, 1.6, 3.4, 2.3, "MuJoCo", ["MjModel.from_xml_path(XML)", "MjData(model)", "Renderer(240 × 320)"], fc=C["green"], tfs=11, fs=8.8, align="left")
+    rbox(ax, 4.2, 1.6, 4.9, 2.3, "발행기 4개", ["/clock            Clock", "/joint_states     JointState", "/tf               TransformBroadcaster", "/tip_camera/image_raw   Image"], fc=C["blue"], tfs=11, fs=8.8, align="left")
+    rbox(ax, 9.6, 1.6, 4.1, 2.3, "구독 1개 · 주기", ["/cmd  Float64MultiArray → on_cmd", "joint_period = 1 / 50 Hz", "camera_period = 1 / 5 Hz", "use_sim_time = True"], fc=C["orange"], tfs=11, fs=8.8, align="left")
+    note(ax, 0.3, 0.8, "이름 목록이 곧 트리다:  joints = [joint1, joint2]      bodies = [base_link, link1, link2, camera_link]", fs=9.5)
+    save(fig, "lesson01_fn_init.png")
+
+
+def fn_joints():
+    fig, ax = fig_ax(14, 3.6)
+    note(ax, 0.3, 3.3, "publish_joints (앞부분): MuJoCo 상태 → JointState", bold=True, fs=12)
+    chain(ax, [("data.qpos · data.qvel", ["MuJoCo 전체 상태 배열"]), ("관절 인덱스", ["model.joint(j).qposadr", "model.joint(j).dofadr"]),
+               ("JointState", ["name · position · velocity", "stamp = 시뮬레이션 시각 t"]), ("/joint_states", ["50 Hz"])],
+          y=0.7, h=1.9, colors=[C["green"], C["grey"], C["yellow"], C["blue"]], tfs=10.5, fs=8.8)
+    save(fig, "lesson01_fn_joints.png")
+
+
+def fn_tf():
+    fig, ax = fig_ax(14, 4.6)
+    note(ax, 0.3, 4.3, "publish_joints (뒷부분): body 자세(월드) → 부모 기준 변환 → /tf", bold=True, fs=12)
+    spans = chain(ax, [("(parent, child) 쌍", ["base_link→link1", "link1→link2 · link2→camera_link"]), ("xpos · xquat", ["두 body 의 월드 자세"]),
+                       ("상대 변환", ["mju_negQuat · mju_mulQuat", "mju_rotVecQuat"]), ("TransformStamped", ["frame_id = parent", "child_frame_id = child"]),
+                       ("sendTransform", ["3개를 한 번에 → /tf"])],
+                  y=1.4, h=2.1, gap=0.25, colors=[C["grey"], C["green"], C["purple"], C["yellow"], C["blue"]], tfs=10.5, fs=8.6)
+    xr = (spans[3][0] + spans[3][1]) / 2; xl = (spans[0][0] + spans[0][1]) / 2
+    ax.plot([xr, xr], [1.4, 0.9], color="#7a4b00", lw=1.3); ax.plot([xr, xl], [0.9, 0.9], color="#7a4b00", lw=1.3); arrow(ax, (xl, 0.9), (xl, 1.4), color="#7a4b00", lw=1.3)
+    label(ax, (xl + xr) / 2, 0.9, "쌍마다 반복 (3회) → tfs 리스트", color="#7a4b00", fs=9)
+    note(ax, 0.3, 0.35, "q_rel = conj(q_parent) · q_child        p_rel = rot(conj(q_parent), p_child - p_parent)", fs=9.5)
+    save(fig, "lesson01_fn_tf.png")
+
+
+def fn_camera():
+    fig, ax = fig_ax(14, 3.6)
+    note(ax, 0.3, 3.3, "publish_camera: MuJoCo 렌더 → sensor_msgs/Image", bold=True, fs=12)
+    chain(ax, [("update_scene", ["camera=\"tip_camera\"", "현재 data 로 장면 갱신"]), ("render()", ["numpy (240, 320, 3) uint8", "오프스크린 · GPU 불필요"]),
+               ("Image 메시지", ["encoding rgb8 · step 960", "frame_id camera_link · data = bytes"]), ("/tip_camera/image_raw", ["5 Hz"])],
+          y=0.7, h=1.9, colors=[C["green"], C["green"], C["yellow"], C["blue"]], tfs=10.5, fs=8.6)
+    save(fig, "lesson01_fn_camera.png")
+
+
+def fn_cmd():
+    fig, ax = fig_ax(14, 3.6)
+    note(ax, 0.3, 3.3, "on_cmd: ROS 2 명령 → MuJoCo 액추에이터", bold=True, fs=12)
+    chain(ax, [("/cmd", ["Float64MultiArray", "[q1, q2] rad"]), ("길이 확인", ["len(data) == model.nu", "아니면 무시"]),
+               ("np.clip", ["actuator_ctrlrange 안으로"]), ("data.ctrl[:]", ["다음 mj_step 부터 적용"]), ("위치 액추에이터", ["토크 = kp · (ctrl - q)", "관절이 목표로 간다"])],
+          y=0.7, h=1.9, gap=0.25, colors=[C["orange"], C["grey"], C["grey"], C["purple"], C["green"]], tfs=10.5, fs=8.6)
+    save(fig, "lesson01_fn_cmd.png")
+
+
+def fn_clock():
+    fig, ax = fig_ax(14, 3.6)
+    note(ax, 0.3, 3.3, "stamp · /clock: 시뮬레이션 시각이 ROS 시간이 된다", bold=True, fs=12)
+    chain(ax, [("data.time", ["float 초", "mj_step 마다 +0.002"]), ("stamp(t)", ["sec = int(t)", "nanosec = 소수부 × 1e9"]),
+               ("Clock 메시지", ["매 스텝 발행"]), ("/clock", ["use_sim_time 노드가 따른다", "메시지 stamp 도 같은 t"])],
+          y=0.7, h=1.9, colors=[C["green"], C["grey"], C["yellow"], C["blue"]], tfs=10.5, fs=8.6)
+    save(fig, "lesson01_fn_clock.png")
+
+
 if __name__ == "__main__":
     for f in (gz_mj_profile, gz_mj_arch, gz_mj_physics, gz_mj_ros, gz_mj_proscons, why_mujoco, arm_schematic, bridge_io, step_loop,
-              run_terminals, tf_tree, to_warehouse, try_it):
+              run_terminals, tf_tree, to_warehouse, try_it, fn_init, fn_joints, fn_tf, fn_camera, fn_cmd, fn_clock):
         f()

@@ -21,6 +21,7 @@ import numpy as np
 import rclpy
 from geometry_msgs.msg import TransformStamped
 from rclpy.node import Node
+from rclpy.signals import SignalHandlerOptions
 from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import Image, JointState
 from std_msgs.msg import Float64MultiArray
@@ -121,7 +122,7 @@ def main():
     ap.add_argument("--camera-hz", type=float, default=5.0)
     ap.add_argument("--joint-hz", type=float, default=50.0)
     args = ap.parse_args()
-    rclpy.init()
+    rclpy.init(signal_handler_options=SignalHandlerOptions.NO)   # Ctrl+C -> KeyboardInterrupt, not a mid-loop shutdown
     node = MinimalBridge(args.viewer, args.camera_hz, args.joint_hz)
     try:
         node.spin()

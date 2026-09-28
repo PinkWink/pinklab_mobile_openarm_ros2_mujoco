@@ -130,7 +130,7 @@ def md_to_storage(md):
             while i < len(lines) and re.match(r"^\d+\. ", lines[i]):
                 items.append(re.sub(r"^\d+\. ", "", lines[i])); i += 1
             out.append("<ol>" + "".join(f"<li>{inline(x)}</li>" for x in items) + "</ol>"); continue
-        m = re.match(r"^!\[[^\]]*\]\(([^)]+)\)(?:\{width=(\d+)\})?", line)
+        m = re.match(r"^!\[(?:[^\[\]]|\[[^\]]*\])*\]\(([^)]+)\)(?:\{width=(\d+)\})?", line)  # alt text may contain [..]
         if m:
             name = Path(m.group(1)).name
             out.append(f'<ac:image ac:width="{m.group(2) or 640}"><ri:attachment ri:filename="{name}"/></ac:image>'); i += 1; continue

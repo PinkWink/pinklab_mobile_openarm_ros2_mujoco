@@ -1,6 +1,6 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-09-27 밤 (hand-off). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-09-28 저녁 (hand-off). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
 ## 0-1. 배포 채널 (2026-09-27 저녁에 만든 것)
 
@@ -8,10 +8,18 @@
 - **Confluence EDU 공간** (spaceId 2517565443, 부모 페이지 3692396550 "주행형 양팔로봇 수업자료 (mujoco + ROS2)"):
   - 3692331022 "패키지 소개와 단기 과정 커리큘럼" ← `docs/camp/intro_curriculum.md` (개조식, h3마다 그림 1장) + `architecture.png` + `intro_*.png` 21장 (`draw_intro_figures.py`, 2026-09-28 v10)
   - 3692331054 "환경 설정과 패키지 사용법" ← `docs/camp/setup_usage.md` (개조식, h3마다 그림 1장) + 그림 4장 (`draw_setup_figures.py`) + `setup_*.png` 26장 (setup_start_result.png · setup_display_result.png 는 실제 화면 캡처) (`draw_setup_detail_figures.py`, 2026-09-28)
-  - 3692920898 "MuJoCo와 ROS2를 연결하기" (Gazebo vs MuJoCo + 최소 브리지, 2026-09-28) ← `docs/camp/lesson01_mujoco_ros2.md` + `lesson01_*.png` 14장 (`draw_lesson01_figures.py`; `lesson01_run_result.png` 는 실제 화면 캡처)
-  - 갱신: `set -a; source ../confluence_token.txt; set +a; python3 scripts/publish_confluence.py <md> "<제목>" --update <pageId> [png...]`. 문법: `:::tip|info|note|warning|panel 제목 … :::`, `:::cards(2|3)` + `::card 제목`, `![..](x.png){width=1000}`.
+  - 3692920898 "MuJoCo와 ROS2를 연결하기" (Gazebo vs MuJoCo + 최소 브리지, 2026-09-28 v7) ← `docs/camp/lesson01_mujoco_ros2.md` (h3 32개 = 그림 32장) + `lesson01_*.png` (`draw_lesson01_figures.py` 블록선도 20장, `render_terminal.py` 로 그린 실제 CLI 출력 캡처 9장, 실제 화면 캡처 `lesson01_run_result.png` · `lesson01_pub1_motion.png` · `lesson01_pub2_motion.png` · `lesson01_t2_rqt_window.png`)
+  - 갱신: `set -a; source ../confluence_token.txt; set +a; python3 scripts/publish_confluence.py <md> "<제목>" --update <pageId> [png...]`. 새 하위 페이지: `... <md> "<제목>" 3692396550 2517565443 [png...]`. 문법: `:::tip|info|note|warning|panel 제목 … :::`, `:::cards(2|3)` + `::card 제목`, `![..](x.png){width=1000}`.
 - **Confluence PD 공간** (개발 기록, 부모 3683418127): Phase 0 3684663302, M1 3687055362, M2 3687776258, M3 3687251977, M4 3692527619, M5 3692527659.
 - **학회 전달용 커리큘럼**: Claude Doc https://claude.ai/code/artifact/5d2472b7-3ceb-4be2-9ee2-2da6dbddba30 + 로컬 `../CAMP_CURRICULUM.md`. 강사 개발 계획은 `../LECTURE_PLAN.md`(v4).
+
+## 0-2. 페이지 작성 규칙 (2026-09-28, 사용자 피드백으로 굳어진 것)
+
+- 문장은 짧게, 전부 개조식. 표는 쓰지 않는다(사용자가 표를 모두 삭제시킴). h3가 최소 단위이고 나중에 슬라이드 한 장이 되므로 h3 본문은 짧게, **h3마다 대표 그림 1장**.
+- 명령은 코드 블록으로 두되 **명령마다 h3를 나누고 실제 실행 결과를 캡처**해서 붙인다. 터미널 출력은 실제로 실행해 얻은 텍스트를 `docs/camp/render_terminal.py`로 터미널 모양 PNG로 그린다(한글 폰트 NanumGothicCoding). GUI는 `DISPLAY=:1`에서 xdotool 로 창을 배치하고 `import -window root -crop WxH+X+Y` 로 찍는다. 움직임(topic pub 등)은 보내기 전/후를 각각 찍어 PIL 로 좌우 합성한다(`lesson01_pub1_motion.png` 만든 방식, 코드는 세션 기록에만 있고 스크립트화 안 됨).
+- 코드 설명은 "함수 이름 - 역할" h3 + 코드 발췌 + 블록선도 + 불릿 3~4개 (lesson01 페이지 3장 끝부분 6개 절이 견본).
+- 그림은 matplotlib, 직교 화살표만, 헬퍼는 `draw_intro_figures.py`(chain / flow_rows / tiles / rbox)를 다른 스크립트가 import 한다. 렌더 후 반드시 PNG를 눈으로 확인(글자 넘침이 잦다).
+- Claude Code Bash 에서 `pkill -f`/`pgrep -f` 패턴이 자기 명령줄과 겹치면 셸이 죽는다 → `pgrep -f "^python lessons/..."` 처럼 앵커를 쓴다. 백그라운드로 띄운 파이썬은 SIGINT 를 무시하므로 종료 테스트는 `timeout -s INT` 로 포그라운드에서 한다.
 
 ## 0. 컨셉 변경 (2026-09-27)
 
@@ -58,7 +66,8 @@ M4 전체 데모(시뮬레이터 + 실행기 + 텍스트 대화)는 `docs/lectur
 3. (완료) EE 제어 예제 → `lessons/05_moveit/`.
 4. 09 웹 대시보드: 카메라 프레임은 핸들러 프로세스 안에 있으므로 핸들러가 JPEG를 websocket으로 내보내는 방식 또는 rosbridge + roslibjs. 로봇 상태(/odom, /joint_states, 스킬 phase) 표시 + 자연어 명령 입력(→ /warehouse/utterance).
 4. GitHub 저장소: `git init`, `src/`는 하나(완성 코드), `lessons/01~10/README.md`에 실행 명령·핵심 코드 포인터. 설치 스크립트 + 사전 환경 점검 스크립트 강화(수강생 직접 설치).
-5. ~~Gazebo vs MuJoCo 강의자료, 최소 브리지 예제(01_mujoco_ros2)~~ **완료 2026-09-28**: `lessons/01_mujoco_ros2/` (two_link_arm.xml = 2링크 팔 + 팔 끝 카메라, minimal_bridge.py 136줄: /clock /joint_states /tf /tip_camera/image_raw 발행 · /cmd 구독, README). Confluence 3692920898. 실행: `source scripts/env.sh; python lessons/01_mujoco_ros2/minimal_bridge.py --viewer`. 함정: MJCF 관절 range 는 `compiler angle="radian"` 없으면 도(degree) 단위; 관절에서 겹치는 캡슐은 contype=0 으로 자기 충돌 제외. **다음 세션은 여기서 시작**: `lessons/02~04`, `07~10` README, 수강생용 `INSTALL.md`와 `scripts/check_env.sh`(PASS/FAIL 표), 마지막에 09 웹 대시보드.
+5. ~~Gazebo vs MuJoCo 강의자료, 최소 브리지 예제(01_mujoco_ros2)~~ **완료 2026-09-28**: `lessons/01_mujoco_ros2/` (two_link_arm.xml = 2링크 팔 + 팔 끝 카메라, minimal_bridge.py 138줄: /clock /joint_states /tf /tip_camera/image_raw 발행 · /cmd 구독, README). Confluence 3692920898 v7 (Gazebo vs MuJoCo 6절 → 최소 브리지 → 실행 명령별 캡처 → 함수별 코드 구조 6절). 실행: `source scripts/env.sh; python lessons/01_mujoco_ros2/minimal_bridge.py --viewer`, 명령 `ros2 topic pub -1 /cmd std_msgs/msg/Float64MultiArray "{data: [0.6, 1.5]}"`. 함정: MJCF 관절 range 는 `compiler angle="radian"` 없으면 도(degree) 단위; 관절에서 겹치는 캡슐은 contype=0 으로 자기 충돌 제외; 카메라 `xyaxes="0 -1 0 -1 0 0"` 이어야 링크 방향을 정방향으로 본다; `rclpy.init(signal_handler_options=SignalHandlerOptions.NO)` 라야 Ctrl+C 가 깨끗이 끝난다. 미결: `publish_joints` 가 TF 까지 발행해 이름이 좁다(사용자가 알고 있음, 나누려면 페이지 3장 코드 발췌도 같이 수정).
+   **다음 세션은 여기서 시작**: (a) 페이지 3692920898 사용자 검토 후 남은 수정, (b) 다음 페이지 = 커리큘럼 ③ "OpenARM Mobile Dual-Arm Launch / Robot Description" (`./scripts/mobile_openarm display`, URDF/Xacro → MJCF, TF 트리; 환경 설정 페이지 2장 "description" 절 캡처 재사용 가능) 을 같은 규칙(0-2)으로 3692396550 아래에 작성, (c) `lessons/02~04`, `07~10` README, 수강생용 `INSTALL.md`와 `scripts/check_env.sh`(PASS/FAIL 표), 마지막에 09 웹 대시보드.
 6. lessons README 틀은 `lessons/05_moveit/README.md`, `lessons/06_pick_place/README.md`를 따른다(목표 → 실행 → 화면에서 볼 것 → 핵심 코드 → 해 볼 것 → 문제 해결).
 
 ## 4. 개발용 도구
