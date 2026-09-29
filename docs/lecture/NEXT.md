@@ -6,7 +6,7 @@
 
 - ROS 프로세스는 모두 종료함(cleanup_ros.sh + `ros2 daemon stop`). 새로 시작하면 `source scripts/env.sh` 후 바로 띄우면 된다.
 - 점검 결과 이상 없음: lesson01·02·03 md 가 참조하는 PNG 는 전부 존재, 중복·누락 없음. git 의 `D lesson02_intro_openarm.png` · `lesson02_intro_vicpinky.png` · `lesson02_pkg_files.png` 는 의도된 삭제(사이트 사진 그림으로 교체 / '이 페이지에서 보는 파일' 절 삭제).
-- **미커밋**: 오후 작업 전체(③ v3 이후 개정, ④ 원고·그림 ~40장, `draw_lesson03_figures.py`, `odom_experiment.py`, `scan_probe.py`, 이 NEXT.md). 사용자가 요청하면 커밋·push. 첫 일로 사용자에게 물어볼 것.
+- git: 09-29 오후 작업 전체를 커밋 9ad8d70 으로 push 함. 작업 트리 깨끗.
 - **결정 대기**: `docs/camp/lesson03_square3_motion.png` 는 만들었지만 ④ 페이지에 안 들어감(3바퀴 절은 그래프만). 넣을지 지울지 사용자에게 확인.
 - 검토 대기: ③ 3697442817, ④ 3696820239. Confluence 게시본과 로컬 md 의 일치 여부는 아직 대조 안 함.
 - 다음 작업: 커리큘럼 ⑤ SLAM 페이지 (0-0 마지막 불릿 참고).
