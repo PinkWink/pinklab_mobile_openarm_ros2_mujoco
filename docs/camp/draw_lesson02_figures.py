@@ -66,17 +66,6 @@ def pkg_assembly():
     save(fig, "lesson02_pkg_assembly.png")
 
 
-def pkg_files():
-    fig, ax = fig_ax(14, 5.4)
-    note(ax, 0.3, 5.1, "이 페이지에서 보는 파일", bold=True, fs=12)
-    tiles(ax, [("mobile_openarm_description/", ["urdf/mobile_openarm.urdf.xacro  (조립)", "urdf/cameras.xacro · config/cameras.yaml", "mobile_openarm_description/model.py  (expand_urdf)", "launch/display.launch.py  (URDF 만 보기)"], C["green"]),
-               ("mobile_openarm_mujoco/", ["mobile_openarm_mujoco/model.py  (build_model: URDF → MJCF)", "mobile_openarm_mujoco/bridge.py  (/joint_states · /odom · TF)", "config/mujoco.yaml  (물리 · 게인 · 주기)"], C["teal"]),
-               ("mobile_openarm_bringup/", ["launch/warehouse.launch.py", "  expand_urdf() 한 번 → 브리지 · robot_state_publisher · MoveIt"], C["blue"]),
-               ("생성물  artifacts/mobile_generated/", ["robot.urdf  (펼친 URDF)", "warehouse.xml  (MJCF)", "*.obj  (변환된 메시)  ·  aruco_*.png"], C["grey"])],
-          cols=2, y_top=4.7, gap=0.3, h=2.05, tfs=11, fs=8.6)
-    save(fig, "lesson02_pkg_files.png")
-
-
 # ================================================================ 2. relations
 def rel_flow():
     fig, ax = fig_ax(14, 6.2)
@@ -315,33 +304,78 @@ def code_display():
     note(ax, 0.3, 0.4, "OpaqueFunction(setup) 이라 LaunchConfiguration 값을 Python 에서 바로 읽는다.  브리지 · Nav2 · MoveIt 은 없다.", fs=9.2)
     save(fig, "lesson02_code_display.png")
 
+# ================================================================ 1b. features of the two upstream robots (from the official sites)
+def feat_openarm():
+    fig, ax = fig_ax(14, 4.9)
+    note(ax, 0.3, 4.6, "OpenARM 특징 (docs.openarm.dev 요약)", bold=True, fs=12)
+    tiles(ax, [("오픈소스 7자유도 휴머노이드 팔", ["Enactic 공개 · Apache-2.0", "접촉 많은 환경의 physical AI 연구용", "CAD · 펌웨어 · 제어 코드 전부 공개"], C["yellow"]),
+               ("사람 크기", ["키 160~165 cm 비율", "리치 606 mm · 팔 무게 5.5 kg", "몸통 하나에 팔 둘 (bimanual)"], C["yellow"]),
+               ("가반하중", ["공칭 4.1 kg (1분 유지)", "최대 6.0 kg (들었다 놓기)", "그리퍼 무게 포함"], C["green"]),
+               ("QDD 백드라이버블 모터", ["사람과 부딪혀도 안전", "양방향 힘 피드백 텔레오퍼레이션", "→ 데이터 수집 · 모방학습"], C["green"]),
+               ("제어 · 구조", ["CAN-FD 1 kHz", "알루미늄 · 스테인리스", "부품 원가(BOM) 약 6,500달러"], C["grey"]),
+               ("생태계", ["OpenArm Cell: 평가용 표준 셀", "KER: 모터 없는 리더 팔", "(같은 기구학 · 텔레옵 · 교시)"], C["grey"]),
+               ("버전", ["사이트 = OpenArm 2.0", "우리 패키지 = v1.0 자산 (openarm_v1.0)", "관절 범위 같음 (J1 -80° ~ +200°)"], C["orange"]),
+               ("우리가 쓰는 방식", ["xacro:openarm_robot 매크로 호출만", "ros2_control · CAN 은 끈다", "그리퍼 parallel_link · mimic"], C["blue"])],
+          cols=4, y_top=4.25, gap=0.25, h=1.75, tfs=10.5, fs=8.4)
+    save(fig, "lesson02_feat_openarm.png")
 
-# ================================================================ 1b. the two upstream robots
-def intro_openarm():
-    fig, ax = fig_ax(14, 5.0)
-    note(ax, 0.3, 4.7, "OpenARM (Enactic · Apache-2.0 · v1.0): 오픈소스 양팔 매니퓰레이터", bold=True, fs=12)
-    tiles(ax, [("구성", ["몸통 body_link0 위에 팔 둘", "팔마다 7관절 (joint1~7) + 그리퍼", "그리퍼: parallel_link 손가락 2개 (mimic)"], C["yellow"]),
-               ("파일 (assets/robot/openarm_v1.0)", ["urdf/: robot · arm · body · ee · ros2_control xacro", "mesh/: dae (보기) · stl (충돌)", "config/: joint_limits · kinematics · inertials"], C["grey"]),
-               ("관절 한계 (joint_limits.yaml)", ["joint1 -80° ~ 200° · effort 40 N·m", "속도 16.75 rad/s", "→ MJCF range · forcerange 로 그대로"], C["green"]),
-               ("우리가 쓰는 방식", ["xacro:openarm_robot 매크로 호출", "bimanual=true · ee_type=parallel_link", "ros2_control=false (실기 CAN 은 안 씀)"], C["blue"])],
-          cols=2, y_top=4.25, gap=0.25, h=1.75, tfs=10.5, fs=8.6)
-    note(ax, 0.3, 0.3, "github.com/enactic/openarm_description · 상류 커밋 1fba2cbc 그대로 (UPSTREAM.md)", fs=9.2)
-    save(fig, "lesson02_intro_openarm.png")
+
+def feat_vicpinky():
+    fig, ax = fig_ax(14, 4.9)
+    note(ax, 0.3, 4.6, "Vic Pinky 특징 (pinklab.art/vic-pinky 요약)", bold=True, fs=12)
+    tiles(ax, [("모빌리티 플랫폼", ["\"Move the Body of Intelligence\"", "로봇 · 장비를 싣고 공간을 이동", "PinkLAB (핑크랩)"], C["yellow"]),
+               ("양팔 로봇과 결합", ["주행 + 조작 = 반주반인 로봇", "이 과정의 로봇이 그 구성", "상판에 OpenARM 을 얹는다"], C["yellow"]),
+               ("크기 · 탑재", ["539(W) × 600(D) × 215(H) mm", "최대 탑재 중량 70 kg", "상판에 장비를 올리는 구조"], C["green"]),
+               ("구동", ["150 W DC 기어드 모터 × 2", "6.5인치 바퀴 × 2 + 캐스터", "차동 구동 → 제자리 회전"], C["green"]),
+               ("전원 · 포트", ["배터리 12 V 7 Ah × 2", "외부 USB · 5 V 전원"], C["grey"]),
+               ("용도", ["작업 영역 확장 (고정형 로봇 보완)", "라이다 자율주행: 공정 간 이동 · 자재 운반", "교육 · 데모 · 전시"], C["grey"]),
+               ("robot_core.xacro 와 대응", ["차체 0.6 × 0.5 m · 높이 0.128 m", "윤거 0.4288 m · 바퀴 반지름 0.0825 m", "= 6.5인치 바퀴"], C["orange"]),
+               ("우리가 쓰는 방식", ["robot_core.xacro 만 include", "Gazebo · 센서 xacro 는 안 씀", "바퀴 → MJCF velocity 액추에이터"], C["blue"])],
+          cols=4, y_top=4.25, gap=0.25, h=1.75, tfs=10.5, fs=8.4)
+    save(fig, "lesson02_feat_vicpinky.png")
 
 
-def intro_vicpinky():
-    fig, ax = fig_ax(14, 5.0)
-    note(ax, 0.3, 4.7, "Vic Pinky (PinkLAB): 차동 구동 모바일 베이스", bold=True, fs=12)
-    tiles(ax, [("구성", ["차체 0.6 × 0.5 × 0.128 m · 50 kg", "구동 바퀴 2 (반지름 0.0825 m · 윤거 0.4288 m)", "캐스터 4 · lidar_mount + laser_link"], C["yellow"]),
-               ("파일 (urdf/)", ["robot_core.xacro: 차체 · 바퀴 · 캐스터 · 라이다 마운트", "lidar · camera · gazebo_control xacro (Gazebo 용)", "meshes/: visual · collision"], C["grey"]),
-               ("프레임", ["base_footprint (바닥) → base_link (차체)", "left/right_wheel_joint: continuous", "laser_link: base_link 기준 yaw 180°"], C["green"]),
-               ("우리가 쓰는 방식", ["robot_core.xacro 만 include", "Gazebo · 센서 xacro 는 쓰지 않는다", "바퀴 → MJCF velocity 액추에이터"], C["blue"])],
-          cols=2, y_top=4.25, gap=0.25, h=1.75, tfs=10.5, fs=8.6)
-    note(ax, 0.3, 0.3, "github.com/pinklab-art/vic_pinky · 상류 커밋 7a8ce991 그대로 (UPSTREAM.md)", fs=9.2)
-    save(fig, "lesson02_intro_vicpinky.png")
-
+# ================================================================ 3-0. who imports model.py, what comes out, who uses it
+def code_derived():
+    fig, ax = fig_ax(14, 8.9)
+    note(ax, 0.3, 8.6, "model.py 를 누가 import 하고, 어떤 파생물이 나와 누가 쓰나", bold=True, fs=12)
+    T = 2.7  # everything above the derived-files row is shifted up by T
+    rbox(ax, 0.3, 2.9 + T, 3.2, 2.3, "원본 (src/)", ["mobile_openarm.urdf.xacro", "cameras.yaml · gripper_inertials.yaml", "collision_exclusions.json · 메시 dae · stl"], fc=C["yellow"], tfs=10.5, fs=8.2)
+    rbox(ax, 0.3, 0.6 + T, 3.2, 1.6, "mobile_openarm_description/", ["model.py", "def expand_urdf()"], fc=C["green"], tfs=10, fs=9)
+    arrow(ax, (1.9, 2.9 + T), (1.9, 2.2 + T)); label(ax, 1.9, 2.55 + T, "xacro.process_file", fs=8.4)
+    ax.add_patch(Rectangle((4.4, 0.4 + T), 4.6, 4.8, fc="#F6F2FB", ec="#9C8AC6", lw=1.2, zorder=1))
+    note(ax, 4.6, 4.95 + T, "import 하는 곳 (launch 시점에 호출)", bold=True, fs=10.5, color="#5E4B8B")
+    rbox(ax, 4.6, 3.6 + T, 4.2, 1.0, "warehouse.launch.py", ["시뮬레이터 실행 · 주 경로"], fc=C["purple"], tfs=10, fs=8.4)
+    rbox(ax, 4.6, 2.4 + T, 4.2, 1.0, "display.launch.py", ["URDF 만 보기"], fc=C["purple"], tfs=10, fs=8.4)
+    rbox(ax, 4.6, 1.2 + T, 4.2, 1.0, "moveit_config/config.py · mujoco/model.py", ["URDF 를 안 받았을 때만 (대체 경로)"], fc=C["grey"], tfs=9.4, fs=8.2)
+    ax.plot([3.5, 3.95], [1.4 + T, 1.4 + T], color=INK, lw=1.6); ax.plot([3.95, 3.95], [1.4 + T, 4.1 + T], color=INK, lw=1.6)
+    for y in (4.1, 2.9, 1.7):
+        arrow(ax, (3.95, y + T), (4.6, y + T))
+    rbox(ax, 9.9, 4.2 + T, 3.8, 0.9, "URDF 문자열 (메모리)", fc=C["orange"], tfs=10)
+    rbox(ax, 9.9, 2.9 + T, 3.8, 0.9, "robot.urdf (파일)", ["artifacts/mobile_generated/"], fc=C["orange"], tfs=10, fs=8.2)
+    ax.plot([8.8, 9.35], [4.1 + T, 4.1 + T], color=INK, lw=1.6); ax.plot([9.35, 9.35], [3.35 + T, 4.65 + T], color=INK, lw=1.6)
+    arrow(ax, (9.35, 4.65 + T), (9.9, 4.65 + T)); arrow(ax, (9.35, 3.35 + T), (9.9, 3.35 + T))
+    label(ax, 9.35, 3.75 + T, "write_text", fs=8.2)
+    rbox(ax, 9.9, 1.5 + T, 3.8, 0.9, "robot_state_publisher", ["robot_description 파라미터 → /robot_description"], fc=C["blue"], tfs=10, fs=7.8)
+    rbox(ax, 9.9, 0.4 + T, 3.8, 0.9, "브리지 --urdf-file", ["build_model(urdf) 호출"], fc=C["teal"], tfs=10, fs=8.2)
+    ax.plot([13.85, 14.0], [4.65 + T, 4.65 + T], color="#1f4e79", lw=1.4); ax.plot([14.0, 14.0], [1.95 + T, 4.65 + T], color="#1f4e79", lw=1.4); arrow(ax, (14.0, 1.95 + T), (13.7, 1.95 + T), color="#1f4e79", lw=1.4)
+    ax.plot([13.85, 13.98], [3.35 + T, 3.35 + T], color="#2a6f68", lw=1.4); ax.plot([13.98, 13.98], [0.85 + T, 3.35 + T], color="#2a6f68", lw=1.4); arrow(ax, (13.98, 0.85 + T), (13.7, 0.85 + T), color="#2a6f68", lw=1.4)
+    # ---- derived files produced by build_model (bottom row) ----
+    ax.add_patch(Rectangle((0.3, 0.55), 13.4, 2.4, fc="#EEF8F7", ec="#5FA8A0", lw=1.2, zorder=1))
+    note(ax, 0.5, 2.72, "build_model() 이 robot.urdf 에서 만드는 파생물 (artifacts/mobile_generated/)", bold=True, fs=10.5, color="#2a6f68")
+    arrow(ax, (11.8, 0.4 + T), (11.8, 2.3), color="#2a6f68", lw=1.6)
+    rbox(ax, 0.5, 0.7, 3.0, 1.3, "mobile_openarm.urdf", ["파싱한 URDF 를 다시 쓴 기록"], fc=C["orange"], tfs=9.8, fs=8.0)
+    rbox(ax, 3.8, 0.7, 3.4, 1.3, "*_<sha>.obj  (41개)", ["dae · stl → obj · 스케일 굽기", "원본이 바뀔 때만 다시 변환"], fc=C["orange"], tfs=9.8, fs=8.0)
+    rbox(ax, 7.5, 0.7, 3.0, 1.3, "warehouse.xml  (MJCF)", ["로봇 + 액추에이터 · 센서 · 창고"], fc=C["orange"], tfs=9.8, fs=8.0)
+    rbox(ax, 10.9, 0.7, 2.6, 1.3, "MuJoCo", ["MjModel.from_xml_path", "obj 는 <asset> 으로 참조"], fc=C["green"], tfs=9.8, fs=8.0)
+    arrow(ax, (10.5, 1.35), (10.9, 1.35))
+    ax.plot([2.0, 11.8], [2.3, 2.3], color="#2a6f68", lw=1.2)
+    for x in (2.0, 5.5, 9.0):
+        arrow(ax, (x, 2.3), (x, 2.0), color="#2a6f68", lw=1.2)
+    note(ax, 0.3, 0.15, "파생물은 매 실행마다 다시 만든다 (xacro 약 0.1 s · MJCF 약 0.3 s).  원본 xacro · YAML · launch 인자가 바뀌면 결과도 바뀌기 때문이다.  obj 만 캐시된다.", fs=9.2)
+    save(fig, "lesson02_code_derived.png")
 
 if __name__ == "__main__":
-    for f in (pkg_kinds, intro_openarm, intro_vicpinky, pkg_assembly, pkg_files, rel_flow, rel_xacro, rel_added, rel_names, rel_tf, rel_display,
-              code_expand, code_launch, code_build, code_link, code_joint, code_geom, code_sensor, code_act, code_mimic, code_physics, code_state, code_display):
+    for f in (pkg_kinds, feat_openarm, feat_vicpinky, pkg_assembly, rel_flow, rel_xacro, rel_added, rel_names, rel_tf, rel_display,
+              code_derived, code_expand, code_launch, code_build, code_link, code_joint, code_geom, code_sensor, code_act, code_mimic, code_physics, code_state, code_display):
         f()

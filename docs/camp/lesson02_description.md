@@ -6,19 +6,19 @@
 
 ### OpenARM: 오픈소스 양팔 매니퓰레이터
 
-![OpenARM](lesson02_intro_openarm.png){width=1000}
+![OpenArm 2.0 과 치수 · 관절 범위 (출처: docs.openarm.dev)](lesson02_intro_openarm_site.png){width=1000}
 
-- Enactic이 공개한 7관절 팔이다. 몸통 하나에 팔 둘을 붙인 양팔(bimanual) 구성을 xacro 매크로로 제공한다.
-- 그리퍼는 parallel_link 손가락 두 개다. 한쪽 손가락은 mimic으로 따라간다.
-- 우리는 `xacro:openarm_robot` 매크로를 호출만 한다. 실제 하드웨어용 ros2_control · CAN 부분은 끈다.
+### OpenARM 특징
+
+![OpenARM 특징](lesson02_feat_openarm.png){width=1000}
 
 ### Vic Pinky: PinkLAB 차동 구동 모바일 베이스
 
-![Vic Pinky](lesson02_intro_vicpinky.png){width=1000}
+![Vic Pinky 와 제원 도면 (출처: pinklab.art/vic-pinky)](lesson02_intro_vicpinky_site.png){width=1000}
 
-- 핑크랩의 차동 구동 베이스다. 구동 바퀴 둘, 캐스터 넷, 라이다 마운트가 `robot_core.xacro` 하나에 있다.
-- 바닥 프레임 base_footprint와 차체 base_link가 여기서 나온다. Nav2 · SLAM이 이 두 프레임을 쓴다.
-- 우리는 `robot_core.xacro`만 include한다. Gazebo · 센서 xacro는 쓰지 않는다.
+### Vic Pinky 특징
+
+![Vic Pinky 특징](lesson02_feat_vicpinky.png){width=1000}
 
 ### Vic Pinky 의 description 만 보기
 
@@ -52,10 +52,6 @@ ros2 launch openarm_description display.launch.py
 
 ![로봇 한 대의 조립](lesson02_pkg_assembly.png){width=1000}
 
-### 이 페이지에서 보는 파일
-
-![이 페이지에서 보는 파일](lesson02_pkg_files.png){width=1000}
-
 ## 2. 관계 편: URDF 하나가 세 곳으로
 
 ### 흐름 한눈에
@@ -78,98 +74,13 @@ ros2 launch openarm_description display.launch.py
 
 ![TF는 누가 내나](lesson02_rel_tf.png){width=1000}
 
-### 시뮬레이터 없이 보기: display.launch.py
-
-![display.launch.py](lesson02_rel_display.png){width=1000}
-
-- `/joint_states` 공급자만 바뀐다. MuJoCo 대신 슬라이더 창.
-- robot_state_publisher와 URDF는 같다. RViz2가 `/robot_description`으로 모델을 받는다.
-- 시뮬레이터와 같이 띄우지 않는다. `/joint_states`와 `/tf`가 두 군데서 나온다.
-
-### 실행: 터미널 1 (display)
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source scripts/env.sh
-./scripts/mobile_openarm display          # = ros2 launch mobile_openarm_description display.launch.py
-```
-
-![터미널 1: display 실행](lesson02_t1_display.png){width=1000}
-
-### display 의 실행 결과
-
-![display 실행 화면: RViz2(왼쪽)와 관절 슬라이더(오른쪽)](setup_display_result.png){width=1000}
-
-### 터미널 2: ros2 node list
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source scripts/env.sh
-ros2 node list
-```
-
-![ros2 node list](lesson02_cli_node_list.png){width=1000}
-
-### 터미널 2: ros2 topic list · topic info /robot_description
-
-```bash
-ros2 topic list
-ros2 topic info /robot_description
-```
-
-![ros2 topic list 와 /robot_description 정보](lesson02_cli_topic_info.png){width=1000}
-
-### 터미널 2: ros2 topic echo /joint_states
-
-```bash
-ros2 topic echo --once /joint_states
-```
-
-![/joint_states 의 관절 이름 20개](lesson02_cli_joint_states.png){width=1000}
-
-### 터미널 2: tf2_echo base_footprint openarm_left_hand_tcp
-
-```bash
-ros2 run tf2_ros tf2_echo base_footprint openarm_left_hand_tcp
-```
-
-![tf2_echo base_footprint → openarm_left_hand_tcp](lesson02_cli_tf_echo.png){width=1000}
-
-### 터미널 2: tf2_echo base_link laser_link
-
-```bash
-ros2 run tf2_ros tf2_echo base_link laser_link
-```
-
-![tf2_echo base_link → laser_link (고정 관절, /tf_static)](lesson02_cli_tf_laser.png){width=1000}
-
-### 생성된 파일 보기
-
-```bash
-ls artifacts/mobile_generated/
-head -3 artifacts/mobile_generated/warehouse.xml
-```
-
-![생성된 파일](lesson02_cli_generated.png){width=1000}
-
-### URDF 와 MJCF 의 크기 비교
-
-```bash
-grep -o '<link ' artifacts/mobile_generated/robot.urdf | wc -l
-grep -o '<joint ' artifacts/mobile_generated/robot.urdf | wc -l
-for t in body joint geom camera site velocity position exclude; do
-  echo "$t $(grep -o "<$t " artifacts/mobile_generated/warehouse.xml | wc -l)"
-done
-```
-
-![URDF 와 MJCF 의 요소 수](lesson02_cli_counts.png){width=1000}
-
-- URDF 관절 49개 중 fixed 25개는 MJCF에서 joint가 되지 않는다. body만 남아 22개 joint(자유 관절 1 + 바퀴 2 + 팔 14 + 손가락 4)다.
-- body가 링크 수보다 많다. 창고 상자 · 배우 · 마커 body가 더해졌다.
-
 ## 3. 코드 편
 
-### Xacro 펼치기 - expand_urdf 함수
+### 파생물의 흐름: model.py → robot.urdf → 누가 쓰나
+
+![model.py 를 누가 import 하고, robot.urdf 는 누가 쓰나](lesson02_code_derived.png){width=1000}
+
+### Xacro 펼치기 - expand_urdf 함수 (다른 launch · 모듈이 import 해서 사용)
 
 ```python
 # mobile_openarm_description/model.py
@@ -401,6 +312,93 @@ def setup(context):
 ```
 
 ![display.launch.py](lesson02_code_display.png){width=1000}
+
+## 4. 실행해보기
+
+### 시뮬레이터 없이 보기: display.launch.py
+
+![display.launch.py](lesson02_rel_display.png){width=1000}
+
+### 실행: 터미널 1 (display)
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source scripts/env.sh
+./scripts/mobile_openarm display          # = ros2 launch mobile_openarm_description display.launch.py
+```
+
+![터미널 1: display 실행](lesson02_t1_display.png){width=1000}
+
+### display 의 실행 결과
+
+![display 실행 화면: RViz2(왼쪽)와 관절 슬라이더(오른쪽)](setup_display_result.png){width=1000}
+
+### 터미널 2: ros2 node list
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source scripts/env.sh
+ros2 node list
+```
+
+![ros2 node list](lesson02_cli_node_list.png){width=1000}
+
+### 터미널 2: ros2 topic list · topic info /robot_description
+
+```bash
+ros2 topic list
+ros2 topic info /robot_description
+```
+
+![ros2 topic list 와 /robot_description 정보](lesson02_cli_topic_info.png){width=1000}
+
+### 터미널 2: ros2 topic echo /joint_states
+
+```bash
+ros2 topic echo --once /joint_states
+```
+
+![/joint_states 의 관절 이름 20개](lesson02_cli_joint_states.png){width=1000}
+
+### 터미널 2: tf2_echo base_footprint openarm_left_hand_tcp
+
+```bash
+ros2 run tf2_ros tf2_echo base_footprint openarm_left_hand_tcp
+```
+
+![tf2_echo base_footprint → openarm_left_hand_tcp](lesson02_cli_tf_echo.png){width=1000}
+
+### 터미널 2: tf2_echo base_link laser_link
+
+```bash
+ros2 run tf2_ros tf2_echo base_link laser_link
+```
+
+![tf2_echo base_link → laser_link (고정 관절, /tf_static)](lesson02_cli_tf_laser.png){width=1000}
+
+### 생성된 파일 보기
+
+```bash
+ls artifacts/mobile_generated/
+head -3 artifacts/mobile_generated/warehouse.xml
+```
+
+![생성된 파일](lesson02_cli_generated.png){width=1000}
+
+### URDF 와 MJCF 의 크기 비교
+
+```bash
+grep -o '<link ' artifacts/mobile_generated/robot.urdf | wc -l
+grep -o '<joint ' artifacts/mobile_generated/robot.urdf | wc -l
+for t in body joint geom camera site velocity position exclude; do
+  echo "$t $(grep -o "<$t " artifacts/mobile_generated/warehouse.xml | wc -l)"
+done
+```
+
+![URDF 와 MJCF 의 요소 수](lesson02_cli_counts.png){width=1000}
+
+- URDF 관절 49개 중 fixed 25개는 MJCF에서 joint가 되지 않는다. body만 남아 22개 joint(자유 관절 1 + 바퀴 2 + 팔 14 + 손가락 4)다.
+- body가 링크 수보다 많다. 창고 상자 · 배우 · 마커 body가 더해졌다.
 
 ### 해 볼 것
 
