@@ -50,7 +50,180 @@
 - 카메라를 Python에서 직접 받아 검출 결과만 발행한다.
 - Gazebo는 설치하지 않는다. 비교 설명 이후 모든 실습은 MuJoCo로만 진행한다.
 
-## 2. MuJoCo와 ROS 2 연결하기: 최소 브리지
+## 2. 로봇 모델 파일: two_link_arm.xml
+
+### 로봇을 적는 두 형식: URDF와 MJCF
+
+![URDF와 MJCF](lesson01_xml_formats.png){width=1000}
+
+- URDF는 ROS의 로봇 기술 형식이다. RViz · MoveIt · robot_state_publisher가 읽는다.
+- MJCF는 MuJoCo의 모델 형식이다. mujoco 라이브러리가 직접 읽는다.
+- 둘 다 XML이다. 링크와 관절의 트리를 적는다는 점은 같다.
+- 창고 로봇은 URDF(xacro)로 적고 MJCF로 바꿔 쓴다. 이 예제는 MJCF 하나만 쓴다.
+
+### 트리를 적는 방법이 다르다
+
+![트리를 적는 방법](lesson01_xml_tree.png){width=1000}
+
+- URDF: `<link>`와 `<joint>`를 나란히 나열한다. `<joint>`의 parent · child 이름이 트리를 만든다.
+- MJCF: `<body>` 안에 `<body>`를 넣어 트리를 만든다. 관절은 자식 body 안에 `<joint>`로 적는다.
+- MJCF의 body `pos`는 부모 body 기준이다. URDF의 joint origin과 같은 역할이다.
+
+### 파일 안에 담기는 것이 다르다
+
+![파일 안에 담기는 것](lesson01_xml_contents.png){width=1000}
+
+- URDF: 형상 · 관성 · 관절 한계까지다. 물리 옵션 · 액추에이터 · 센서는 파일 밖(ros2_control · 플러그인)에 있다.
+- MJCF: `<option>`(중력 · 시간 스텝) · `<actuator>` · `<camera>` · `<light>`가 파일 안에 있다.
+- 그래서 MJCF 파일 하나면 시뮬레이션이 바로 돈다. 브리지 없이 뷰어로 열 수 있다.
+
+### 단위와 기본값이 다르다
+
+![단위와 기본값](lesson01_xml_units.png){width=1000}
+
+- 각도: URDF는 항상 rad다. MJCF는 기본이 도(degree)다. `compiler angle="radian"`으로 맞춘다.
+- 관성: URDF는 `<inertial>`을 직접 적는다. MJCF는 geom 크기와 밀도에서 자동 계산한다.
+- 충돌: URDF는 `<collision>`이 따로 있다. MJCF는 geom 하나가 시각과 충돌을 겸한다. `contype=0`으로 끈다.
+
+### 모델만 먼저 보기: mujoco.viewer
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source scripts/env.sh
+python -m mujoco.viewer --mjcf=lessons/01_mujoco_ros2/two_link_arm.xml
+```
+
+![mujoco.viewer 로 연 two_link_arm.xml](lesson01_xml_viewer.png){width=1000}
+
+### 파일 전체 구조
+
+```xml
+<mujoco model="two_link_arm">
+  <compiler angle="radian"/>
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+  <visual> ... </visual>
+  <asset> ... </asset>
+  <default> ... </default>
+  <worldbody> ... </worldbody>
+  <actuator> ... </actuator>
+</mujoco>
+```
+
+![파일 전체 구조](lesson01_xml_structure.png){width=1000}
+
+### compiler · option - 단위와 물리 스텝
+
+```xml
+<compiler angle="radian"/>
+<option timestep="0.002" gravity="0 0 -9.81"/>
+```
+
+![compiler 와 option](lesson01_xml_compiler.png){width=1000}
+
+### visual · asset - 렌더 크기와 바닥 무늬
+
+```xml
+<visual>
+  <global offwidth="640" offheight="480"/>
+</visual>
+<asset>
+  <texture name="grid" type="2d" builtin="checker" rgb1="0.85 0.85 0.85" rgb2="0.65 0.65 0.65" width="256" height="256"/>
+  <material name="floor" texture="grid" texrepeat="6 6" reflectance="0.1"/>
+</asset>
+```
+
+![visual 과 asset](lesson01_xml_asset.png){width=1000}
+
+### default - 팔 링크의 공통 속성
+
+```xml
+<default>
+  <!-- arm geoms do not collide with each other (capsules overlap at the joints) -->
+  <default class="arm"><geom contype="0" conaffinity="0"/></default>
+</default>
+```
+
+![default class arm](lesson01_xml_default.png){width=1000}
+
+### worldbody - 빛 · 바닥 · 상자
+
+```xml
+<worldbody>
+  <light pos="0.5 -0.5 2.0" dir="-0.3 0.3 -1"/>
+  <geom name="floor" type="plane" size="2 2 0.05" material="floor"/>
+  <geom name="red_box" type="box" pos="0.55 0.08 0.04" size="0.04 0.04 0.04" rgba="0.9 0.2 0.2 1"/>
+  <geom name="blue_box" type="box" pos="0.62 -0.10 0.03" size="0.03 0.03 0.03" rgba="0.2 0.3 0.9 1"/>
+  ...
+</worldbody>
+```
+
+![worldbody 의 고정물](lesson01_xml_world.png){width=1000}
+
+### body 트리 - base_link → link1 → link2 → camera_link
+
+```xml
+<body name="base_link" pos="0 0 0">
+  <body name="link1" pos="0 0 0.06">
+    <body name="link2" pos="0 0 0.30">
+      <body name="camera_link" pos="0 0 0.26">
+      </body>
+    </body>
+  </body>
+</body>
+```
+
+![body 트리](lesson01_xml_bodies.png){width=1000}
+
+### joint - hinge 관절 두 개
+
+```xml
+<body name="link1" pos="0 0 0.06">
+  <joint name="joint1" type="hinge" axis="0 1 0" range="-1.57 1.57" damping="0.5"/>
+  ...
+  <body name="link2" pos="0 0 0.30">
+    <joint name="joint2" type="hinge" axis="0 1 0" range="-2.0 2.0" damping="0.5"/>
+```
+
+![joint](lesson01_xml_joint.png){width=1000}
+
+### geom - capsule 로 그린 링크
+
+```xml
+<geom class="arm" name="base" type="cylinder" size="0.05 0.03" pos="0 0 0.03" rgba="0.3 0.3 0.3 1"/>
+<geom class="arm" name="link1_geom" type="capsule" fromto="0 0 0 0 0 0.30" size="0.02" rgba="0.2 0.5 0.9 1"/>
+<geom class="arm" name="link2_geom" type="capsule" fromto="0 0 0 0 0 0.25" size="0.018" rgba="0.9 0.6 0.2 1"/>
+<geom class="arm" name="camera_body" type="box" size="0.015 0.02 0.01" rgba="0.1 0.1 0.1 1"/>
+```
+
+![geom](lesson01_xml_geom.png){width=1000}
+
+### camera - 팔 끝 카메라의 방향
+
+```xml
+<body name="camera_link" pos="0 0 0.26">
+  <geom class="arm" name="camera_body" type="box" size="0.015 0.02 0.01" rgba="0.1 0.1 0.1 1"/>
+  <camera name="tip_camera" pos="0 0 0.01" xyaxes="0 -1 0 -1 0 0" fovy="60"/>
+</body>
+```
+
+![camera](lesson01_xml_camera.png){width=1000}
+
+### actuator - 관절을 잡는 위치 액추에이터
+
+```xml
+<actuator>
+  <position name="joint1_pos" joint="joint1" kp="30" ctrlrange="-1.57 1.57"/>
+  <position name="joint2_pos" joint="joint2" kp="20" ctrlrange="-2.0 2.0"/>
+</actuator>
+```
+
+![actuator](lesson01_xml_actuator.png){width=1000}
+
+### 브리지가 이 파일에서 찾는 이름
+
+![브리지가 찾는 이름](lesson01_xml_names.png){width=1000}
+
+## 3. MuJoCo와 ROS 2 연결하기: 최소 브리지
 
 ### 예제 로봇: 2링크 팔 + 팔 끝 카메라
 
@@ -58,9 +231,6 @@
 
 - 폴더: `lessons/01_mujoco_ros2/`. 파일 두 개다.
 - `two_link_arm.xml`: MJCF. hinge 관절 2개, 위치 액추에이터 2개, 팔 끝 카메라 `tip_camera`, 바닥의 빨강 · 파랑 상자.
-- `minimal_bridge.py`: 브리지 노드. 136줄이다.
-- 관절 단위는 rad다. MJCF 기본은 도(degree)라서 `compiler angle="radian"`을 넣었다.
-- 링크끼리는 충돌하지 않게 했다. 관절에서 캡슐이 겹치기 때문이다.
 
 ### 브리지가 주고받는 것
 
@@ -204,6 +374,102 @@ ros2 topic echo --once /tip_camera/image_raw --no-arr
 - TF는 부모 → 자식 상대 자세다. `mju_negQuat`, `mju_mulQuat`, `mju_rotVecQuat` 세 함수로 바꾼다.
 - 영상의 `frame_id`가 `camera_link`다. 그래서 검출 결과를 TF로 다른 프레임에 옮길 수 있다.
 
+### Python과 MuJoCo의 연결
+
+```python
+import mujoco
+import mujoco.viewer
+
+self.model = mujoco.MjModel.from_xml_path(str(XML))                  # 모델 (상수)
+self.data = mujoco.MjData(self.model)                                # 상태 (매 스텝 변함)
+mujoco.mj_step(self.model, self.data)                                # 물리 한 스텝
+self.renderer = mujoco.Renderer(self.model, height=240, width=320)   # 오프스크린 카메라
+self.viewer = mujoco.viewer.launch_passive(self.model, self.data)    # 화면 창 (선택)
+```
+
+![Python 코드가 MuJoCo 와 만나는 다섯 곳](lesson01_py_overview.png){width=1000}
+
+### 모델 읽기 - MjModel.from_xml_path
+
+```python
+XML = Path(__file__).with_name("two_link_arm.xml")
+self.model = mujoco.MjModel.from_xml_path(str(XML))
+dt = self.model.opt.timestep          # 0.002
+self.model.nq, self.model.nu          # 관절 수 2, 액추에이터 수 2
+```
+
+![MjModel](lesson01_py_model.png){width=1000}
+
+### 상태 만들기 - MjData
+
+```python
+self.data = mujoco.MjData(self.model)
+self.data.time                      # 시뮬레이션 시각 (초)
+self.data.qpos, self.data.qvel      # 관절 각 · 각속도
+self.data.xpos, self.data.xquat     # body 위치 · 자세 (월드 기준)
+self.data.ctrl                      # 액추에이터 목표
+```
+
+![MjData](lesson01_py_data.png){width=1000}
+
+### 물리 한 스텝 - mj_step
+
+```python
+while rclpy.ok():
+    mujoco.mj_step(self.model, self.data)   # data.time += model.opt.timestep
+    t = self.data.time
+```
+
+![mj_step](lesson01_py_step.png){width=1000}
+
+### 이름으로 찾기 - model.joint · model.body
+
+```python
+self.model.joint("joint1").qposadr[0]   # qpos 안의 번호
+self.model.joint("joint1").dofadr[0]    # qvel 안의 번호
+self.model.body("link1").id             # xpos · xquat 의 행 번호
+```
+
+![이름으로 찾기](lesson01_py_names.png){width=1000}
+
+### 오프스크린 렌더 - Renderer
+
+```python
+self.renderer = mujoco.Renderer(self.model, height=240, width=320)   # __init__ 에서 한 번
+self.renderer.update_scene(self.data, camera="tip_camera")           # 5 Hz 마다
+rgb = self.renderer.render()                                          # (240, 320, 3) uint8
+```
+
+![Renderer](lesson01_py_renderer.png){width=1000}
+
+### 화면 창 - viewer.launch_passive
+
+```python
+if viewer:
+    self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
+
+while rclpy.ok() and (self.viewer is None or self.viewer.is_running()):
+    ...
+    if self.viewer is not None:
+        self.viewer.sync()
+```
+
+![viewer](lesson01_py_viewer.png){width=1000}
+
+### 실시간 맞추기 - 벽시계와 시뮬레이션 시각
+
+```python
+wall0 = time.monotonic()
+while ...:
+    mujoco.mj_step(self.model, self.data)
+    ...
+    lag = wall0 + t - time.monotonic()   # 시뮬레이션이 벽시계보다 앞선 만큼
+    if lag > 0:
+        time.sleep(lag)
+```
+
+![실시간 맞추기](lesson01_py_realtime.png){width=1000}
+
 ### 노드 초기화 - __init__ 함수
 
 ```python
@@ -224,10 +490,6 @@ self.joint_period, self.camera_period = 1.0 / joint_hz, 1.0 / camera_hz
 
 ![__init__ 구조](lesson01_fn_init.png){width=1000}
 
-- MuJoCo 쪽은 모델 · 데이터 · 렌더러 셋이다. ROS 2 쪽은 발행기 넷과 구독 하나다.
-- `joints`와 `bodies` 이름 목록이 곧 발행 순서와 TF 트리다. 링크를 추가하면 이 두 줄에 이름만 더한다.
-- 노드는 `use_sim_time=True`로 만든다. 시간은 이 노드가 내는 `/clock`을 따른다.
-
 ### Joint State 발행 - publish_joints 함수 (앞부분)
 
 ```python
@@ -241,10 +503,6 @@ def publish_joints(self, t):
 ```
 
 ![publish_joints 앞부분 구조](lesson01_fn_joints.png){width=1000}
-
-- MuJoCo는 모든 관절 값을 `qpos` · `qvel` 배열 하나에 담는다. 관절 이름으로 인덱스(`qposadr`, `dofadr`)를 찾아 꺼낸다.
-- 시각은 시뮬레이션 시간 `t`다. `/clock`과 같은 시각이라 다른 노드가 맞춰 쓸 수 있다.
-- 50 Hz마다 불린다. 주기는 `spin()`이 시뮬레이션 시간으로 센다.
 
 ### TF 발행 - publish_joints 함수 (뒷부분)
 
@@ -267,11 +525,6 @@ def publish_joints(self, t):
 
 ![publish_joints 뒷부분 구조](lesson01_fn_tf.png){width=1000}
 
-- `bodies` 목록에서 이웃한 두 이름을 (부모, 자식) 쌍으로 묶는다. 쌍이 셋이니 변환도 셋이다.
-- MuJoCo의 `xpos` · `xquat`은 월드 기준이다. 부모 쿼터니언의 역(`mju_negQuat`)을 곱해 부모 기준 상대 자세로 바꾼다.
-- 변환 셋을 리스트에 모아 `sendTransform`으로 한 번에 보낸다. `/joint_states`와 같은 함수, 같은 시각이다.
-- MuJoCo 쿼터니언은 (w, x, y, z) 순서다. ROS 메시지 필드에 넣을 때 순서를 맞춘다.
-
 ### 카메라 영상 발행 - publish_camera 함수
 
 ```python
@@ -287,11 +540,6 @@ def publish_camera(self, t):
 
 ![publish_camera 구조](lesson01_fn_camera.png){width=1000}
 
-- 렌더는 MuJoCo 함수 두 줄이다. 결과는 (240, 320, 3) numpy 배열이다.
-- `Image` 메시지는 배열을 바이트로 그대로 담는다. `step`은 한 줄의 바이트 수(320 × 3)다.
-- `frame_id`가 `camera_link`라서 TF로 다른 프레임에 옮길 수 있다.
-- 5 Hz다. 영상 토픽은 크기가 커서 창고 브리지는 이 단계 대신 검출 결과만 발행한다.
-
 ### 명령 수신 - on_cmd 함수
 
 ```python
@@ -301,10 +549,6 @@ def on_cmd(self, msg):
 ```
 
 ![on_cmd 구조](lesson01_fn_cmd.png){width=1000}
-
-- 콜백은 `spin()`의 `spin_once`가 부른다. 스텝 사이에만 실행되므로 물리 계산과 겹치지 않는다.
-- 값의 개수가 액추에이터 수(`nu`)와 다르면 무시한다. 범위 밖 값은 `ctrlrange`로 자른다.
-- `data.ctrl`에 넣으면 끝이다. 다음 `mj_step`부터 위치 액추에이터가 `kp · (ctrl - q)` 토크를 낸다.
 
 ### 시뮬레이션 시각 - stamp 함수와 /clock
 
@@ -319,17 +563,13 @@ self.clock_pub.publish(Clock(clock=stamp(t)))
 
 ![stamp 와 /clock 구조](lesson01_fn_clock.png){width=1000}
 
-- `data.time`은 `mj_step`마다 `timestep`(2 ms)씩 늘어나는 float 초다.
-- `stamp()`가 초와 나노초로 나눠 ROS 시간 형식으로 바꾼다. 모든 메시지 헤더가 이 함수를 쓴다.
-- `/clock`을 매 스텝 내므로 `use_sim_time` 노드는 시뮬레이션 시간으로 움직인다. 시뮬레이터를 멈추면 그 노드들의 시간도 멈춘다.
-
 ### 창고 브리지와의 관계
 
 ![창고 브리지로](lesson01_to_warehouse.png){width=1000}
 
-- 창고 패키지의 브리지(`src/mobile_openarm_mujoco/mobile_openarm_mujoco/bridge.py`)는 같은 루프다.
-- 더해진 것: 라이다 레이캐스트 → `/scan`, 바퀴 → `/odom` + TF, `/cmd_vel` 수신, FollowJointTrajectory 액션, 카메라 핸들러.
-- 카메라 핸들러는 영상을 토픽으로 내지 않는다. 같은 프로세스에서 검출하고 `/vision/*`만 낸다.
+### MuJoCo <-> ROS2
+
+![MuJoCo와 ROS 2 사이에 오가는 토픽](lesson01_exchange.png){width=1000}
 
 ### 해 볼 것
 
