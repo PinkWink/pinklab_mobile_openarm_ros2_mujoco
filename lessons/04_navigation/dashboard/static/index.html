@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patrol Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <div class="brand">Mobile OpenArm · 순찰 대시보드</div>
+  <div class="chips">
+    <span class="chip" id="conn">연결 중…</span>
+    <span class="chip">sim <b id="simtime">-</b> s</span>
+    <span class="chip">실시간 비율 <b id="rtf">-</b></span>
+  </div>
+</header>
+
+<main>
+  <section class="card map-card">
+    <div class="card-head">
+      <h2>지도</h2>
+      <div class="legend">
+        <span><i class="sw truth"></i>실제 (ground truth)</span>
+        <span><i class="sw amcl"></i>AMCL</span>
+        <span><i class="sw odom"></i>odom</span>
+        <span><i class="sw plan"></i>/plan</span>
+        <span><i class="sw scan"></i>/scan</span>
+        <span><i class="sw person"></i>사람 (안전모)</span>
+        <span><i class="sw noh"></i>안전모 없음</span>
+      </div>
+    </div>
+    <canvas id="map"></canvas>
+  </section>
+
+  <section class="side">
+    <div class="card">
+      <div class="card-head">
+        <h2>미션</h2>
+        <span class="state" id="state">-</span>
+      </div>
+      <div class="message" id="message">patrol.py 를 기다리는 중</div>
+      <div class="progress"><div id="bar"></div></div>
+      <div class="kv">
+        <div><span>전체 시간</span><b id="elapsed">-</b></div>
+        <div><span>이번 구간</span><b id="leg">-</b></div>
+        <div><span>남은 거리</span><b id="remain">-</b></div>
+        <div><span>복구 동작</span><b id="recov">-</b></div>
+      </div>
+      <table class="stops">
+        <thead><tr><th>#</th><th>장소</th><th>상태</th><th>시간</th><th>AMCL 오차</th><th>odom 오차</th></tr></thead>
+        <tbody id="stops"></tbody>
+      </table>
+      <div class="buttons">
+        <button id="start">순찰 시작</button>
+        <button id="cancel" class="ghost">취소</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>로봇</h2></div>
+      <div class="kv">
+        <div><span>속도 v</span><b id="v">-</b></div>
+        <div><span>회전 w</span><b id="w">-</b></div>
+        <div><span>AMCL − 실제</span><b id="erra">-</b></div>
+        <div><span>odom − 실제</span><b id="erro">-</b></div>
+        <div><span>AMCL 표준편차</span><b id="cov">-</b></div>
+        <div><span>보이는 사람</span><b id="people">-</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>카메라</h2><span class="hint">박스 = /vision/detections</span></div>
+      <div class="cams" id="cams"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>이벤트</h2></div>
+      <ul class="log" id="log"></ul>
+    </div>
+  </section>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -2,6 +2,25 @@
 
 마지막 갱신: 2026-09-29 밤 (hand-off, 내일 2026-09-30 이어서). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
+## 0-000000. 2026-09-30 밤 hand-off: "전반부 통합 Demo" (순찰 + 웹 대시보드) 작업 중단 지점
+
+**사용자 요청**: 전반부 통합 Demo = 내가 만든 지도로 창고 순찰 + Flask 웹 대시보드(미션 상태 · 카메라 · 위치 모니터링). Confluence 페이지(부모 3692396550)에 사용법과 구현 원리를 쓰되 **대시보드 부분은 페이지 맨 마지막에**. 아직 페이지는 안 만들었다.
+
+**만든 것 (커밋 안 함, `lessons/04_navigation/`)**
+- `patrol.py`: locations.yaml 이름 목록(기본 pick_table → rack_a → rack_b → place_table → center_aisle)을 NavigateToPose 로 차례로. `/patrol/status`(String JSON, latched) 발행, `/patrol/command`(start|cancel) 구독, `--wait` 는 시작 버튼 대기. 정지마다 truth 대비 AMCL · odom 오차 기록. **near 워치독**: 목표 0.25 m 안에서 8 s 동안 안 움직이면 cancel 후 status "near" 로 도착 처리 (DWB 가 xy_goal_tolerance 0.08 바로 밖, 옆을 보고 멈추는 경우).
+- `dashboard/frame_tap.py`: `DashboardPipeline(LecturePipeline)` = 기존 비전 파이프라인 + 카메라마다 최신 JPEG 를 `/dev/shm/mobile_openarm_dashboard/<cam>.jpg` 에 원자적 저장 (+ meta.json). launch 인자 `camera_handler:=lessons/04_navigation/dashboard/frame_tap.py:DashboardPipeline camera_fps:=5`.
+- `dashboard/server.py`: Flask(설치돼 있음) + rclpy 노드(백그라운드 스레드, SingleThreadedExecutor, SignalHandlerOptions.NO 로 Ctrl+C 깨끗이 종료). `/api/stream`(SSE 5 Hz 상태 JSON), `/api/map` · `/api/map.png`, `/camera/<name>.mjpg`(MJPEG), `/api/cameras`, `POST /api/command`. 구독: /ground_truth /amcl_pose /odom /plan /scan(TF 로 map 변환) /map /warehouse/actor_states /vision/detections /patrol/status.
+- `dashboard/static/{index.html,app.js,style.css}`: 지도 캔버스(실제 · AMCL · odom 로봇, /plan, 궤적, /scan, 사람(안전모 색), 정지 번호), 미션 카드(상태 · 진행바 · 정지표 · 시작/취소 버튼), 로봇 수치, 카메라 2대 + 검출 박스 오버레이(안전모 X 빨강), 이벤트 로그. 서버 재시작 시 MJPEG 재연결 처리.
+- 검증됨: 모든 API 동작, 카메라 스트림 · 검출 박스 표시, 대시보드 cancel 버튼(API) 동작, 서버 Ctrl+C 정상 종료, pick_table 1구간 도착(19.8 s, AMCL 0.042 m / odom 0.003 m), rack_a 는 near 처리로 통과.
+- 실행 순서: T1 `./scripts/mobile_openarm nav moveit:=false map:=$PWD/artifacts/maps/my_warehouse.yaml camera_fps:=5 camera_handler:=lessons/04_navigation/dashboard/frame_tap.py:DashboardPipeline` → T2 `python lessons/04_navigation/dashboard/server.py` (http://localhost:8080) → T3 `python lessons/04_navigation/patrol.py --wait` → 브라우저의 [순찰 시작].
+
+**막힌 곳 (다음에 먼저 할 일)**
+- rack_a(랙 사이 좁은 통로, x=-4.0) 에서 rack_b 로 떠날 때 로봇이 전혀 못 움직임 (Failed to make progress 반복 → ABORTED). DWB 가 제자리 회전을 0.022~0.067 rad/s 로만 내서 바퀴 정지마찰(약 0.1 rad/s 필요)을 못 넘김 + ObstacleFootprint 비용이 큰 회전을 막음. 수동 /cmd_vel 로는 잘 움직이므로 브리지 · 물리 문제는 아님.
+- **미검증 수정**: `src/mobile_openarm_navigation/config/nav2.yaml` 의 FollowPath 를 `nav2_rotation_shim_controller::RotationShimController`(primary DWB, rotate_to_heading_angular_vel 0.6, angular_dist_threshold 0.6, rotate_to_goal_heading true) 로 바꿨다. **아직 한 번도 돌려보지 않음** (사용자 중단). 다음 세션: ① 이 설정으로 patrol 전체 경로 시험 ② 잘 되면 ⑥ goal · 충돌 회피 시나리오 · Day 2 pick 재확인 (전체 스택 동작이 바뀜) ③ 안 되면 `git checkout src/mobile_openarm_navigation/config/nav2.yaml` 로 되돌리고 경로를 넓은 곳(pick_table, place_table, center_aisle, east_wall 등)으로 바꾸는 쪽 검토.
+- 그 뒤: 순찰 전체 캡처(대시보드 · MuJoCo · 터미널) → 개념 그림(`draw_lesson07_figures.py` 예정) → Confluence 페이지 "전반부 통합 Demo" (순찰 흐름 → 실행 → 결과 → 코드, **대시보드 사용법 · 구현 원리(SSE · MJPEG · frame_tap · ROS 스레드)는 맨 끝**).
+- 캡처 요령: Chrome `--app=http://localhost:8080` 창은 xdotool 클릭 · 키(F5, Ctrl+R)가 먹지 않음 → 시작은 `curl -X POST -H "Content-Type: application/json" -d '{"cmd":"start"}' localhost:8080/api/command`, 새로고침은 창을 닫고 다시 연다. MuJoCo 창이 위에 떠 있으니 캡처 전 MuJoCo · RViz 창을 최소화. 대시보드 캡처 영역 `import -window root -crop 1690x992+70+68` (창을 70,40 에 두었을 때).
+- nohup 금지: `nohup … &` 로 띄운 launch 는 SIGINT 무시 → run_in_background 로 띄우고 `pkill -INT -f "[w]arehouse.launch.py mode:=nav"` 로 끈다.
+
 ## 0-00000. 2026-09-30 저녁: "ROS2 nav2의 충돌 회피" 페이지 신규 (3701145683)
 
 - 원고 `docs/camp/lesson06_avoidance.md` (h2 4개: 1 개념 4절 → 2 crossing 실행 11절 → 3 headon 한계 5절 → 4 코드와 설정 4절 + 해 볼 것). 그림 17장 (`draw_lesson06_figures.py`, `render_lesson06_terminals.py`, 캡처는 `artifacts/dev/avoid_frames/`).

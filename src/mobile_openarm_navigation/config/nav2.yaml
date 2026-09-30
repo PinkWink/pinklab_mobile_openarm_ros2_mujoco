@@ -67,7 +67,17 @@ controller_server:
       yaw_goal_tolerance: 0.15
       stateful: true
     FollowPath:
-      plugin: dwb_core::DWBLocalPlanner
+      # Rotation Shim: turn in place at a fixed speed until the robot faces along the path (and, at the end,
+      # the goal heading), then hand over to DWB. DWB alone sends in-place rotations too small to overcome
+      # wheel friction when it has to turn from standstill in a tight spot (e.g. leaving the rack corridors).
+      plugin: nav2_rotation_shim_controller::RotationShimController
+      primary_controller: dwb_core::DWBLocalPlanner
+      angular_dist_threshold: 0.6
+      forward_sampling_distance: 0.5
+      rotate_to_heading_angular_vel: 0.6
+      max_angular_accel: 1.5
+      simulate_ahead_time: 1.0
+      rotate_to_goal_heading: true
       debug_trajectory_details: false
       min_vel_x: 0.0
       min_vel_y: 0.0
