@@ -2,6 +2,16 @@
 
 마지막 갱신: 2026-09-29 밤 (hand-off, 내일 2026-09-30 이어서). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
+## 0-00000. 2026-09-30 저녁: "ROS2 nav2의 충돌 회피" 페이지 신규 (3701145683)
+
+- 원고 `docs/camp/lesson06_avoidance.md` (h2 4개: 1 개념 4절 → 2 crossing 실행 11절 → 3 headon 한계 5절 → 4 코드와 설정 4절 + 해 볼 것). 그림 17장 (`draw_lesson06_figures.py`, `render_lesson06_terminals.py`, 캡처는 `artifacts/dev/avoid_frames/`).
+- 도구: `docs/camp/avoid_scenario.py` (`--mode crossing|headon`, /warehouse/set_actor 로 worker_helmet_orange teleport + set_path, NavigateToPose (6.2,0,0), 최소 거리 출력). **로봇이 원점에서 동쪽을 볼 때(새로 띄운 직후) 실행**. `nav_record.py` 에 actors · local_plan · global_series 추가. 데이터 `artifacts/dev/nav_crossing.pkl`(확대 화면 회차), `nav_crossing_wide.pkl`, `nav_headon.pkl`.
+- 실측: crossing 최소 1.16 m (감지 6 s → 남쪽 우회 → 9~10 s 정지 대기 → 근로자 뒤로 재개). headon 최소 0.30 m (다가오는 속도 0.7 m/s, 1.5 m 에서야 반응 → 겹침). 처음 시도(서쪽 목표)는 180° 제자리 회전에 12 s 걸려 폐기.
+- **코드 수정**: `navigation.rviz` 에 Global Costmap · Local Costmap (costmap 색) · Footprint · DWB Trajectories(/marker) · Local Plan 표시 추가. 그래서 ⑥ 페이지 캡처(표시 추가 전)와 지금 화면이 다르다. slam 모드에서는 이 표시들이 '데이터 없음' 상태.
+- 함정: `nohup ... &` 로 띄운 launch 는 SIGINT 를 무시해 pkill -INT 로 안 죽고, TERM 뒤에도 자식이 남음 → 결국 KILL. launch 는 run_in_background 로 띄울 것.
+- `draw_lesson05_figures.py` 의 amcl_compare 입력을 `artifacts/dev/nav_frames/` 로 옮김.
+- 커밋 안 함.
+
 ## 0-0000. 2026-09-30 저녁: ⑥ "ROS2 Navigation" 페이지 신규 (3701866498)
 
 - 원고 `docs/camp/lesson05_navigation.md` (h2 4개: 1 Nav2 란 8절 → 2 실행 22절 → 3 AMCL 실험 6절 → 4 코드와 설정 8절 + 해 볼 것). 그림 30장: `draw_lesson05_figures.py`(개념 14 + 실데이터 5: global_plan · local_costmap · speed · amcl_particles · amcl_compare), `render_lesson05_terminals.py`(6장), 화면 캡처 5장.

@@ -16,6 +16,7 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import OccupancyGrid, Odometry, Path
 from nav2_msgs.msg import ParticleCloud
+from warehouse_interfaces.msg import ActorStateArray
 
 
 def yaw(q):
@@ -33,7 +34,7 @@ class Rec(Node):
         super().__init__("nav_record", parameter_overrides=[rclpy.Parameter("use_sim_time", value=True)])
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         best = QoSProfile(depth=5, reliability=ReliabilityPolicy.BEST_EFFORT)
-        self.d = dict(global_costmap=None, local=[], plans=[], particles=[], amcl=[], truth=[], odom=[])
+        self.d = dict(global_costmap=None, global_series=[], local=[], plans=[], local_plans=[], particles=[], amcl=[], truth=[], odom=[], actors=[])
         self.last = {}
         self.create_subscription(OccupancyGrid, "/global_costmap/costmap", self.on_global, latched)
         self.create_subscription(OccupancyGrid, "/local_costmap/costmap", self.on_local, 10)
@@ -42,6 +43,8 @@ class Rec(Node):
         self.create_subscription(PoseWithCovarianceStamped, "/amcl_pose", self.on_amcl, latched)
         self.create_subscription(PoseStamped, "/ground_truth", self.on_truth, 10)
         self.create_subscription(Odometry, "/odom", self.on_odom, 10)
+        self.create_subscription(Path, "/local_plan", self.on_local_plan, 10)
+        self.create_subscription(ActorStateArray, "/warehouse/actor_states", self.on_actors, 10)
 
     def every(self, key, period=1.0):
         now = time.monotonic()
@@ -52,9 +55,21 @@ class Rec(Node):
 
     def on_global(self, m):
         self.d["global_costmap"] = grid(m)
+        if self.every("global", 1.0):
+            self.d["global_series"].append(grid(m))
+
+    def on_local_plan(self, m):
+        if self.every("local_plan", 0.2):
+            self.d["local_plans"].append(dict(t=m.header.stamp.sec + m.header.stamp.nanosec * 1e-9,
+                                              xy=np.array([(p.pose.position.x, p.pose.position.y) for p in m.poses])))
+
+    def on_actors(self, m):
+        if self.every("actors", 0.1):
+            t = m.header.stamp.sec + m.header.stamp.nanosec * 1e-9
+            self.d["actors"].append((t, {a.name: (a.pose.position.x, a.pose.position.y) for a in m.actors}))
 
     def on_local(self, m):
-        if self.every("local"):
+        if self.every("local", 0.5):
             self.d["local"].append(grid(m))
 
     def on_plan(self, m):

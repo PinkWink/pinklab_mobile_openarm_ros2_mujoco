@@ -336,7 +336,7 @@ def amcl_particles():
 
 
 def amcl_compare():
-    S = Path("/tmp/claude-1000/-home-pw-mujoco-ros2/1beb48be-36fd-4f55-82d9-6f1896714b3d/scratchpad")
+    S = Path("artifacts/dev/nav_frames")          # screenshots saved during the lesson-05 AMCL run
     a = Image.open(S / "amcl_wrong.png").crop((1470, 130, 2230, 866))
     b = Image.open(S / "amcl_after.png").crop((1470, 130, 2230, 866))
     fig, axs = plt.subplots(1, 2, figsize=(14, 7.0), dpi=150)

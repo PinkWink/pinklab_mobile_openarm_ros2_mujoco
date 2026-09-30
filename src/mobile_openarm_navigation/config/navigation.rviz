@@ -29,6 +29,43 @@ Visualization Manager:
         Value: /map
         Durability Policy: Transient Local
       Alpha: 0.75
+    # --- obstacle view (nav mode): what Nav2 thinks is blocked and what the controller tries ---
+    - Class: rviz_default_plugins/Map
+      Name: Global Costmap
+      Enabled: true
+      Topic:
+        Value: /global_costmap/costmap
+        Durability Policy: Transient Local
+      Update Topic:
+        Value: /global_costmap/costmap_updates
+      Color Scheme: costmap
+      Alpha: 0.3
+      Draw Behind: false
+    - Class: rviz_default_plugins/Map
+      Name: Local Costmap
+      Enabled: true
+      Topic:
+        Value: /local_costmap/costmap
+        Durability Policy: Transient Local
+      Update Topic:
+        Value: /local_costmap/costmap_updates
+      Color Scheme: costmap
+      Alpha: 0.7
+      Draw Behind: false
+    - Class: rviz_default_plugins/Polygon
+      Name: Footprint
+      Enabled: true
+      Topic: {Value: /local_costmap/published_footprint}
+      Color: 255; 70; 70
+    - Class: rviz_default_plugins/MarkerArray
+      Name: DWB Trajectories
+      Enabled: true
+      Topic: {Value: /marker}
+    - Class: rviz_default_plugins/Path
+      Name: Local Plan
+      Enabled: true
+      Topic: {Value: /local_plan}
+      Color: 255; 200; 0
     - Class: rviz_default_plugins/LaserScan
       Name: Lidar
       Enabled: true
