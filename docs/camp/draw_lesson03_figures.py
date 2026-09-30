@@ -83,6 +83,23 @@ def sensors_overview():
     save(fig, "lesson03_sensors_overview.png")
 
 
+def bridge_process():
+    fig, ax = fig_ax(14, 5.0)
+    note(ax, 0.3, 4.75, "warehouse.launch.py → 브리지 프로세스 하나 = bridge.py + model.py", bold=True, fs=12)
+    rbox(ax, 0.3, 1.5, 2.9, 1.9, "warehouse.launch.py", ["ExecuteProcess", "python -m", "mobile_openarm_mujoco.bridge"], fc=C["purple"], tfs=10.5, fs=8.8)
+    ax.add_patch(Rectangle((3.8, 0.5), 6.9, 3.85, fc="#F7F7F9", ec="#9A9AA6", lw=1.2, ls="--", zorder=1))
+    note(ax, 3.95, 4.1, "프로세스 1개 · 노드 이름 mobile_openarm_mujoco", bold=True, fs=10, color="#444444")
+    rbox(ax, 4.0, 0.7, 3.2, 3.1, "bridge.py  (Bridge 노드)", ["main(): Physics(...) 생성", "while 루프 100 Hz", "  → advance()", "  → publish_state()", "ROS 2 발행 · /cmd_vel 수신"], fc=C["teal"], tfs=10.2, fs=8.6, align="left")
+    rbox(ax, 7.8, 0.7, 2.7, 3.1, "model.py  (Physics)", ["MuJoCo model · data", "step(): mj_step × 5", "  + odom 적분", "scan(): mj_multiRay", "pose() · 관절 상태"], fc=C["green"], tfs=10.2, fs=8.6, align="left")
+    arrow(ax, (7.2, 2.75), (7.8, 2.75)); label(ax, 7.5, 3.05, "호출", fs=8.4)
+    arrow(ax, (7.8, 1.6), (7.2, 1.6)); label(ax, 7.5, 1.3, "결과", fs=8.4)
+    arrow(ax, (3.2, 2.45), (3.8, 2.45))
+    rbox(ax, 11.3, 0.7, 2.4, 3.1, "ROS 2 토픽", ["/scan", "/odom · TF", "/joint_states", "/clock"], fc=C["blue"], tfs=10.2, fs=8.8, align="left")
+    arrow(ax, (10.7, 2.25), (11.3, 2.25))
+    note(ax, 0.3, 0.15, "robot_state_publisher · RViz2 는 같은 launch 가 띄우는 별도 프로세스다.", fs=9.2)
+    save(fig, "lesson03_bridge_process.png")
+
+
 def lidar_ray():
     fig, ax = fig_ax(14, 5.4)
     note(ax, 0.3, 5.1, "라이다: laser_link 의 site 에서 360줄을 쏜다", bold=True, fs=12)
@@ -290,6 +307,6 @@ def wrapper_why():
 
 
 if __name__ == "__main__":
-    for f in (bringup_tree, bringup_modes, wrapper_why, bringup_cmd, sensors_overview, lidar_ray, lidar_msg, wheel_encoder, cameras, clock_tf, rates,
+    for f in (bringup_tree, bringup_modes, wrapper_why, bringup_cmd, sensors_overview, bridge_process, lidar_ray, lidar_msg, wheel_encoder, cameras, clock_tf, rates,
               diffdrive, step_cmd, step_odom, odom_msg, frames, exp_design, why_drift, odom_role):
         f()

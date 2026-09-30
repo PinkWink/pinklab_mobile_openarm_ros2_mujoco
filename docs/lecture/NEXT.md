@@ -2,6 +2,23 @@
 
 마지막 갱신: 2026-09-29 밤 (hand-off, 내일 2026-09-30 이어서). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
+## 0-0000. 2026-09-30 저녁: ⑥ "ROS2 Navigation" 페이지 신규 (3701866498)
+
+- 원고 `docs/camp/lesson05_navigation.md` (h2 4개: 1 Nav2 란 8절 → 2 실행 22절 → 3 AMCL 실험 6절 → 4 코드와 설정 8절 + 해 볼 것). 그림 30장: `draw_lesson05_figures.py`(개념 14 + 실데이터 5: global_plan · local_costmap · speed · amcl_particles · amcl_compare), `render_lesson05_terminals.py`(6장), 화면 캡처 5장.
+- 도구: `docs/camp/nav_record.py` (costmap · /plan · particle_cloud · amcl_pose · truth · odom → pkl). 데이터 `artifacts/dev/nav_run.pkl`(goal 명령 + RViz 목표), `nav_amcl.pkl`(틀린 initialpose 0.6,0.4,23° → 7 s 안에 퍼짐 0.49→0.09 m, 오차 3~6 cm).
+- **코드 수정**: `navigation.rviz` · `moveit.rviz` 의 `nav2_rviz_plugins/GoalTool` 은 Navigation 2 패널이 없으면 목표를 안 보냄(버튼이 먹통) → `rviz_default_plugins/SetGoal` (Topic /goal_pose, 버튼 이름 2D Goal Pose) 로 교체. bt_navigator 가 /goal_pose 를 구독해 동작 확인.
+- 실측: goal 1.2 -3.6 0 → 27.4 s SUCCEEDED, 복구 동작 없음. /plan 약 1 Hz 재계산.
+- 커밋 안 함.
+
+## 0-000. 2026-09-30 오후: ⑤ SLAM 페이지 신규 + ④ 개정
+
+- 새 페이지 3701112888 "SLAM: SLAM Toolbox로 창고 지도 만들기" (부모 3692396550) ← `docs/camp/lesson04_slam.md` (h2 4개: 1 SLAM 이란 7절 → 2 실행 20절(명령 h3 · 실행 결과 h3 분리) → 3 지도 저장 6절 → 4 코드와 설정 5절(그림 절 먼저, 코드 절 뒤) + 해 볼 것). 그림 26장: `draw_lesson04_figures.py`(개념 13장 + 실데이터 4장: map_growth · map_compare · lidar_height · pose_graph_real), `render_lesson04_terminals.py`(터미널 캡처 7장, 실측 텍스트), 화면 캡처 2장(run_result · final_screen).
+- 도구: `docs/camp/slam_tour.py` (/odom 웨이포인트 순회 58 m, `--record` 로 /map npz, `--shots` 로 화면 캡처). 실측 데이터 `artifacts/dev/slam_maps/wp0~7.npz`, `slam_graph.pkl`, `artifacts/maps/my_warehouse.{pgm,yaml}`.
+- 함정: 기본 actors 로는 가장자리 통로에 사람·지게차가 있어 순회가 막힘 → `slam actors:=none`. 제자리 회전 P 제어는 0.12 rad/s 미만이면 마찰로 멈춤. RViz 뷰는 시작 후 휠 7칸 축소하면 창고 전체가 들어옴. Ceres `num_threads: 50 exceeds ... 16` 경고는 최적화 때마다 나오며 무해.
+- 실측: 한 바퀴 뒤 map→odom (-0.023, 0.013, -0.37°), /map 301×222 @ 5 cm, 1 Hz, 포즈 그래프 노드 1110 · 루프 엣지 190. 라이다 높이 0.239 m → 작업대는 다리만, 선반은 기둥 + 아래 칸 상자만 지도에 남음(패키지 지도는 통째로 막힘). `start map:=$PWD/artifacts/maps/my_warehouse.yaml` 로 Nav2 active 확인.
+- ④ 개정(v11→v20): 코드 절 그림 먼저, lidar/scan 발행 코드 추가, 브리지 프로세스 그림, odom 오차 원인 h3 7개(`draw_lesson03_drift_figures.py`, `odom_offline.py`). 미결: `odom_experiment.py` 가 /odom 과 한 틱 전 /ground_truth 를 짝지음 → 결과 그래프 재작성 제안 중.
+- 커밋 안 함.
+
 ## 0-00. 2026-09-30 시작 체크리스트 (09-29 밤 점검 결과)
 
 - ROS 프로세스는 모두 종료함(cleanup_ros.sh + `ros2 daemon stop`). 새로 시작하면 `source scripts/env.sh` 후 바로 띄우면 된다.

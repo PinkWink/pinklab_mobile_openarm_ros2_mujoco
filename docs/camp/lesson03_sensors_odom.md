@@ -39,12 +39,9 @@ ros2 node list
 ros2 topic list
 ```
 
-![node list 와 topic list](lesson03_cli_nodes_topics.png){width=1000}
+### 실행 결과: node list · topic list
 
-- 노드 3개: 브리지(mobile_openarm_mujoco) · robot_state_publisher · rviz
-- 센서 토픽 /scan · /odom · /joint_states · /clock: 모두 브리지가 발행
-- 영상 토픽 없음
-- 카메라 결과는 /vision/* 로만 발행
+![node list 와 topic list](lesson03_cli_nodes_topics.png){width=1000}
 
 ## 2. 센서: 무엇을 어떻게 재나
 
@@ -52,36 +49,76 @@ ros2 topic list
 
 ![브리지가 재는 것과 내는 것](lesson03_sensors_overview.png){width=1000}
 
-- 측정 대상 5가지: 라이다 · 바퀴 엔코더 · 관절 각도 · 카메라 · 시각
-- 모두 MuJoCo 상태에서 직접 읽음
-- 브리지 루프 100 Hz
-- 한 바퀴에 mj_step 5회(10 ms) 후 주기별 발행
-- 노이즈 없음 (이상적인 센서)
+### 브리지 프로세스: bridge.py + model.py
 
-### 라이다 - scan 함수
+![warehouse.launch.py 가 띄우는 브리지 프로세스](lesson03_bridge_process.png){width=1000}
+
+### MuJoCo에서 라이다값 읽기
+
+![라이다 레이캐스트](lesson03_lidar_ray.png){width=1000}
+
+### 라이다 광선 준비 - __init__ 발췌
 
 ```python
 # mobile_openarm_mujoco/model.py  (Physics)
-self.angles = np.linspace(-math.pi, math.pi, self.settings["lidar"]["samples"], endpoint=False)   # 360개
-self.rays = np.column_stack([np.cos(self.angles), np.sin(self.angles), np.zeros(len(self.angles))])
-self.ray_group = np.array([1, 0, 0, 0, 0, 0], dtype=np.uint8)      # geom group 0 만 맞춘다
-self.lidar_id = self.model.site("lidar").id
+def __init__(self, model_path, config_file=None):   # 발췌
+    self.angles = np.linspace(-math.pi, math.pi, self.settings["lidar"]["samples"], endpoint=False)   # 360개
+    self.rays = np.column_stack([np.cos(self.angles), np.sin(self.angles), np.zeros(len(self.angles))])
+    self.ray_group = np.array([1, 0, 0, 0, 0, 0], dtype=np.uint8)      # geom group 0 만 맞춘다
+    self.lidar_id = self.model.site("lidar").id
+```
 
+### 라이다 거리 측정 - scan 함수
+
+```python
+# mobile_openarm_mujoco/model.py  (Physics)
 def scan(self):
     self.mj.mj_forward(self.model, self.data)
     rays = np.ascontiguousarray(self.rays @ self.data.site_xmat[self.lidar_id].reshape(3, 3).T)
     distances = np.empty(len(rays)); ids = np.empty(len(rays), dtype=np.int32)
+    cfg = self.settings["lidar"]
     self.mj.mj_multiRay(self.model, self.data, self.data.site_xpos[self.lidar_id], rays.ravel(),
                         self.ray_group, True, -1, ids, distances, None, len(rays), cfg["range_max"])
     distances[(distances < cfg["range_min"]) | (distances > cfg["range_max"])] = np.inf
     return distances
 ```
 
-![라이다 레이캐스트](lesson03_lidar_ray.png){width=1000}
-
 ### LaserScan 메시지
 
 ![sensor_msgs/LaserScan](lesson03_lidar_msg.png){width=1000}
+
+### /scan 발행자 만들기 - Bridge.__init__ 발췌
+
+```python
+# mobile_openarm_mujoco/bridge.py  (Bridge)
+def __init__(self, physics, world_file=None, actors=None):   # 발췌
+    self.scan_pub = self.create_publisher(LaserScan, "/scan", qos_profile_sensor_data)
+```
+
+### /scan 메시지 채워 발행 - advance 함수 발췌
+
+```python
+# mobile_openarm_mujoco/bridge.py  (Bridge)
+def advance(self):   # 발췌: 100 Hz 루프 한 바퀴
+    p = self.physics
+    ...                                    # 명령 적용 · p.step() (mj_step 5회) · /clock 발행
+    now = self.sim_stamp()
+    self.tick += 1
+    rates = p.settings["rates"]
+    if self.tick % round(rates["bridge_hz"] / rates["scan_hz"]) == 0:   # 10 바퀴에 한 번 = 10 Hz
+        scan = LaserScan()
+        scan.header.stamp = now
+        scan.header.frame_id = "laser_link"
+        scan.angle_min = float(p.angles[0])                        # -π
+        scan.angle_max = float(p.angles[-1])                       # +π - 1°
+        scan.angle_increment = float(p.angles[1] - p.angles[0])    # 1°
+        scan.time_increment = 0.0
+        scan.scan_time = 1 / rates["scan_hz"]                      # 0.1 s
+        scan.range_min = p.settings["lidar"]["range_min"]          # 0.05 m
+        scan.range_max = p.settings["lidar"]["range_max"]          # 20 m
+        scan.ranges = p.scan().astype("float32").tolist()          # Physics.scan() 결과 360개
+        self.scan_pub.publish(scan)
+```
 
 ### 터미널 2: ros2 topic echo /scan
 
@@ -103,12 +140,7 @@ python docs/camp/scan_probe.py
 
 ![RViz2 LaserScan 표시 (Fixed Frame odom, 위에서 본 창고 벽과 선반)](lesson03_rviz_scan.png){width=1000}
 
-- 점 하나 = ranges[i] 하나
-- laser_link 기준 각도를 TF로 odom 프레임에 옮겨 표시
-- 보이는 것: 벽 · 선반 다리 · 작업대
-- 안 보이는 것: 마커 판 · 시각용 geom (group 0이 아님)
-
-### 바퀴 엔코더
+### 바퀴 엔코더 (밑에서 별도로 설명)
 
 ![바퀴 엔코더 = 바퀴 관절 각도](lesson03_wheel_encoder.png){width=1000}
 
@@ -154,6 +186,10 @@ ros2 topic hz /clock
 
 ![차동 구동 기구학](lesson03_diffdrive.png){width=1000}
 
+### 명령 → 바퀴 목표 속도
+
+![step 앞부분](lesson03_step_cmd.png){width=1000}
+
 ### 명령 → 바퀴 목표 속도 - step 함수 앞부분
 
 ```python
@@ -169,7 +205,9 @@ def step(self, linear=0.0, angular=0.0, steps=None):
     self.data.ctrl[self.wheel_ctrl] = np.clip(wheel, -max_speed, max_speed)
 ```
 
-![step 앞부분](lesson03_step_cmd.png){width=1000}
+### 바퀴 회전 → 자세 적분
+
+![step 뒷부분](lesson03_step_odom.png){width=1000}
 
 ### 바퀴 회전 → 자세 적분 - step 함수 뒷부분
 
@@ -183,7 +221,9 @@ def step(self, linear=0.0, angular=0.0, steps=None):
     self.twist[:] = [ds / dt, da / dt]
 ```
 
-![step 뒷부분](lesson03_step_odom.png){width=1000}
+### /odom 메시지와 TF
+
+![publish_state](lesson03_odom_msg.png){width=1000}
 
 ### /odom 메시지와 TF - publish_state 함수
 
@@ -207,8 +247,6 @@ def publish_state(self, now):
     tf.transform.rotation = odom.pose.pose.orientation
     self.tf.sendTransform(tf)
 ```
-
-![publish_state](lesson03_odom_msg.png){width=1000}
 
 ### 터미널 2: ros2 topic echo /odom
 
@@ -305,6 +343,34 @@ ros2 topic echo --once /odom
 - 출발점을 원점으로 삼을 뿐임
 - odom만으로는 지도 위 위치 파악 불가
 - 이 빈칸은 SLAM · AMCL이 map → odom으로 채움
+
+### 시뮬레이터에서도 odom 오차가 생기는 이유
+
+![odom 은 바퀴 각도로 계산한 값](lesson03_drift_overview.png){width=1000}
+
+### 원인 1: 바퀴가 바닥에 살짝 파고든다
+
+![soft contact 로 줄어든 반지름](lesson03_drift_contact.png){width=1000}
+
+### 원인 2: 제자리 회전에서 바퀴와 캐스터가 끌린다
+
+![제자리 회전의 끌림](lesson03_drift_turn.png){width=1000}
+
+### 원인 3: 접촉은 스프링이다
+
+![움직이는 동안의 탄성 어긋남](lesson03_drift_elastic.png){width=1000}
+
+### yaw 오차는 다음 직진에서 옆으로 벌어진다
+
+![yaw 오차 → 옆 방향 오차](lesson03_drift_yaw.png){width=1000}
+
+### 비교할 때 주의: 같은 시각의 값끼리
+
+![한 틱 어긋난 비교의 가짜 오차](lesson03_drift_timing.png){width=1000}
+
+### 실측 다시 보기: 같은 틱끼리 비교
+
+![같은 틱끼리 비교한 1바퀴 오차](lesson03_drift_measured.png){width=1000}
 
 ## 5. Odom 의 의미와 단점
 
