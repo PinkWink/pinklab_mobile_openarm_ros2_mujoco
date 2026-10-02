@@ -2,6 +2,22 @@
 
 마지막 갱신: 2026-09-29 밤 (hand-off, 내일 2026-09-30 이어서). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
+## 0-000000000. 2026-10-02 저녁: ⑥ 속도 그래프 재촬영
+
+- ⑥ 3701866498 의 `lesson05_speed.png` 를 RotationShim 설정으로 다시 찍어 첨부만 갱신 (본문 v2 그대로). 데이터 `artifacts/dev/nav_run_shim.pkl` (goal 1.2 -3.6 0 → /goal_pose (0.02, 0.02, 0) = RViz 2D Goal Pose 와 같은 토픽). `draw_lesson05_figures.speed()` 만 새 파일을 읽고, global_plan · local_costmap 은 옛 nav_run.pkl 그대로.
+- 관찰: 두 번째 목표에서 0.07 m 앞(xy 허용 0.08 m 안)에 선 뒤 목표 방향(0°)을 맞추며 좌우로 4 번 오감 (123° → 34° → 78° → 22° → 120° → -3°, 약 17 s). 옛 DWB 그래프에도 같은 자리에서 2 번 오간 흔적. RotationShim(목표 방향으로 회전)과 DWB(목표 점을 바라봄)가 번갈아 잡는 것으로 보임. 미조치.
+- 이번엔 MuJoCo 뷰어 창이 안 떠서 시뮬레이터가 멈춤(/clock 없음, CPU 100 %) → `viewer:=false rviz:=false` 로 촬영. 오늘 Chrome 창을 xdotool 로 만진 뒤 창 관리자 상태가 이상한 듯 (재로그인 · 재부팅 뒤 확인).
+
+## 0-00000000. 2026-10-02 오후: "전반부 통합 Demo: 창고 순찰과 웹 대시보드" 페이지 신규 (3707076612)
+
+- 원고 `docs/camp/lesson07_patrol.md` (h2 5개: 1 순찰 Demo 5절 → 2 실행 17절 → 3 막혔던 곳(Failed to make progress → RotationShim → 그래도 v=0 → critic 이름) 8절 → 4 코드와 설정 7절 → 5 웹 대시보드 25절(독립: 구성 · 실행 · 캡처 · SSE/MJPEG/frame_tap/스레드 · 코드) + 해 볼 것). 그림 39장: `draw_lesson07_figures.py`(개념 · 실데이터 · 캡처 크롭), `render_lesson07_terminals.py`(9장).
+- 데이터: `artifacts/dev/patrol_run.pkl`(nav_record, 148 s 순찰), `artifacts/dev/patrol_frames/`(MuJoCo+RViz 4 s 간격 캡처, patrol_run.log, t1_nav.log, stall_rec.log), `artifacts/dev/dash_frames/`(대시보드 3.3 s 간격 + done.png, server/patrol/status/SSE 출력).
+- **대시보드 수정**: app.js 가 카메라 2대의 사람 수를 더해 한 명을 '2 명'으로 셌다 → 카메라별 최댓값. (worker_no_helmet_red 가 랙 B 통로 끝에 있어 '안전모 미착용' 이벤트는 정상)
+- 캡처 요령(바뀜): Chrome --app 창은 한 번 닫으면 Iconic 상태로만 다시 떠서 xdotool 로 못 살림 → **headless Chrome + DevTools 스크린샷**: `google-chrome --headless=new --user-data-dir=<scratch> --remote-debugging-port=9333 --window-size=1700,1000 http://localhost:8080` 후 node 스크립트(Page.captureScreenshot, 1700×1000)로 찍음. MJPEG 도 나온다. `--screenshot` 단발 모드는 카메라가 비어 나옴.
+- MuJoCo+RViz 캡처: 창을 xdotool 로 MuJoCo (70,40) 1000×900 · RViz (1075,40) 1250×900, RViz 뷰에서 휠 7칸 축소, `import -window root -crop 2290x975+52+18` 후 (12,8,2272,955) 크롭.
+- v2 (사용자 요청): 3장에서 '그래도 멈춘다 · 원인 2 · param get 2절 · 고친 뒤' 삭제 → 3장 = 증상 → 원인 → 해결(RotationShim). 그림 stall · critic · before_after · cli_param 삭제 (Confluence 첨부도 삭제), FollowPath 발췌 주석 수정. 주의: 증상 터미널 로그는 실제로는 RotationShim 을 넣은 뒤(원인 = ObstacleFootprint.scale) 찍은 것.
+- 커밋 안 함 (app.js 수정 + 원고 · 그림 · 스크립트).
+
 ## 0-0000000. 2026-10-02: 순찰 막힘 해결
 
 - RotationShim 설정 시험: 제자리 회전은 해결됐지만 rack_a → rack_b 에서 여전히 Failed to make progress 4번 + spin 복구 (순찰 302 s).

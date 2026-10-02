@@ -1,6 +1,6 @@
 """Figures for the lesson-05 Confluence page (ROS2 Navigation). Output: docs/camp/lesson05_*.png
 
-Run from the workspace root. Data figures read artifacts/dev/nav_run.pkl and nav_amcl.pkl (docs/camp/nav_record.py).
+Run from the workspace root. Data figures read artifacts/dev/nav_run.pkl, nav_run_shim.pkl (speed, RotationShim) and nav_amcl.pkl (docs/camp/nav_record.py).
 """
 import pickle
 import sys
@@ -297,7 +297,8 @@ def local_costmap():
 
 
 def speed():
-    d = pickle.load(open("artifacts/dev/nav_run.pkl", "rb"))
+    # re-recorded 2026-10-02 with the RotationShim controller (goal 1.2 -3.6 0, then /goal_pose (0.02, 0.02, 0) = RViz 2D Goal Pose)
+    d = pickle.load(open("artifacts/dev/nav_run_shim.pkl", "rb"))
     od = np.array(d["odom"]); segs = segments(d)
     t0 = segs[0][0]["t"] - 1
     m = (od[:, 0] >= t0) & (od[:, 0] <= segs[-1][-1]["t"] + 5)
@@ -308,8 +309,10 @@ def speed():
     ax.text(0.5, 0.32, "max_vel_x 0.3", color=BLUE, fontsize=9); ax.text(0.5, 0.55, "max_vel_theta 0.65", color=BROWN, fontsize=9)
     for s in segs:
         ax.axvline(s[0]["t"] - t0, color=GREEN, lw=1.2, ls="--")
-    ax.set_xlabel("시뮬레이션 시각 [s]"); ax.grid(alpha=0.3); ax.legend(loc="lower right", fontsize=9)
-    ax.set_title("Controller 가 낸 속도: 돌면서 출발 → 0.3 m/s 순항 → 감속 → 멈춰서 목표 방향으로 회전  (초록 점선 = 새 목표)", fontsize=11)
+    ax.set_xlabel("시뮬레이션 시각 [s]"); ax.grid(alpha=0.3); ax.legend(loc="lower center", bbox_to_anchor=(0.45, 0.03), fontsize=9)
+    ax.annotate("제자리 회전\n(0.6 rad/s)", (2.5, -0.56), (5.0, -0.45), fontsize=9, color=BROWN, arrowprops=dict(arrowstyle="-|>", color=BROWN))
+    ax.text(28.3, 0.47, "42 ~ 59 s: 목표 방향을 맞추며 좌우로 오간다 →", fontsize=8.8, color="#555")
+    ax.set_title("Controller 가 낸 속도: 제자리에서 방향 맞추기 → 0.3 m/s 순항 → 감속 → 멈춰서 목표 방향으로 회전  (초록 점선 = 새 목표)", fontsize=11)
     fig.tight_layout()
     save(fig, "lesson05_speed.png")
 

@@ -130,8 +130,10 @@ function render() {
   const err = (p) => (S.truth && p ? Math.hypot(p[0] - S.truth[0], p[1] - S.truth[1]) : null);
   $("erra").textContent = fmt(err(S.amcl), 3, " m"); $("erro").textContent = fmt(err(S.odom), 3, " m");
   $("cov").textContent = S.amcl_cov ? `${fmt(S.amcl_cov[0], 2)} m · ${fmt(S.amcl_cov[2], 1)}°` : "-";
-  const seen = Object.values(S.detections || {}).flat().filter((d) => d.label === "person");
-  $("people").textContent = `${seen.length} 명`;
+  // Both cameras often see the same person: count per camera and take the larger number, not the sum.
+  const perCam = Object.values(S.detections || {}).map((ds) => ds.filter((d) => d.label === "person"));
+  const most = (f) => Math.max(0, ...perCam.map((ds) => ds.filter(f).length));
+  $("people").textContent = `${most(() => true)} 명`;
 
   const p = S.patrol;
   if (!p) return;
@@ -157,7 +159,7 @@ function render() {
     if (p.index >= 0) log(`출발: ${p.stops[p.index].label} 로`);
     lastIndex = p.index;
   }
-  const unhelmeted = seen.filter((d) => d.attrs.helmet === "false").length;
+  const unhelmeted = most((d) => d.attrs.helmet === "false");
   if (unhelmeted && S.sim_time - lastUnhelmeted > 5) { log(`카메라: 안전모 미착용 ${unhelmeted} 명`, "warn"); lastUnhelmeted = S.sim_time; }
 }
 
