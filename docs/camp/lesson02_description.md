@@ -397,11 +397,11 @@ done
 
 ![URDF 와 MJCF 의 요소 수](lesson02_cli_counts.png){width=1000}
 
-- URDF 관절 49개 중 fixed 25개는 MJCF에서 joint가 되지 않는다. body만 남아 22개 joint(자유 관절 1 + 바퀴 2 + 팔 14 + 손가락 4)다.
-- body가 링크 수보다 많다. 창고 상자 · 배우 · 마커 body가 더해졌다.
+- URDF 관절 49개 중 fixed 25개는 MJCF에서 joint로 변환되지 않고 body만 남음 → 22개 joint (자유 관절 1 + 바퀴 2 + 팔 14 + 손가락 4)
+- body 수가 링크 수보다 많음 — 창고 상자 · 배우 · 마커 body 추가분
 
 ### 해 볼 것
 
-- `./scripts/mobile_openarm display`를 띄우고 슬라이더로 `openarm_left_joint4`를 움직인다. `tf2_echo base_footprint openarm_left_hand_tcp` 값이 바뀐다.
-- `ros2 launch mobile_openarm_description display.launch.py gui:=false`로 띄우면 관절이 0에 고정된다. 초기 자세와 다른 이유를 `initial_positions.yaml`에서 찾는다.
-- `mujoco.yaml`의 `arm.kp`를 반으로 줄이고 `./scripts/mobile_openarm start`. 팔이 초기 자세를 잡는 데 걸리는 시간이 달라진다.
+- `./scripts/mobile_openarm display` 실행 후 슬라이더로 `openarm_left_joint4` 조작 → `tf2_echo base_footprint openarm_left_hand_tcp` 값 변화 확인
+- `ros2 launch mobile_openarm_description display.launch.py gui:=false`로 실행 시 관절이 0에 고정 → 초기 자세와 다른 이유를 `initial_positions.yaml`에서 확인
+- `mujoco.yaml`의 `arm.kp`를 절반으로 줄이고 `./scripts/mobile_openarm start` 실행 → 팔이 초기 자세를 잡는 시간 변화 확인

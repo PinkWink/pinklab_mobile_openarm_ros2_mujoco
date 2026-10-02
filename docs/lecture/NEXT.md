@@ -2,6 +2,13 @@
 
 마지막 갱신: 2026-09-29 밤 (hand-off, 내일 2026-09-30 이어서). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
+## 0-0000000000. 2026-10-02 밤: GitHub ↔ Confluence 전수 대조 · Confluence 기준 동기화
+
+- 9개 페이지(부모 3692396550)의 코드 발췌 66개 · 경로 · wrapper 명령 · launch 인자 · ros2 run/launch · 첨부를 저장소와 대조 → 코드 쪽 불일치 없음 (줄여 쓴 YAML/한 줄 합치기는 값까지 확인).
+- Confluence 에서 직접 고친 4개 페이지(소개 3692331022, 환경 설정 3692331054, ① 3692920898, ③ 3697442817)의 본문을 md 로 되받음. 변환 결과를 publish_confluence.md_to_storage 로 다시 그려 게시본과 정규화 비교 → 4개 모두 동일. 이미지 alt 는 게시본에 없으므로 기존 md 의 alt 를 재사용.
+- ① 의 `lesson01_*_v2.png` 9장(9/29 밤 Confluence 에 직접 올린 그림, 만든 스크립트 없음)을 docs/camp 로 내려받음. 옛 `lesson01_why.png` 등은 저장소에 남아 있지만 어느 md 도 참조하지 않음.
+- **앞으로**: 페이지를 웹에서 고친 뒤에는 다시 게시하기 전에 반드시 md 로 되받을 것 (그냥 게시하면 웹 수정이 사라진다).
+
 ## 0-000000000. 2026-10-02 저녁: ⑥ 속도 그래프 재촬영
 
 - ⑥ 3701866498 의 `lesson05_speed.png` 를 RotationShim 설정으로 다시 찍어 첨부만 갱신 (본문 v2 그대로). 데이터 `artifacts/dev/nav_run_shim.pkl` (goal 1.2 -3.6 0 → /goal_pose (0.02, 0.02, 0) = RViz 2D Goal Pose 와 같은 토픽). `draw_lesson05_figures.speed()` 만 새 파일을 읽고, global_plan · local_costmap 은 옛 nav_run.pkl 그대로.
