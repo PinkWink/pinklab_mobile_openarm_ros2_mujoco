@@ -235,7 +235,9 @@ controller_server:
   ros__parameters:
     controller_frequency: 15.0
     FollowPath:
-      plugin: dwb_core::DWBLocalPlanner
+      plugin: nav2_rotation_shim_controller::RotationShimController
+      primary_controller: dwb_core::DWBLocalPlanner
+      rotate_to_heading_angular_vel: 0.6
       max_vel_x: 0.3
       max_vel_theta: 0.65
       acc_lim_x: 0.4

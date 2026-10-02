@@ -2,6 +2,20 @@
 
 마지막 갱신: 2026-09-29 밤 (hand-off, 내일 2026-09-30 이어서). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
+## 0-0000000. 2026-10-02: 순찰 막힘 해결
+
+- RotationShim 설정 시험: 제자리 회전은 해결됐지만 rack_a → rack_b 에서 여전히 Failed to make progress 4번 + spin 복구 (순찰 302 s).
+- 진짜 원인: `nav2.yaml` 의 `BaseObstacle.scale: 0.05` 는 무시되고 있었다 (쓰는 critic 은 ObstacleFootprint). 실제 값은 기본 1.0 → 랙 기둥 사이(1.8 m 통로, 기둥 x=-5.0 · -3.1, y=-1.25) 에서 장애물 비용이 진행 점수를 이겨 v=0 으로 멈춤. `ObstacleFootprint.scale: 0.05` 로 바꿈.
+- patrol.py 버그 2개 수정: ① near 판정에 Nav2 feedback `distance_remaining` 대신 AMCL ↔ 목표 거리 사용 (feedback 이 0 근처로 나와 4.4 m 떨어진 곳에서 '도착 처리'됨) ② 첫 구간에서 `self.truth` 가 None 이면 정지 기준이 안 잡혀 8 s 뒤 움직이는 중에도 cancel → 첫 정지가 늘 "near" 였던 이유.
+- 결과: center_aisle → pick_table → rack_a → rack_b → place_table → center_aisle 6구간 모두 SUCCEEDED, 복구 0, near 0, 195 s.
+- 회귀 확인 (모두 통과):
+  - crossing: SUCCEEDED 34 s, 최소 1.05 m (페이지 1.16 m). 흐름은 같음 (감지 → 우회 → t≈9 s 잠깐 정지 → 재개), 우회 폭 y -0.14 (전 -0.27), 정지 0.7 s (전 1.1 s). 데이터 scratchpad 의 new_crossing.pkl (보관 안 함).
+  - headon: SUCCEEDED 33 s, 최소 0.24 m (페이지 0.30 m). 늦게 반응해 겹치는 한계 그대로.
+  - ⑥ `goal 1.2 -3.6 0` SUCCEEDED. Day 2: 원점 → `pick red --phase pick` 82 s → `pick red place_table --phase place` 90 s, 슬롯 오차 3.1 cm.
+  - pytest 41 passed.
+- ⑥ 페이지 코드 발췌를 RotationShim 으로 고쳐 3701866498 v2 로 재게시 (게시본과 로컬 md 대조: 차이는 이 발췌뿐). 충돌 회피 페이지(수치 1.16 / 0.30 m, 그림)는 사용자 결정으로 그대로 둠.
+- 다음: 순찰 전체 캡처 → 개념 그림 → Confluence "전반부 통합 Demo" 페이지 (0-000000 의 '그 뒤' 참고).
+
 ## 0-000000. 2026-09-30 밤 hand-off: "전반부 통합 Demo" (순찰 + 웹 대시보드) 작업 중단 지점
 
 **사용자 요청**: 전반부 통합 Demo = 내가 만든 지도로 창고 순찰 + Flask 웹 대시보드(미션 상태 · 카메라 · 위치 모니터링). Confluence 페이지(부모 3692396550)에 사용법과 구현 원리를 쓰되 **대시보드 부분은 페이지 맨 마지막에**. 아직 페이지는 안 만들었다.

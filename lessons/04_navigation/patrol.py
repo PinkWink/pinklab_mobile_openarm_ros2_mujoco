@@ -123,15 +123,15 @@ class Patrol(Node):
             rclpy.spin_once(self, timeout_sec=0.05)
             # Watchdog: DWB can stall a few cm outside the goal tolerance, sideways to the goal, sending
             # rotations too small to overcome wheel friction. Close enough for a patrol: stop and move on.
-            if self.truth and still and (math.hypot(self.truth[0] - still[0], self.truth[1] - still[1]) > 0.01
-                                         or abs(self.truth[2] - still[2]) > 0.02):
+            if self.truth and (still is None or math.hypot(self.truth[0] - still[0], self.truth[1] - still[1]) > 0.01
+                               or abs(self.truth[2] - still[2]) > 0.02):
                 still, still_since = self.truth, time.monotonic()
-            near = self.feedback.get("distance_remaining", 9.9) < NEAR_DIST
+            # Nav2's distance_remaining feedback can read ~0 while the robot is still far away, so measure it here.
+            near = self.amcl is not None and math.hypot(self.amcl[0] - x, self.amcl[1] - y) < NEAR_DIST
             if near and time.monotonic() - still_since > NEAR_STALL_S:
                 self.command = "cancel_near"
             if self.command in ("cancel", "cancel_near"):
                 reason = self.command
-                self.command = None
                 self.command = None
                 cancel = handle.cancel_goal_async()
                 while not cancel.done():
