@@ -44,8 +44,18 @@ class MapTransformer:
         self.target = target
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, node, spin_thread=False)
+        self.missing_noted = False
 
     def to_map(self, frame, point_optical, stamp=None, timeout_s=0.0):
+        # drive · moveit 모드 (Nav2 · AMCL 없음): map 프레임이 아예 없으니 경고 없이 건너뛴다.
+        # map 이 한 번이라도 보이면 그 뒤의 실패는 아래에서 경고한다.
+        if not self.buffer._frameExists(self.target):
+            if not self.missing_noted:
+                self.node.get_logger().info(
+                    f"No '{self.target}' frame (running without Nav2): detections are not converted to {self.target}"
+                )
+                self.missing_noted = True
+            return None
         msg = PointStamped()
         msg.header.frame_id = frame.optical_frame
         msg.header.stamp = stamp if stamp is not None else self.node.sim_stamp()

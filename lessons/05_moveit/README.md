@@ -26,7 +26,7 @@ MoveIt이 OpenARM 양팔을 계획하고, 그 궤적이 MuJoCo 브리지의 Foll
 ## 화면에서 볼 것
 
 - MuJoCo 창에서 팔이 움직이고, RViz MotionPlanning에서 같은 계획이 보인다. 두 화면이 같은 `/joint_states`를 보고 있다.
-- `demo`: ready 자세 → TCP (0.45, 0.20, 0.95)로 계획 이동(오차 약 6 mm) → 직선 하강 5 cm(100 %) → 그리퍼 닫힘 11 mm / 열림 45 mm → 복귀.
+- `demo`: ready 자세 → TCP (0.45, 0.20, 0.95)로 계획 이동(오차 약 1 mm) → 직선 하강 5 cm(100 %) → 그리퍼 닫힘 11 mm / 열림 45 mm → 복귀.
 
 ## 핵심 코드
 

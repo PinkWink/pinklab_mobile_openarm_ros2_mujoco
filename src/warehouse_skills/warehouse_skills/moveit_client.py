@@ -143,9 +143,10 @@ class MoveItClient:
         req.max_acceleration_scaling_factor = float(m["acceleration_scaling"])
         req.start_state.is_diff = True
         c = Constraints(name="skill")
+        # 목표는 IK 로 검증된 관절값이다. ±0.01 rad 이면 계획 끝이 관절마다 ~0.01 rad 달라져 TCP 가 수 mm ~ 1 cm 틀어진다.
         for name, value in zip(self.arm_joints(side), positions):
             c.joint_constraints.append(
-                JointConstraint(joint_name=name, position=float(value), tolerance_above=0.01, tolerance_below=0.01, weight=1.0)
+                JointConstraint(joint_name=name, position=float(value), tolerance_above=0.001, tolerance_below=0.001, weight=1.0)
             )
         req.goal_constraints = [c]
         goal.planning_options.planning_scene_diff.is_diff = True
