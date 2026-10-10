@@ -2,6 +2,17 @@
 
 마지막 갱신: 2026-10-02 (PC 끄기 전 hand-off). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
+## 0-000000000000000000. 2026-10-10: ⑪ LMM + OpenAI API 페이지
+
+**한 일**
+- 새 모듈 `lessons/08_lmm/` (README, 01_hello · 02_structured_command · 03_accuracy · 04_cost_log). 기존 `warehouse_lecture.llm.client.LLM` · `commands/schema.py` (RobotCommand, validate_world) · `commands/parser.py` (SYSTEM + few-shot 4) · `examples/m4_command_dialog/commands_test.yaml` (60 문장) 위에 얹음. 시뮬레이터 불필요.
+- Confluence 새 하위 페이지 3719496070 "LMM + OpenAI API: 자연어 → Structured Command" (v1, 부모 3692396550) ← `docs/camp/lesson12_lmm.md` + `lesson12_*.png` 13장. 그림: `python3 docs/camp/draw_lesson12_figures.py`, 터미널: `python3 docs/camp/render_lesson12_terminals.py` (render_terminal.py 에 width 인자 추가, 기본값 그대로). 데이터: `artifacts/dev/l12/` (01~04.log, acc_run1~3.json, tokens.log).
+- 실측 (gpt-4.1-mini, temperature 0): 60 문장 58 · 59 · 58 (Phase 0 와 같은 두 문장: "주위에 누가 있어?" report→find, "팔 내려서 주행 자세로" transport→home). 문장당 평균 0.95~0.98 s, 회당 $0.035. 명령 한 번 입력 1,327 토큰 = system 592 + few-shot 224 + JSON 스키마 490 + 문장 ~21, 출력 48.
+- 모델 확인: API 에 gpt-4.1-mini 그대로 있음 (gpt-5.x 도 있음). llm.yaml 은 바꾸지 않음. 오늘 API 비용 합계 약 $0.11.
+- git: 커밋 · push 함 (2026-10-10).
+
+**다음**: ⑫ LMM → ROS 2 Task Pipeline (`commands/plan.py`, `plan_parser.py`, `task_manager.py`, examples/m5_task_plan 이 이미 있음).
+
 ## 0-00000000000000000. 2026-10-10: ⑩ Navigation + Pick & Place 페이지
 
 **한 일**

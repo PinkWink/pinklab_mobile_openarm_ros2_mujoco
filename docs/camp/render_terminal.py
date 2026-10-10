@@ -15,8 +15,8 @@ from matplotlib.patches import FancyBboxPatch
 PROMPT = "pw@laptop:~/mujoco_ros2/mobile_openarm_ws$ "
 
 
-def render(lines, out, title="pw@laptop: ~/mujoco_ros2/mobile_openarm_ws — bash", highlight=()):
-    W, LH = 14.0, 0.36
+def render(lines, out, title="pw@laptop: ~/mujoco_ros2/mobile_openarm_ws — bash", highlight=(), width=14.0):
+    W, LH = width, 0.36
     H = LH * len(lines) + 1.0
     fig, ax = plt.subplots(figsize=(W, H), dpi=150); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
     ax.add_patch(FancyBboxPatch((0.1, 0.1), W - 0.2, H - 0.2, boxstyle="round,pad=0,rounding_size=0.15", fc="#1E1E1E", ec="#444444", lw=1))
