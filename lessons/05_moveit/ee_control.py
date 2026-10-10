@@ -6,7 +6,7 @@ Run the simulator with MoveIt first (any of these):
     ./scripts/mobile_openarm start spawn:=pick_table                          # full stack, robot already at the pick table
 Then:
     ./scripts/mobile_openarm exec python lessons/05_moveit/ee_control.py where                       # TCP poses of both arms (TF)
-    ./scripts/mobile_openarm exec python lessons/05_moveit/ee_control.py named both ready            # SRDF named pose (ready | hands_up | transport | home)
+    ./scripts/mobile_openarm exec python lessons/05_moveit/ee_control.py named both ready            # SRDF named pose (ready | hands_up | transport; home fails in MuJoCo, convex-hull contact)
     ./scripts/mobile_openarm exec python lessons/05_moveit/ee_control.py ik left 0.45 0.20 0.95      # IK only: print the 7 joint angles
     ./scripts/mobile_openarm exec python lessons/05_moveit/ee_control.py pose left 0.45 0.20 0.95    # plan + execute to a TCP position (fingers forward, horizontal)
     ./scripts/mobile_openarm exec python lessons/05_moveit/ee_control.py cartesian left 0 0 -0.05    # straight-line move relative to the current TCP

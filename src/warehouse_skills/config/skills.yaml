@@ -8,7 +8,7 @@ dock:
   gain: 0.6
   lateral_gain: 1.2
   heading_gain: 0.4
-  timeout_s: 60.0
+  timeout_s: 180.0
   max_lateral_error: 0.05   # 이보다 크면 오도메트리 옆걸음(90° 회전-직진-복귀) 후 서보 시작
   undock_distance: 0.75  # 작업 후 후진 거리 (Nav2 팽창 영역 밖으로)
 stations:

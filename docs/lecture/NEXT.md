@@ -2,6 +2,26 @@
 
 마지막 갱신: 2026-10-02 (PC 끄기 전 hand-off). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
+## 0-0000000000000000. 2026-10-10: ⑨ Pick & Place 페이지
+
+**한 일**
+- Confluence 새 하위 페이지 3719692425 "Pick & Place: 도킹 · 인식 · 집고 놓기" (v1, 부모 3692396550) ← `docs/camp/lesson10_pick_place.md` (h3 35개: 1 개념 7절 → 2 실행(T1 · 시작 화면 · pick/place 터미널 · 도킹 렌더 · 도킹 그래프 · 카메라 화면 · 잡기/놓기 렌더 · 손가락/높이 그래프 · 단계별 시간 · 실패 · CLI) → 3 코드(run · execute · do_pick · dock · VisionLocator.relative · grasp · place · skills.yaml) → 해 볼 것) + `lesson10_*.png` 21장.
+- 그림: `MUJOCO_GL=egl .venv-mobile-openarm/bin/python docs/camp/draw_lesson10_figures.py` (ros env 필요: mobile_openarm_mujoco.model). 터미널: `python3 docs/camp/render_lesson10_terminals.py`. 기록기 `docs/camp/pick_record.py` (joint_states · /ground_truth · 상자 · /cmd_vel · feedback · TCP · /vision/detections · /vision/markers) → `artifacts/dev/pick_red.pkl`. 근접 그림은 기록한 base · 상자 · 관절을 오프스크린 렌더 (REAR = azimuth 35, 오른쪽 뒤에서 작업대 마커가 보임). 카메라 그림 = head_camera 오프스크린 320×240 + 기록한 YOLO bbox (맞음 확인).
+- 실측: pick 59 s · place 63 s (벽시계), sim 44 s · 51 s, 슬롯 오차 1.7 cm (1차 1.6, CLI 0.9). 마커 쌍 측정은 약 2.6 s 마다 → 서보가 '측정 직후만 전진' 하는 계단 모양 (도킹 그래프).
+- **버그 수정: `locate.py` VisionLocator.relative** 가 마지막 /vision/detections 한 장만 봐서, 도킹 직후 (blind 구간에 찍힌 프레임) "parcel_red not visible" 로 실패 (첫 실행). → 부른 시각 이후 stamp 의 프레임에 label 이 보일 때까지 최대 10 s (벽시계) 대기. 이후 3회 연속 성공, locate 대기 약 3~4 s. pytest 41 passed.
+- **README 오류 수정**: `pick red pick_table --phase place` 는 to_station 기본값 place_table 로 간다 → `pick red pick_table pick_table --phase place` (README · pick_then_place.py docstring · 페이지).
+- 도킹 timeout_s 60 → 180 (위 0-000000000000000) 반영 후 도킹 실패 없음 (pick 3 · place 3).
+- 주의: 스택 띄운 직후 ("Managed nodes are active" 바로 뒤) 보내면 "Nav2 rejected the goal" → 20 s 정도 기다린 뒤 보낼 것.
+- git: 커밋 · push 함 (2026-10-10).
+
+**다음**: ⑩ Nav + Pick & Place.
+
+## 0-000000000000000. 2026-10-10: 열린 일 1·2 결정
+
+- 도킹 타임아웃: `skills.yaml` dock.timeout_s 60 → 180 (사용자 결정, 벽시계 기준 그대로). install 은 symlink 라 재빌드 불필요. 실제 pick 으로 재확인은 아직 안 함.
+- `arm both home`: 코드 · SRDF 는 그대로 두고 (⑦ 3절 교재), `lessons/05_moveit/README.md` · `ee_control.py` 안내에서 home 을 "MuJoCo 실행 실패" 로 표시. ⑧ 페이지는 home 언급 없음 → 재게시 불필요.
+- 남은 열린 일: ⑥ 좌우 오가는 현상, ① 옛 그림 정리. 다음: ⑨ Pick & Place.
+
 ## 0-00000000000000. 2026-10-02 hand-off (PC 끄기 전) — 다음 세션은 여기부터
 
 **상태**

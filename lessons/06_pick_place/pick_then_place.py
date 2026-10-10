@@ -12,7 +12,7 @@ Then:
 
 Equivalent CLI (same action, same phases):
     ./scripts/mobile_openarm pick red --phase pick
-    ./scripts/mobile_openarm pick red pick_table --phase place
+    ./scripts/mobile_openarm pick red pick_table pick_table --phase place     # colour, from, to (to defaults to place_table)
 
 What to notice (feedback phases printed with their timing):
   navigate_pick  Nav2 to the pre-dock pose (already there -> instant)

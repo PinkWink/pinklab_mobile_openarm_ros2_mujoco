@@ -10,7 +10,8 @@ MoveIt이 OpenARM 양팔을 계획하고, 그 궤적이 MuJoCo 브리지의 Foll
 # 시뮬레이터 + MoveIt (Nav2 없음). RViz MotionPlanning 패널을 보려면 rviz:=true
 ./scripts/mobile_openarm moveit viewer:=true rviz:=true
 
-# 이름 자세 (SRDF group_state): ready | hands_up | transport | home
+# 이름 자세 (SRDF group_state): ready | hands_up | transport
+# (home 은 MoveIt 계획은 성공하지만 MuJoCo 실행은 실패한다: 볼록 껍질 충돌, ⑦ 페이지 3절)
 ./scripts/mobile_openarm arm both ready
 ./scripts/mobile_openarm arm left hands_up
 

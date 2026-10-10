@@ -81,15 +81,27 @@ class VisionLocator:
         node.create_subscription(Detection3DArray, topic, lambda m: setattr(self, "latest", m), 10,
                                  callback_group=ReentrantCallbackGroup())
 
-    def relative(self, label):
+    def relative(self, label, wait=10.0):
+        """Wait (wall seconds) for a frame taken after this call that shows the label: right after
+        docking the latest frame may still be from the blind segment, and the camera handler
+        publishes only a few frames per second on a loaded PC."""
+        import time
         import rclpy.duration
         from tf2_ros import TransformException
 
-        if self.latest is None:
-            raise SkillError("no /vision/detections yet")
-        hits = [d for d in self.latest.detections if d.label == label and d.has_position]
-        if not hits:
-            raise SkillError(f"{label} not visible")
+        since = self.node.get_clock().now().nanoseconds * 1e-9
+        end = time.monotonic() + wait
+        while True:
+            m = self.latest
+            fresh = m is not None and m.header.stamp.sec + m.header.stamp.nanosec * 1e-9 >= since
+            hits = [d for d in m.detections if d.label == label and d.has_position] if fresh else []
+            if hits:
+                break
+            if time.monotonic() > end:
+                if m is None:
+                    raise SkillError("no /vision/detections yet")
+                raise SkillError(f"{label} not visible")
+            time.sleep(0.05)
         best = max(hits, key=lambda d: d.score)
         frame = best.position.header.frame_id
         try:

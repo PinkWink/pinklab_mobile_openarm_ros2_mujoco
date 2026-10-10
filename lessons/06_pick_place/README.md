@@ -20,7 +20,7 @@ LECTURE_HANDLERS="warehouse_lecture.vision.aruco:ArucoDetector,warehouse_lecture
 
 # 같은 일을 CLI 로
 ./scripts/mobile_openarm pick red --phase pick
-./scripts/mobile_openarm pick red pick_table --phase place
+./scripts/mobile_openarm pick red pick_table pick_table --phase place   # 인자: 색 · 출발 · 놓을 작업대 (놓을 곳 기본값 place_table)
 ```
 
 ## 화면에서 볼 것
