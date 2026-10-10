@@ -2,6 +2,22 @@
 
 마지막 갱신: 2026-10-02 (PC 끄기 전 hand-off). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
+## 0-00000000000000000. 2026-10-10: ⑩ Navigation + Pick & Place 페이지
+
+**한 일**
+- 새 모듈 `lessons/07_nav_pick_place/` (README.md, transport.py: phase=all goal 하나, 단계마다 TF map 위치 · 달린 거리 출력, 끝에 단계별 표).
+- Confluence 새 하위 페이지 3719299331 "Navigation + Pick & Place: 창고를 가로지르는 운반" (v2, 부모 3692396550) ← `docs/camp/lesson11_nav_pick_place.md` (h3 32개) + `lesson11_*.png` 16장. 그림: `MUJOCO_GL=egl python docs/camp/draw_lesson11_figures.py` (ros env), 터미널: `python3 docs/camp/render_lesson11_terminals.py`. 데이터: `artifacts/dev/transport_red.pkl` (pick_record.py 에 /plan · /amcl_pose 추가), `transport_red_fail1.pkl` (첫 시도 실패), `l11_transport_{red,blue,yellow}.log`.
+- 실측 (기본 spawn, 벽시계): 빨강 256 s · 14.7 m · 슬롯 1.1 cm (오른팔), 파랑 298 s · 4.6 cm (왼팔, 적재대 앞에서 출발), 노랑 258 s · 1.8 cm (왼팔, 축 +0.35 → 10 cm 옆 도킹). Nav2 '도착' 때 실제 거리 13 cm · 7 cm (허용 8 cm 는 AMCL 기준).
+- **버그 수정: `nav_client.py` marker/fixes/wait_markers** — 첫 시도에서 place 쪽 side-step 뒤 도킹이 180 s 멈추고 실패. 원인: 마커 '받은 시각' 으로만 신선도를 봐서, 회전 중 (heading 0° 지날 때) 찍힌 마커 쌍을 정지 뒤 값으로 씀 (turn -0.6°). 실제는 -25° 라 마커 3 이 화면 밖 → dock() 이 쌍을 기다리며 정지. 고침: wait_markers 가 부른 시각 이후 '찍힌' (header.stamp) 영상만 받음, 회전 탐색 중 찾으면 멈추고 다시 잼. 이후 3 회 연속 성공. pytest 41 passed.
+- 페이지의 빨강 캡처는 첫 두 줄이 "map (no TF)" 로 나옴 (캡처는 TF 대기 추가 전 실제 출력, 코드는 고친 뒤).
+- git: 커밋 · push 함 (2026-10-10).
+
+**열린 일 (새로)**
+- (해결) side-step 회전이 90° 대신 79~80° 에서 끝나던 것: 오도메트리 · 사양 문제가 아님. URDF 와 MJCF 의 바퀴 반지름 0.0825 · 간격 0.4288 같고, 브리지 오도메트리는 MJCF 에서 값을 읽음. 오프라인 물리 시험에서 오도메트리 = 실제 (회전 · 직진 비율 1.00, 바퀴가 884 N 중 852 N 지지 → 미끄러짐 없음). 원인 = `nav_client.turn()` · `drive()` 의 벽시계 제한 시간 (90° 는 9.3 s): sim 이 실시간의 0.72 배라 6.5 sim-s 에서 조용히 끊김. 고침: 제한 시간을 sim 시간으로 (+ 시뮬레이터가 멈췄을 때만 쓰는 넉넉한 벽시계 guard, 끊기면 warning). 확인: sim 0.74 배에서 90° → 실제 91.3° · 오도메트리 91.4°, side-step 10 cm → 9.8 cm · heading -0.4°. 회귀: transport.py red 227 s · 슬롯 2.3 cm, deadline warning 0. pytest 41 passed. ⑩ 페이지 v3 (지연 그림 설명 수정, turn 발췌 추가).
+- dock() 은 마커 쌍이 없고 last 가 없으면 timeout 까지 기다린다 (한 마커만 보일 때 탐색 없음).
+
+**다음**: ⑪ LMM + OpenAI API.
+
 ## 0-0000000000000000. 2026-10-10: ⑨ Pick & Place 페이지
 
 **한 일**

@@ -4,7 +4,8 @@
 
 Saves (sim-time stamps): /joint_states (all joints), /ground_truth (base pose in the world), /warehouse/object_poses
 (parcels in the world), /cmd_vel, /pick_place feedback (phase, detail), both TCP positions in base_footprint (TF 20 Hz),
-/vision/detections (label, bbox, position) and /vision/markers (id, pose in base_footprint, pixel corners).
+/vision/detections (label, bbox, position), /vision/markers (id, pose in base_footprint, pixel corners),
+every Nav2 /plan (map) and /amcl_pose.
 """
 import argparse
 import pickle
@@ -14,7 +15,8 @@ import rclpy
 import rclpy.time
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from geometry_msgs.msg import PoseArray, PoseStamped, Twist
+from geometry_msgs.msg import PoseArray, PoseStamped, PoseWithCovarianceStamped, Twist
+from nav_msgs.msg import Path
 from sensor_msgs.msg import JointState
 from tf2_ros import Buffer, TransformException, TransformListener
 from warehouse_interfaces.action import PickPlace
@@ -37,7 +39,7 @@ def main():
     rclpy.init()
     node = Node("pick_record", parameter_overrides=[Parameter("use_sim_time", value=True)])
     now = lambda: node.get_clock().now().nanoseconds * 1e-9  # noqa: E731
-    data = dict(states=[], base=[], objects=[], cmd=[], feedback=[], tcp=[], detections=[], markers=[])
+    data = dict(states=[], base=[], objects=[], cmd=[], feedback=[], tcp=[], detections=[], markers=[], plans=[], amcl=[])
     tf = Buffer()
     TransformListener(tf, node, spin_thread=False)
 
@@ -71,6 +73,8 @@ def main():
                              lambda m: data["feedback"].append(dict(t=now(), phase=m.feedback.phase, detail=m.feedback.detail)), 50)
     node.create_subscription(Detection3DArray, "/vision/detections", detections, 20)
     node.create_subscription(ArucoMarkerArray, "/vision/markers", markers, 20)
+    node.create_subscription(Path, "/plan", lambda m: data["plans"].append(dict(t=now(), xy=[(p.pose.position.x, p.pose.position.y) for p in m.poses])), 10)
+    node.create_subscription(PoseWithCovarianceStamped, "/amcl_pose", lambda m: data["amcl"].append(dict(t=stamp(m.header.stamp), pose=pose(m.pose.pose))), 10)
     node.create_timer(0.05, tcp)
     end = time.time() + options.seconds
     last = 0

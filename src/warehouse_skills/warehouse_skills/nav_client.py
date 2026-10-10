@@ -112,20 +112,32 @@ class NavClient:
         p = self.odom.pose.pose.position
         return p.x, p.y
 
-    def marker(self, marker_id, max_age=1.5):
-        """Latest (dx, dy, normal_yaw, distance) of a marker in base_footprint, or None."""
+    def now(self):
+        return self.node.get_clock().now().nanoseconds * 1e-9
+
+    def marker(self, marker_id, max_age=1.5, since=None):
+        """Latest (dx, dy, normal_yaw, distance) of a marker in base_footprint, or None.
+
+        max_age is measured from the message's arrival (wall clock). since (sim seconds) also
+        requires the image to be *captured* at or after that time: on a loaded PC the camera
+        handler publishes a frame seconds after taking it, so a frame that arrives just after the
+        robot stopped can still show the robot mid-turn."""
         if self.markers is None or time.monotonic() - self.markers_wall > max_age:
             return None
+        if since is not None:
+            stamp = self.markers.header.stamp
+            if stamp.sec + stamp.nanosec * 1e-9 < since:
+                return None
         for m in self.markers.markers:
             if m.id == marker_id:
                 return m.pose.position.x, m.pose.position.y, m.normal_yaw, m.distance
         return None
 
-    def fixes(self, ids, max_age=1.5):
+    def fixes(self, ids, max_age=1.5, since=None):
         """{id: (dx, dy, normal_yaw, distance)} for the currently visible markers among ids."""
         out = {}
         for marker_id in ids:
-            m = self.marker(marker_id, max_age)
+            m = self.marker(marker_id, max_age, since)
             if m is not None:
                 out[marker_id] = m
         return out
@@ -174,16 +186,18 @@ class NavClient:
         self.stop()
         time.sleep(seconds)
 
-    def wait_markers(self, ids, timeout=6.0, search=True, need=2, max_age=0.7):
+    def wait_markers(self, ids, timeout=10.0, search=True, need=2, max_age=0.7):
         """Fresh fixes for at least `need` of the ids (or any, if need > visible); sweeps to find them.
 
-        Only fixes younger than max_age are accepted so that a stale image taken while
-        Nav2 was still turning is never combined with the current robot state.
+        The robot is standing still when this is called, so only images captured from now on
+        are accepted (and only if they arrived within max_age): an image taken while Nav2 or a
+        side-step was still turning is never combined with the current robot state.
         """
         need = min(need, len(ids))
+        since = self.now()
         end = time.monotonic() + timeout
         while time.monotonic() < end:
-            f = self.fixes(ids, max_age=max_age)
+            f = self.fixes(ids, max_age=max_age, since=since)
             if len(f) >= need:
                 return f
             time.sleep(0.1)
@@ -195,8 +209,11 @@ class NavClient:
             while time.monotonic() - start < seconds:
                 f = self.fixes(ids)
                 if len(f) >= need:
-                    self.stop()
-                    return f
+                    self.stop()                     # found while turning: measure again standing still
+                    try:
+                        return self.wait_markers(ids, timeout, search=False, need=need, max_age=max_age)
+                    except SkillError:
+                        pass
                 if len(f) > len(best):
                     best = f
                 self._publish(0.0, w)
@@ -278,8 +295,12 @@ class NavClient:
         q = self.odom.pose.pose.orientation
         yaw0 = 2 * math.atan2(q.z, q.w)
         sign = 1.0 if angle >= 0 else -1.0
-        deadline = time.monotonic() + abs(angle) / speed + 3.0
-        while time.monotonic() < deadline:
+        # Sim-time deadline: the simulator often runs slower than real time (0.7x with the
+        # camera handlers), and a wall-clock deadline silently cut a 90 deg turn at 80 deg.
+        deadline = self.now() + abs(angle) / speed + 3.0
+        guard = time.monotonic() + 4 * (abs(angle) / speed + 3.0)      # if the simulator stops
+        done = 0.0
+        while self.now() < deadline and time.monotonic() < guard:
             q = self.odom.pose.pose.orientation
             yaw = 2 * math.atan2(q.z, q.w)
             done = math.atan2(math.sin(yaw - yaw0), math.cos(yaw - yaw0))
@@ -287,6 +308,8 @@ class NavClient:
                 break
             self._publish(0.0, sign * speed)
             time.sleep(0.05)
+        else:
+            self.node.get_logger().warning(f"turn stopped by the deadline at {math.degrees(done):+.1f} of {math.degrees(angle):+.1f} deg")
         self.stop()
 
     def drive(self, distance, speed=0.08):
@@ -295,8 +318,10 @@ class NavClient:
             return
         sign = 1.0 if distance >= 0 else -1.0
         x0, y0 = self._odom_xy()
-        deadline = time.monotonic() + abs(distance) / speed + 5.0
-        while time.monotonic() < deadline:
+        deadline = self.now() + abs(distance) / speed + 5.0      # sim time, as in turn()
+        guard = time.monotonic() + 4 * (abs(distance) / speed + 5.0)
+        travelled = 0.0
+        while self.now() < deadline and time.monotonic() < guard:
             if self.cancel_requested:
                 break
             x, y = self._odom_xy()
@@ -306,4 +331,6 @@ class NavClient:
             v = speed if abs(distance) - travelled > 0.05 else max(0.03, speed * 0.4)
             self._publish(sign * v, 0.0)
             time.sleep(0.05)
+        else:
+            self.node.get_logger().warning(f"drive stopped by the deadline at {travelled:.3f} of {abs(distance):.3f} m")
         self.stop()
