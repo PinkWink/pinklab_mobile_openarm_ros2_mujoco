@@ -1,4 +1,4 @@
-# 08. LMM + OpenAI API (Day 2 ⑪)
+# 08. LMM + OpenAI API (Day 2 ⑪) · LMM → ROS 2 Task Pipeline (⑫)
 
 ## 목표
 
@@ -44,3 +44,53 @@ cp .env.example .env        # OPENAI_API_KEY=sk-... 기입. .env 는 git 에 올
 - `parser.py` 의 SYSTEM 규칙에 "'누가 있어?' 처럼 주변 사람 전체를 묻는 말은 report" 를 넣고 03 을 다시 돌려 report 정확도 비교
 - `03_accuracy.py --model gpt-4.1` (또는 `gpt-4.1-nano`) 로 정확도 · 지연 비교. 단가가 llm.yaml 에 없으면 비용은 0 으로 찍힌다 — 단가를 먼저 넣는다
 - 테스트셋에 자기 문장 5 개를 더해 (`--test my_tests.yaml`) 어떤 문장에서 틀리는지 보기
+
+---
+
+## ⑫ LMM → ROS 2 Task Pipeline (05 ~ 08)
+
+### 목표
+
+지령 하나를 **단계 목록**(`RobotPlan`: navigate · detect · pick · place · arm_pose · gripper · report · answer)으로 바꾸고, ROS 2 Task Manager(`/execute_plan`)가 Nav2 · PickPlace(MoveIt) · 카메라로 차례로 실행한다. 되묻기 · 확인 · 실패 보고까지 텍스트 대화로.
+
+### 실행
+
+```bash
+# 시뮬레이터 없이
+./scripts/mobile_openarm exec python lessons/08_lmm/05_plan.py              # 지령 → 단계 목록 · validate_world (자동 추가 · 거부)
+./scripts/mobile_openarm exec python lessons/08_lmm/06_plan_accuracy.py     # 20 문장 계획 정확도 (약 $0.02)
+
+# 터미널 1: 시뮬레이터 (07 모듈과 같다)
+H=warehouse_lecture.vision
+LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
+  ./scripts/mobile_openarm start camera_depth:=true locate:=vision viewer:=true rviz:=false
+# 터미널 2: Task Manager (command_executor 와 같이 띄우지 않는다)
+./scripts/mobile_openarm exec ros2 run warehouse_lecture task_manager
+# 터미널 3
+./scripts/mobile_openarm exec python lessons/08_lmm/07_run_plan.py navigate:rack_c report
+./scripts/mobile_openarm exec python lessons/08_lmm/08_text_mission.py      # 키보드 대화 (빈 줄로 끝)
+./scripts/mobile_openarm exec python lessons/08_lmm/08_text_mission.py --lines "상자 옮겨" "파란 거 적재대로" "응"
+```
+
+### 화면에서 볼 것 (2026-10-10 실측)
+
+- 05: `[pick parcel_red, place @place_table]` → navigate 두 개가 `(자동 추가)`. `[navigate, place]` → "든 것이 없는데 놓으려 한다".
+- 06: 20/20, 문장당 평균 1.2 s, $0.019.
+- 08: "상자 옮겨" → 되묻기 → "파란 거 적재대로" → 단계 5 개 + "진행할까요?" → "응" → 5/5 성공 244 s. 이어서 "빨간 상자 적재대로 옮겨"(이미 옮긴 상자) → 2 단계 detect 에서 멈춤: "1단계까지 마쳤지만 실패했습니다: 2단계(빨간 상자 확인) 실패: 빨간 상자가 카메라에 보이지 않는다".
+- LLM 은 지금 상자가 어디 있는지 모른다. detect 단계가 집기 전에 싸게 확인한다.
+
+### 핵심 코드
+
+| 무엇 | 어디 |
+|---|---|
+| RobotPlan · PlanStep · validate_world | `src/warehouse_lecture/warehouse_lecture/commands/plan.py` |
+| 계획 프롬프트 (규칙 · 예시 4 개) | `commands/plan_parser.py` |
+| ExecutePlan 서버: 단계 실행 · 피드백 · 실패 문장 | `commands/task_manager.py` (`execute_plan`, `run_step`, `step_detect`, `step_pick`, `step_place`) |
+| 되묻기 · 확인 | `commands/dialog.py` (`PlanDialogManager.handle`) |
+| 액션 정의 | `src/warehouse_interfaces/action/ExecutePlan.action` |
+
+### 해 볼 것
+
+- `07_run_plan.py pick:parcel_red@pick_table place:@place_table` (navigate 없이) 로 자동 추가 확인
+- `08_text_mission.py` 에서 "파란 상자 옮기고 노란 상자도 적재대로" → 10 단계 계획 확인 후 "아니" 로 취소
+- `task_manager.py` 의 `DETECT_TIMEOUT_S` 를 3 으로 줄이면 detect 가 언제 실패하는지 보기 (끝나면 10 으로)

@@ -1,5 +1,6 @@
 """Publish a simple markdown file as a Confluence child page (storage format), with optional attachments."""
 # 사용: set -a; source ../confluence_token.txt; set +a; python3 scripts/publish_confluence.py <md> "<제목>" <parentId> <spaceId> [첨부 png...]
+#       md 가 참조하는 png ( ![..](x.png) ) 는 목록에 없어도 md 옆에서 찾아 자동 첨부한다.
 #       갱신: python3 scripts/publish_confluence.py <md> "<제목>" --update <pageId> [첨부 png...]
 # 부모 페이지 3683418127 (MuJoCo + ROS2 패키지 구성), spaceId 3419570180 (PD). 지원 문법: ##~#### 제목, 단락, - 목록, 1. 목록, | 표 |, ``` 코드, ![..](png){width=900}, **굵게**, `코드`,\n#   :::info|tip|note|warning|panel 제목 ... ::: (패널), :::cards(2|3) ::card 제목 ... ::: (카드 다단)
 import html
@@ -183,6 +184,19 @@ def main():
         page = request("POST", f"{BASE}/wiki/api/v2/pages", json.dumps(payload).encode(), headers)
         page_id = page["id"]
         print("created page", page_id, page["_links"]["base"] + page["_links"]["webui"])
+    # Every image the markdown references is attached (next to the .md), whether or not it was listed:
+    # a hand-written glob once missed lesson10_t1.png (digits) and the page showed a broken image.
+    referenced = re.findall(r"!\[[^\]]*\]\(([^)]+\.png)\)", Path(md_file).read_text())
+    names = {Path(a).name for a in attachments}
+    for ref in referenced:
+        path = Path(md_file).parent / ref
+        if Path(ref).name in names:
+            continue
+        if path.is_file():
+            attachments.append(str(path))
+            names.add(path.name)
+        else:
+            print("WARNING: referenced image not found:", path)
     for path in attachments:
         upload(page_id, path)
 

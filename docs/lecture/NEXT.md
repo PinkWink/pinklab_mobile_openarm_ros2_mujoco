@@ -1,6 +1,55 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-10-02 (PC 끄기 전 hand-off). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-10-10 (세션 종료 hand-off). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+
+## 0-00000000000000000000. 2026-10-10 hand-off (세션 종료) — 다음 세션은 여기부터
+
+**상태**
+- ROS 프로세스 · ros2 daemon · task_manager 모두 종료 (task_manager 는 cleanup_ros.sh 가 안 잡아서 PID 로 끔).
+- git: ⑫ · 스크립트 수정 · 이 NEXT.md 는 2026-10-10 hand-off 뒤 커밋 · push 함. 그 묶음:
+  - ⑫: `lessons/08_lmm/05~08*.py`, `lessons/08_lmm/README.md` (⑫ 절), `docs/camp/lesson13_*` (md + png 14), `draw_lesson13_figures.py`, `render_lesson13_terminals.py`
+  - `scripts/publish_confluence.py`: md 가 참조하는 png 를 목록에 없어도 자동 첨부, 없으면 WARNING
+  - 이 NEXT.md
+- Confluence (부모 3692396550, 오늘 만든 것): ⑨ 3719692425 · ⑩ 3719299331 (v3) · ⑪ 3719496070 · ⑫ 3719430326. 15 개 페이지 전부 본문 참조 그림 = 첨부 확인 (빠진 것 0).
+  - 사고: ⑨ · ⑩ 에서 `lesson10_t1.png` · `lesson11_t1.png` 가 첨부 안 됨 (glob `[a-z_]*` 에 숫자 없음). 첨부만 따로 올려 고침 (본문은 안 건드림). 위 스크립트 수정이 재발 방지.
+- 오늘 커밋: 1120747 (⑨ + locate 신선 프레임 + dock timeout 180 s), 522aa4d (⑩ + 마커 '찍힌 시각' + turn/drive sim 시간 제한), ffb5cb6 (⑪).
+
+**사용자에게 남은 결정**
+1. ⑭ 전에 LLM 계획기에 현재 세계 상태(상자 위치)를 넣을지 — 지금은 이미 옮긴 상자도 픽업대로 계획하고 detect 에서 실패.
+2. llm.yaml 모델: gpt-4.1-mini 유지 중 (API 에 gpt-5.x 도 있음). 바꾸면 pricing 도 같이.
+3. 이전부터: ⑥ 좌우 오가는 현상, ① 옛 그림 정리.
+
+**열린 일 (기술)**
+- dock(): 마커 하나만 보이고 쌍 측정이 한 번도 없으면 timeout 까지 기다림 (탐색 없음).
+- 계획기: "상자 옮겨" → "빨간 거" 뒤 기본 목적지를 안 쓰고 다시 묻는 경우 있음 (1 회 관찰).
+- 대화 페이지 캡처 중 ⑩ 빨강 캡처 첫 두 줄 "map (no TF)" (TF 대기 추가 전 출력).
+
+**다음 작업 순서**
+- ⑬ MuJoCo Web Dashboard: `lessons/04_navigation/dashboard/` (Flask, SSE, 지도 · 카메라) 에 자연어 지령 입력 → PlanDialogManager → /execute_plan 연결 추가. 캡처는 headless Chrome DevTools (feedback_screen_capture).
+- ⑭ Final Mission (`examples/m5_task_plan/04_final_mission.py` 가 기반, 커리큘럼 폴더명 10_final_project).
+- 그 뒤 lessons README · INSTALL.md · check_env.sh.
+
+**작업 요령 (오늘 배운 것)**
+- 셸 환경: `source /opt/ros/jazzy/setup.zsh; source scripts/env.sh` (scripts/mobile_openarm 은 ROS env 없이 부르면 conda.sh 오류).
+- 스택 띄운 직후 Nav2 goal 은 거부될 수 있음 → "Managed nodes are active" 뒤 20 s 기다림.
+- 기록기 `docs/camp/pick_record.py` 는 끝날 때만 저장 → 백그라운드로 띄우고 `wait` 하지 말 것 (한 번 기록을 날림).
+- 이 PC 는 sim 이 실시간의 약 0.72 ~ 0.78 배 (카메라 핸들러 부하), 카메라 영상은 찍힌 뒤 ~2.6 s 에 도착 → 시간 제한 · 신선도는 sim 시각 · header.stamp 로.
+- zsh 에서 `$imgs` 는 단어로 안 쪼개짐 → 배열 `imgs=(...)` + `"${imgs[@]}"`. (이제 publish 스크립트가 자동 첨부하므로 목록은 생략 가능.)
+- matplotlib 문자열에 `$` 가 두 개면 수식으로 바뀜 → `\$`.
+
+## 0-0000000000000000000. 2026-10-10: ⑫ LMM → ROS 2 Task Pipeline 페이지
+
+**한 일**
+- `lessons/08_lmm/` 에 05_plan · 06_plan_accuracy · 07_run_plan · 08_text_mission 추가 (README 에 ⑫ 절). 기존 `commands/plan.py` · `plan_parser.py` · `task_manager.py` · `dialog.py` (PlanDialogManager) 위에 얹음. 05 기본 문장은 plan_parser 의 few-shot 예시와 겹치지 않게 고름.
+- Confluence 새 하위 페이지 3719430326 "LMM → ROS 2 Task Pipeline: 단계 목록과 Task Manager" (v1, 부모 3692396550) ← `docs/camp/lesson13_task_pipeline.md` + `lesson13_*.png` 14장. 그림: `python3 docs/camp/draw_lesson13_figures.py`, 터미널: `python3 docs/camp/render_lesson13_terminals.py`. 로그: `artifacts/dev/l12/05.log 06.log 08.log 08_run1.log`, 기록 `artifacts/dev/mission_l13.pkl`, `mission_l13b.pkl`.
+- 실측: 계획 20/20 (평균 1.2 s, $0.019). 08 (같은 시뮬레이터에서 두 번): 1 회차 빨강 5/5 237 s + 랙 C 보고 41 s. 2 회차 "상자 옮겨" → 되묻기 → "파란 거 적재대로" → 확인 → "응" → 5/5 244 s (슬롯 5.4 cm, 도킹 잔차 6.6 cm), 이어서 이미 옮긴 빨강 → detect 실패 "1단계까지 마쳤지만 실패했습니다: 2단계(빨간 상자 확인) 실패: 빨간 상자가 카메라에 보이지 않는다" (52 s).
+- git: 커밋 · push 함 (2026-10-10, hand-off 뒤).
+
+**관찰 (고치지 않음)**
+- 1 회차에 "상자 옮겨" → "빨간 거" 다음 LLM 이 기본값(적재대)을 쓰지 않고 "어디로 옮길지" 다시 물음 (plan_parser 규칙은 도착지 없으면 place_table). 그래서 스크립트 줄이 한 칸씩 밀림. 2 회차는 "파란 거 적재대로" 로 장소를 같이 줌.
+- LLM 은 지금 상자 위치를 모른다 → 이미 옮긴 상자도 픽업대로 계획. detect 가 잡음. (⑭ 전에 세계 상태를 프롬프트에 넣을지 결정할 일)
+
+**다음**: ⑬ MuJoCo Web Dashboard (lessons/04_navigation/dashboard 에 Flask 대시보드 있음, 자연어 지령 입력 추가 필요) → ⑭ Final Mission.
 
 ## 0-000000000000000000. 2026-10-10: ⑪ LMM + OpenAI API 페이지
 
