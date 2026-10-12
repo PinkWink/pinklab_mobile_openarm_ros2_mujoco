@@ -31,7 +31,8 @@ def setup(context):
                 executable="rviz2",
                 arguments=[
                     "-d",
-                    str(
+                    LaunchConfiguration("rviz_config").perform(context)
+                    or str(
                         Path(
                             get_package_share_directory("mobile_openarm_moveit_config")
                         )
@@ -50,6 +51,7 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("urdf_file", default_value=""),
             DeclareLaunchArgument("rviz", default_value="true"),
+            DeclareLaunchArgument("rviz_config", default_value="", description="RViz config; empty = config/moveit.rviz"),
             OpaqueFunction(function=setup),
         ]
     )

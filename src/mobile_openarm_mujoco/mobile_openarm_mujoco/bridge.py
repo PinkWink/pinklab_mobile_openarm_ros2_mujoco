@@ -241,6 +241,11 @@ def parse_size(text):
 def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--viewer", action="store_true")
+    parser.add_argument(
+        "--no-viewer-shadows",
+        action="store_true",
+        help="Draw the viewer without shadows (camera images keep them); 6x cheaper on integrated GPUs",
+    )
     parser.add_argument("--urdf-file")
     parser.add_argument("--physics-config")
     parser.add_argument("--world-file")
@@ -358,6 +363,9 @@ def main(args=None):
             viewer.cam.azimuth = 130
             viewer.cam.elevation = -50
             viewer.opt.geomgroup[1] = 0
+            if options.no_viewer_shadows:
+                # user_scn flags are copied to the viewer's own scene on sync().
+                viewer.user_scn.flags[mujoco.mjtRndFlag.mjRND_SHADOW] = 0
         deadline = time.monotonic()
         # One callback per tick cannot keep up with /tf, /tf_static and joint state
         # traffic once handlers subscribe inside this process; drain a small batch.

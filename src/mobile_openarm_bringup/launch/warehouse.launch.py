@@ -25,6 +25,15 @@ from mobile_openarm_description.model import expand_urdf
 _lock = None
 
 
+def rviz_config(path, profile, root):
+    """lite: copy of the RViz config redrawn at 15 FPS instead of 30 (half the GPU load)."""
+    if profile != "lite":
+        return str(path)
+    lite = root / f"{path.stem}_lite.rviz"
+    lite.write_text(path.read_text().replace("Frame Rate: 30", "Frame Rate: 15"))
+    return str(lite)
+
+
 def setup(context):
     global _lock
     root = Path(
@@ -61,12 +70,16 @@ def setup(context):
         "--output-dir",
         str(root),
     ]
+    profile = LaunchConfiguration("profile").perform(context)
     if viewer:
         command.append("--viewer")
+        if profile == "lite":
+            # Shadows cost one extra pass over the 2.7 M-triangle robot per light;
+            # the viewer drops them, camera images keep them for vision.
+            command.append("--no-viewer-shadows")
     spawn = resolve_spawn(LaunchConfiguration("spawn").perform(context))
     if spawn:
         command += ["--spawn", ",".join(f"{v:.4f}" for v in spawn)]
-    profile = LaunchConfiguration("profile").perform(context)
     actors = LaunchConfiguration("actors").perform(context)
     if actors:
         command += ["--actors-file", actors]
@@ -132,6 +145,7 @@ def setup(context):
                 launch_arguments={
                     "urdf_file": str(path),
                     "rviz": str(rviz).lower(),
+                    "rviz_config": rviz_config(m / "config/moveit.rviz", profile, root),
                 }.items(),
             )
         )
@@ -151,7 +165,7 @@ def setup(context):
                 executable="rviz2",
                 arguments=[
                     "-d",
-                    str(nav / "config/navigation.rviz"),
+                    rviz_config(nav / "config/navigation.rviz", profile, root),
                     "-f",
                     "odom" if mode == "drive" else "map",
                 ],

@@ -97,7 +97,7 @@ ros2 service call /warehouse/set_actor warehouse_interfaces/srv/SetActor \
 | 인자 | 기본값 | 의미 |
 |---|---|---|
 | `mode` | nav | drive / slam / nav |
-| `profile` | lite | lite: 카메라 2대(base, head) 320×240 2 FPS. full: cameras.yaml(4대 640×480 5 FPS) |
+| `profile` | lite | lite: 카메라 2대(base, head) 320×240 2 FPS, MuJoCo 뷰어 그림자 끔(카메라 영상은 유지), RViz 15 FPS. full: cameras.yaml(4대 640×480 5 FPS), 뷰어 그림자, RViz 30 FPS |
 | `viewer`, `rviz`, `moveit` | true | 각각 MuJoCo 창, RViz, MoveIt 기동 |
 | `skills` | true | `/pick_place` 액션 서버 (moveit:=true일 때) |
 | `locate` | truth | 운반 스킬의 물체 위치 출처. truth = 시뮬레이터 실제값, vision = 카메라 검출 (M3 이후) |
