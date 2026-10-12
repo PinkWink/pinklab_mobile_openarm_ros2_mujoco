@@ -24,6 +24,7 @@ fi
 echo "== Python venv (system site packages for rclpy)"
 python3 -m venv --system-site-packages .venv-mobile-openarm
 source .venv-mobile-openarm/bin/activate
+export PIP_DISABLE_PIP_VERSION_CHECK=1
 python -m pip install -q --upgrade "pip<26"
 python -m pip install -q -r requirements-mobile-openarm.txt
 python -m pip install -q -r requirements-lecture.txt

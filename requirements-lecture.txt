@@ -19,3 +19,6 @@ numpy>=1.26,<2
 opencv-python>=4.10,<4.11
 # onnx가 끌어오는 ml-dtypes 0.6은 numpy 2 전용이다.
 ml-dtypes<0.6
+# Ubuntu의 python3-nacl(apt, python3-github 등이 끌어옴)은 cffi를 요구하지만 apt는 cffi-backend만 설치한다.
+# --system-site-packages venv에서 pip check가 실패하지 않도록 cffi를 함께 설치한다.
+cffi>=1.16
