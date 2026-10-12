@@ -134,7 +134,8 @@ source scripts/env.sh
 ![launch 인자](setup_launch_args.png){width=1000}
 
 - `start`, `drive`, `slam`, `moveit` 뒤에 `인자:=값` 형식으로 추가
-- 느리면 `rviz:=false` · 카메라 기본값은 `profile:=lite`(2대 320×240 2 FPS)
+- 기본값 `profile:=lite`: 카메라 2대 320×240 2 FPS · 뷰어 그림자 끔 · RViz 15 FPS
+- 느리면 7절 '저사양 PC' 참고
 
 ### description
 
@@ -201,3 +202,43 @@ ros2 launch mobile_openarm_description display.launch.py gui:=false   # 슬라�
 ### 동작 · 성능 · 키 문제
 
 ![동작 · 성능 · 키 문제](setup_trouble_run.png){width=1000}
+
+## 7. 저사양 PC
+
+### lite 프로파일 (기본값)
+
+![lite 프로파일: 뷰어 그림자를 끄면 내장 그래픽에서 6배 빠름](setup_lowspec_profile.png){width=1000}
+
+- 무거운 부분은 CPU가 아니라 그래픽: 로봇 메시 270만 삼각형을 조명 3개의 그림자마다 다시 그림
+- `profile:=lite`(기본값): MuJoCo 뷰어 그림자 끔 · RViz 15 FPS · 카메라 2대 320×240 2 FPS
+- 카메라 영상은 그림자를 유지 → 인식 · 데이터셋 결과는 프로파일과 무관
+
+### 내 PC 렌더링 성능 확인
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source scripts/env.sh
+./scripts/mobile_openarm start      # 처음 한 번 (모델 생성), 창이 뜨면 Ctrl+C
+./scripts/mobile_openarm exec python3 scripts/check_gpu.py
+```
+
+![check_gpu.py 실행 결과 (Ryzen 7 9700X 내장 그래픽)](setup_lowspec_check.png){width=1000}
+
+### 더 가볍게 실행하기
+
+```bash
+./scripts/mobile_openarm start viewer:=false        # MuJoCo 창 없이 RViz만
+./scripts/mobile_openarm start rviz:=false          # RViz 없이 MuJoCo 창만
+./scripts/mobile_openarm drive                      # MoveIt · Nav2 없이 주행만 (Day 1 실습)
+```
+
+![start viewer:=false 실행 화면: RViz만 15 FPS로 동작](setup_lowspec_noviewer.png){width=1000}
+
+### NVIDIA 그래픽이 있는 노트북
+
+```bash
+__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia ./scripts/mobile_openarm exec python3 scripts/check_gpu.py
+__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia ./scripts/mobile_openarm start
+```
+
+![NVIDIA로 렌더링할 때의 check_gpu.py 결과](setup_lowspec_nvidia.png){width=1000}

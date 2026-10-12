@@ -324,7 +324,7 @@ def trouble_run():
     fig, ax = fig_ax(14, 4.4)
     note(ax, 0.3, 4.1, "동작 · 성능 · 키 문제: 증상 → 원인 → 조치", bold=True, fs=12)
     tiles(ax, [("numpy.dtype size changed", ["원인: 가상환경에 numpy 2 가 들어감", "조치: pip install \"numpy<2\"", "→ rm -rf build/warehouse_interfaces install/warehouse_interfaces → build"], C["red"]),
-               ("화면이 느림", ["원인: RViz · 뷰어 · 카메라 렌더 부하", "조치: rviz:=false, 필요하면 viewer:=false", "카메라 기본이 2대 320×240 2 FPS 인지 확인 (profile:=lite)"], C["yellow"]),
+               ("화면이 느림 · 바탕화면까지 버벅임", ["원인: 내장 그래픽의 렌더 부하 (뷰어 · RViz · 카메라)", "확인: scripts/check_gpu.py → 권장 실행 방법 출력", "조치: viewer:=false 또는 rviz:=false (7절 저사양 PC)"], C["yellow"]),
                ("command_executor 와 task_manager 동시 실행", ["원인: 둘 다 /execute_command 를 서비스", "조치: 하나만 띄운다", "시뮬레이터를 다시 띄우면 task_manager 도 다시"], C["blue"]),
                ("OpenAI 429 insufficient_quota", ["원인: 키의 크레딧 · 사용 한도 소진", "조치: 강사에게 문의", "LMM 이전 모듈은 키 없이 진행"], C["orange"])],
           cols=2, y_top=3.8, h=1.6, gap=0.3, tfs=10.5, fs=8.6)
