@@ -110,7 +110,7 @@ ros2 topic echo --once /patrol/status         # 순찰 중에 실행
 
 ![patrol.py 흐름](lesson07_code_flow.png){width=1000}
 
-### 목표 보내기 - Patrol.go 발췌
+### base_goal 로 목표 만들어 보내기 - Patrol.go 발췌
 
 ```python
 # lessons/04_navigation/patrol.py
@@ -124,6 +124,12 @@ def go(self, stop):   # 발췌
     future = self.nav.send_goal_async(goal, feedback_callback=on_feedback)
     while not future.done():
         rclpy.spin_once(self, timeout_sec=0.05)                          # 기다리는 동안에도 콜백을 돌린다
+```
+
+### 수락 확인 · 결과 기다리기 · 취소 - Patrol.go 발췌
+
+```python
+# patrol.py Patrol.go (이어서)
     handle = future.result()
     if not handle.accepted:
         return GoalStatus.STATUS_ABORTED
@@ -190,7 +196,7 @@ def publish(self):
     self.pub.publish(String(data=json.dumps(status, ensure_ascii=False)))
 ```
 
-### nav2.yaml - FollowPath 발췌
+### RotationShim 으로 제자리 회전 - nav2.yaml FollowPath 발췌
 
 ```yaml
 # mobile_openarm_navigation/config/nav2.yaml  (발췌)
@@ -202,6 +208,12 @@ controller_server:
       angular_dist_threshold: 0.6          # 경로와 0.6 rad 넘게 틀어져 있으면
       rotate_to_heading_angular_vel: 0.6   # 제자리에서 0.6 rad/s 로 돌고
       rotate_to_goal_heading: true         # 도착해서도 목표 방향으로 돈다
+```
+
+### 속도와 critic 비중 - nav2.yaml FollowPath 발췌
+
+```yaml
+# nav2.yaml controller_server.FollowPath (이어서)
       max_vel_x: 0.3
       critics: [RotateToGoal, Oscillation, ObstacleFootprint, GoalAlign, PathAlign, PathDist, GoalDist]
       ObstacleFootprint.scale: 0.05        # 장애물 점수의 비중
@@ -325,7 +337,7 @@ class DashboardPipeline(LecturePipeline):   # 발췌
             os.replace(tmp, FRAMES / f"{name}.jpg")       # 원자적 교체: 반쯤 쓴 파일을 읽지 않는다
 ```
 
-### 상태 모으기 - RobotState 발췌
+### 토픽 구독 등록 - RobotState.__init__ 발췌
 
 ```python
 # lessons/04_navigation/dashboard/server.py
@@ -337,12 +349,22 @@ class RobotState(Node):   # 발췌
         self.create_subscription(Odometry, "/odom", self.on_odom, 10)
         self.create_subscription(String, "/patrol/status", self.on_patrol, LATCHED)
         ...                                                  # /amcl_pose /plan /scan /map /actor_states /vision/detections
+```
 
+### odom 을 상태에 넣기 - RobotState.on_odom 발췌
+
+```python
+# dashboard/server.py RobotState (이어서)
     def on_odom(self, m):
         p = m.pose.pose
         self.put(odom=[round(p.position.x, 3), round(p.position.y, 3), round(yaw_of(p.orientation), 3)],
                  twist=[round(m.twist.twist.linear.x, 3), round(m.twist.twist.angular.z, 3)])
+```
 
+### 잠금으로 쓰고 복사하기 - RobotState.put · snapshot 발췌
+
+```python
+# dashboard/server.py RobotState (이어서)
     def put(self, **kw):
         with self.lock:                                      # ROS 스레드가 쓰고
             self.s.update(kw)
@@ -367,13 +389,19 @@ def api_stream():
     return Response(gen(), mimetype="text/event-stream", headers={"Cache-Control": "no-cache"})
 ```
 
-### MJPEG - camera 발췌
+### 카메라 JPEG 파일 찾기 - camera 발췌
 
 ```python
 # lessons/04_navigation/dashboard/server.py
 @app.get("/camera/<name>.mjpg")
 def camera(name):
     path = FRAMES / f"{Path(name).name}.jpg"
+```
+
+### 바뀐 프레임만 MJPEG 로 흘리기 - camera 발췌
+
+```python
+# dashboard/server.py camera (이어서)
     def gen():
         last = None
         while True:
@@ -399,7 +427,7 @@ def api_command():
     return jsonify(ok=True, cmd=cmd)
 ```
 
-### 두 스레드 띄우기 - main 발췌
+### ROS 스레드 띄우기 - main 발췌
 
 ```python
 # lessons/04_navigation/dashboard/server.py
@@ -410,6 +438,12 @@ def main():   # 발췌
     executor.add_node(state)
     spinner = threading.Thread(target=executor.spin, daemon=True)   # ROS 스레드
     spinner.start()
+```
+
+### Flask 스레드 실행과 정리 - main 발췌
+
+```python
+# dashboard/server.py main (이어서)
     try:
         make_app(state).run(host=a.host, port=a.port, threaded=True, use_reloader=False)   # Flask 스레드
     finally:

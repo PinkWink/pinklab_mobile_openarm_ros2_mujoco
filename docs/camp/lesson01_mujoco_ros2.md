@@ -223,7 +223,7 @@ python -m mujoco.viewer --mjcf=lessons/01_mujoco_ros2/two_link_arm.xml
 
 ![스텝 루프](lesson01_loop.png){width=1000}
 
-### 스텝 루프 def spin 코드
+### 스텝 루프: 물리 스텝 · /clock · Joint State - def spin 코드
 
 ```python
 def spin(self):
@@ -234,6 +234,12 @@ def spin(self):
         self.clock_pub.publish(Clock(clock=stamp(t)))     # 2. sim time out
         if t >= self.next_joint:                          # 3. joint states + TF at 50 Hz
             self.publish_joints(t); self.next_joint += self.joint_period
+```
+
+### 스텝 루프: 카메라 · 콜백 · 실시간 맞추기 - def spin 코드
+
+```python
+        # spin 함수 while 루프 (이어서)
         if t >= self.next_camera:                         # 4. camera image at 5 Hz
             self.publish_camera(t); self.next_camera += self.camera_period
         rclpy.spin_once(self, timeout_sec=0)              # 5. deliver /cmd callbacks
@@ -469,14 +475,19 @@ while ...:
 
 ![__init__ 구조](lesson01_fn_init.png){width=1000}
 
-### 노드 초기화 - __init__ 함수 (코드)
+### 노드 초기화: 모델과 이름 목록 - __init__ 함수 (코드)
 
 ```python
 self.model = mujoco.MjModel.from_xml_path(str(XML))
 self.data = mujoco.MjData(self.model)
 self.joints = ["joint1", "joint2"]
 self.bodies = ["base_link", "link1", "link2", "camera_link"]
+```
 
+### 노드 초기화: 발행자 · 구독자 · 렌더러 - __init__ 함수 (코드)
+
+```python
+# __init__ 함수 (이어서)
 self.clock_pub = self.create_publisher(Clock, "/clock", 10)
 self.joint_pub = self.create_publisher(JointState, "/joint_states", 10)
 self.image_pub = self.create_publisher(Image, "/tip_camera/image_raw", 2)
@@ -507,7 +518,7 @@ def publish_joints(self, t):
 
 ![publish_joints 뒷부분 구조](lesson01_fn_tf.png){width=1000}
 
-### TF 발행 - publish_joints 함수 (뒷부분) (코드)
+### TF 발행: 부모 기준 상대 자세 계산 - publish_joints 함수 (뒷부분) (코드)
 
 ```python
     tfs = []
@@ -518,6 +529,12 @@ def publish_joints(self, t):
         mujoco.mju_negQuat(q_parent_inv, self.data.xquat[p])
         mujoco.mju_mulQuat(q_rel, q_parent_inv, self.data.xquat[c])
         mujoco.mju_rotVecQuat(pos_rel, self.data.xpos[c] - self.data.xpos[p], q_parent_inv)
+```
+
+### TF 발행: TransformStamped 채워 보내기 - publish_joints 함수 (뒷부분) (코드)
+
+```python
+        # publish_joints 의 for 루프 (이어서)
         tf = TransformStamped()
         tf.header.stamp, tf.header.frame_id, tf.child_frame_id = stamp(t), parent, child
         tf.transform.translation.x, tf.transform.translation.y, tf.transform.translation.z = map(float, pos_rel)

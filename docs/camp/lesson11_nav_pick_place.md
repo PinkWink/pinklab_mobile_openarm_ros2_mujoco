@@ -93,7 +93,7 @@ time ./scripts/mobile_openarm exec python lessons/07_nav_pick_place/transport.py
 
 ## 3. 코드와 설정
 
-### 단계별 위치 출력 - transport.py where · on_fb 함수 발췌
+### map 위치 읽기 - transport.py where 함수 발췌
 
 ```python
 # lessons/07_nav_pick_place/transport.py
@@ -102,8 +102,12 @@ def where(self):
     q = tf.rotation
     yaw = math.atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z))
     return tf.translation.x, tf.translation.y, yaw
+```
 
+### 단계가 바뀔 때 위치 출력 - transport.py on_fb 함수 발췌
 
+```python
+# transport.py (이어서)
 goal = PickPlace.Goal(object=colour, from_station=src, to_station=dst, phase="all")   # goal 하나
 
 
@@ -140,13 +144,19 @@ def do_place(self, goal, name, arm, feedback):
     return st, offset
 ```
 
-### Nav2 + 마커 정렬 - pick_place_server.py navigate_and_dock 함수 발췌
+### Nav2 로 사전 도킹 지점까지 - pick_place_server.py navigate_and_dock 함수 발췌
 
 ```python
 # warehouse_skills/pick_place_server.py
 goal = list(self.locations.goal(key))                         # locations.yaml base_goal
 self.nav.go_to(*goal)                                         # Nav2 navigate_to_pose
 self.nav.settle()                                             # 멈추고 1 s
+```
+
+### 마커로 옆 오차 맞추고 도킹 - pick_place_server.py navigate_and_dock 함수 발췌
+
+```python
+# pick_place_server.py navigate_and_dock (이어서)
 for attempt in range(3):
     fixes = self.nav.wait_markers(st["markers"])              # 멈춘 뒤 찍힌 마커 쌍
     along, side, turn, origin, u = self.nav.geometry(fixes, st["offsets"])
@@ -160,7 +170,7 @@ for attempt in range(3):
 dx, residual = self.nav.dock(st["offsets"], self.cfg["dock"]["target_dx"], target_side, ...)
 ```
 
-### Nav2 goal - nav_client.py _go_to_once 함수 발췌
+### map 목표 보내기 - nav_client.py _go_to_once 함수 발췌
 
 ```python
 # warehouse_skills/nav_client.py
@@ -171,6 +181,12 @@ goal.pose.pose.orientation.z, goal.pose.pose.orientation.w = math.sin(yaw / 2), 
 handle = wait(self.nav.send_goal_async(goal), 10.0, "navigate_to_pose goal")
 if not handle.accepted:
     raise SkillError("Nav2 rejected the goal")
+```
+
+### 결과 기다리기 · 제한 시간 - nav_client.py _go_to_once 함수 발췌
+
+```python
+# nav_client.py _go_to_once (이어서)
 future = handle.get_result_async()
 while not future.done():
     if self.cancel_requested or time.monotonic() > end:       # 180 s
@@ -179,7 +195,7 @@ while not future.done():
     time.sleep(0.1)
 ```
 
-### 멈춘 뒤 찍힌 마커만 - nav_client.py marker · wait_markers 함수 발췌
+### 받은 시각 · 찍힌 시각 거르기 - nav_client.py marker 함수 발췌
 
 ```python
 # warehouse_skills/nav_client.py
@@ -191,8 +207,12 @@ def marker(self, marker_id, max_age=1.5, since=None):
         if stamp.sec + stamp.nanosec * 1e-9 < since:          # 찍힌 시각이 since 전이면 버린다
             return None
     ...
+```
 
+### 멈춘 뒤 찍힌 마커 쌍 기다리기 - nav_client.py wait_markers 함수 발췌
 
+```python
+# nav_client.py (이어서)
 def wait_markers(self, ids, timeout=10.0, search=True, need=2, max_age=0.7):
     since = self.now()                                        # 지금 (sim) = 로봇이 멈춘 뒤
     end = time.monotonic() + timeout
@@ -204,12 +224,18 @@ def wait_markers(self, ids, timeout=10.0, search=True, need=2, max_age=0.7):
     # 안 보이면 제자리에서 좌우로 돌며 찾는다. 찾으면 멈추고 다시 wait_markers (search=False)
 ```
 
-### 회전 · 직진의 제한 시간 - nav_client.py turn 함수 발췌
+### sim 시간으로 제한 시간 정하기 - nav_client.py turn 함수 발췌
 
 ```python
 # warehouse_skills/nav_client.py
 deadline = self.now() + abs(angle) / speed + 3.0                # sim 시간 (전: 벽시계 → 느린 PC 에서 90° 가 80° 로 끊김)
 guard = time.monotonic() + 4 * (abs(angle) / speed + 3.0)       # 시뮬레이터가 멈췄을 때만
+```
+
+### 목표 각도까지 돌기 - nav_client.py turn 함수 발췌
+
+```python
+# nav_client.py turn (이어서)
 while self.now() < deadline and time.monotonic() < guard:
     q = self.odom.pose.pose.orientation
     yaw = 2 * math.atan2(q.z, q.w)

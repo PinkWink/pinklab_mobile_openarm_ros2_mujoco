@@ -95,7 +95,7 @@ def __init__(self, physics, world_file=None, actors=None):   # 발췌
     self.scan_pub = self.create_publisher(LaserScan, "/scan", qos_profile_sensor_data)
 ```
 
-### /scan 메시지 채워 발행 - advance 함수 발췌
+### /scan 10 Hz 주기와 헤더 - advance 함수 발췌
 
 ```python
 # mobile_openarm_mujoco/bridge.py  (Bridge)
@@ -109,6 +109,12 @@ def advance(self):   # 발췌: 100 Hz 루프 한 바퀴
         scan = LaserScan()
         scan.header.stamp = now
         scan.header.frame_id = "laser_link"
+```
+
+### /scan 각도 · 거리 범위 · ranges 채워 발행 - advance 함수 발췌
+
+```python
+        # advance 함수 scan 부분 (이어서)
         scan.angle_min = float(p.angles[0])                        # -π
         scan.angle_max = float(p.angles[-1])                       # +π - 1°
         scan.angle_increment = float(p.angles[1] - p.angles[0])    # 1°
@@ -225,7 +231,7 @@ def step(self, linear=0.0, angular=0.0, steps=None):
 
 ![publish_state](lesson03_odom_msg.png){width=1000}
 
-### /odom 메시지와 TF - publish_state 함수
+### /odom 메시지: 자세 · 속도 · 공분산 - publish_state 함수
 
 ```python
 # mobile_openarm_mujoco/bridge.py
@@ -240,6 +246,12 @@ def publish_state(self, now):
         odom.pose.covariance[7 * i] = v
         odom.twist.covariance[7 * i] = v
     self.odom_pub.publish(odom)
+```
+
+### odom → base_footprint TF - publish_state 함수
+
+```python
+    # publish_state (이어서)
     tf = TransformStamped()
     tf.header, tf.child_frame_id = odom.header, odom.child_frame_id
     tf.transform.translation.x = odom.pose.pose.position.x

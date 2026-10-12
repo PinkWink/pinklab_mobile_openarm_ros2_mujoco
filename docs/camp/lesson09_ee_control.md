@@ -174,7 +174,7 @@ def make_pose(xyz, quat=GRASP_FORWARD):
     return pose
 ```
 
-### IK 풀기 - moveit_client.py solve_ik 함수
+### 시드와 IK 요청 설정 - moveit_client.py solve_ik 함수
 
 ```python
 # warehouse_skills/moveit_client.py
@@ -189,6 +189,12 @@ def solve_ik(self, side, pose, avoid_collisions=True):
         r.group_name, r.ik_link_name = arm["group"], arm["tcp_link"]   # left_arm, openarm_left_hand_tcp
         r.avoid_collisions = avoid_collisions
         r.timeout.nanosec = 200_000_000                                # 0.2 s
+```
+
+### 목표 자세 · 시작 관절로 /compute_ik 호출 - moveit_client.py solve_ik 함수
+
+```python
+# moveit_client.py solve_ik (이어서)
         r.pose_stamped = PoseStamped()
         r.pose_stamped.header.frame_id = "base_footprint"
         r.pose_stamped.pose = pose
@@ -196,6 +202,12 @@ def solve_ik(self, side, pose, avoid_collisions=True):
         r.robot_state.joint_state.name = names
         r.robot_state.joint_state.position = seed.tolist()
         res = wait(self.ik.call_async(req), 5.0, "compute_ik")         # 서비스 /compute_ik
+```
+
+### 지금 자세와 가장 가까운 해 고르기 - moveit_client.py solve_ik 함수
+
+```python
+# moveit_client.py solve_ik (이어서)
         if res.error_code.val != MoveItErrorCodes.SUCCESS:
             continue
         q = dict(zip(res.solution.joint_state.name, res.solution.joint_state.position))
@@ -208,7 +220,7 @@ def solve_ik(self, side, pose, avoid_collisions=True):
     return best[1]
 ```
 
-### pose goal - moveit_client.py move_pose · move_joints 함수 발췌
+### pose goal → 관절 목표 MoveGroup 요청 - moveit_client.py move_pose · move_joints 함수 발췌
 
 ```python
 # warehouse_skills/moveit_client.py
@@ -223,6 +235,12 @@ def move_joints(self, side, positions, timeout=60.0):   # 발췌
     m = self.cfg["moveit"]
     req.max_velocity_scaling_factor = float(m["velocity_scaling"])    # 0.35
     req.start_state.is_diff = True
+```
+
+### 관절 제약 ± 0.001 rad 로 보내기 - moveit_client.py move_joints 함수 발췌
+
+```python
+# moveit_client.py move_joints (이어서)
     c = Constraints(name="skill")
     for name, value in zip(self.arm_joints(side), positions):
         c.joint_constraints.append(JointConstraint(joint_name=name, position=float(value),
@@ -232,7 +250,7 @@ def move_joints(self, side, positions, timeout=60.0):   # 발췌
     result = wait(handle.get_result_async(), timeout, "move_action result")
 ```
 
-### Cartesian path - moveit_client.py move_cartesian 함수 발췌
+### Cartesian path 요청 - moveit_client.py move_cartesian 함수 발췌
 
 ```python
 # warehouse_skills/moveit_client.py
@@ -245,6 +263,12 @@ def move_cartesian(self, side, waypoints, timeout=60.0):   # 발췌
     req.max_step = float(m["cartesian_step"])                        # 1 cm 마다 IK
     req.jump_threshold = 0.0
     req.avoid_collisions = True
+```
+
+### 경로 비율 확인 후 실행 - moveit_client.py move_cartesian 함수 발췌
+
+```python
+# moveit_client.py move_cartesian (이어서)
     res = wait(self.cartesian.call_async(req), 10.0, "compute_cartesian_path")
     if res.error_code.val != MoveItErrorCodes.SUCCESS or res.fraction < float(m["cartesian_min_fraction"]):
         raise SkillError(f"Cartesian path covers only {res.fraction * 100:.0f}% (error_code={res.error_code.val})")
@@ -268,7 +292,7 @@ def gripper(self, side, position, effort, timeout=15.0):
     return result                                                      # position · reached_goal · stalled
 ```
 
-### 그리퍼가 끝나는 판정 - actions.py Controllers.update 함수 발췌
+### 그리퍼 도달 · 멈춤 판정 - actions.py Controllers.update 함수 발췌
 
 ```python
 # mobile_openarm_mujoco/actions.py
@@ -279,6 +303,12 @@ else:   # 그리퍼 (발췌)
         state["last_motion"] = p.data.time
         state["last_position"] = position
     stalled = p.data.time - state["last_motion"] > 1.0 and not reached                            # 1 s 정지
+```
+
+### 그리퍼 결과 채우고 끝내기 - actions.py Controllers.update 함수 발췌
+
+```python
+# actions.py Controllers.update (이어서)
     result.position = position
     result.reached_goal = reached
     result.stalled = stalled

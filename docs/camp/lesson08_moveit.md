@@ -138,7 +138,7 @@ time ./scripts/mobile_openarm arm both ready          # arm <left|right|both> <t
 
 ![joint_goal.py 흐름](lesson08_joint_goal_flow.png){width=1000}
 
-### 이름 자세로 MoveGroup 보내기 - joint_goal.py main 함수 발췌
+### MoveGroup 요청 만들기 - joint_goal.py main 함수 발췌
 
 ```python
 # mobile_openarm_moveit_config/joint_goal.py
@@ -153,6 +153,12 @@ def main(args=None):   # 발췌
     req.max_velocity_scaling_factor = 0.3                  # joint_limits.yaml 의 최대 속도 × 0.3
     req.max_acceleration_scaling_factor = 0.3
     req.start_state.is_diff = True                         # 시작 = 현재 관절
+```
+
+### SRDF 이름 자세를 관절 목표로 - joint_goal.py main 함수 발췌
+
+```python
+# joint_goal.py main (이어서)
     constraint = Constraints(name=options.pose)
     for side in ["left", "right"] if options.side == "both" else [options.side]:
         state = srdf.find(f"group_state[@group='{side}_arm'][@name='{options.pose}']")
@@ -160,6 +166,12 @@ def main(args=None):   # 발췌
             constraint.joint_constraints.append(JointConstraint(
                 joint_name=j.get("name"), position=float(j.get("value")),
                 tolerance_above=0.01, tolerance_below=0.01, weight=1.0))
+```
+
+### 계획 · 실행 요청과 결과 코드 - joint_goal.py main 함수 발췌
+
+```python
+# joint_goal.py main (이어서)
     req.goal_constraints = [constraint]
     goal.planning_options.plan_only = options.plan_only    # False = 계획 + 실행
     future = client.send_goal_async(goal)
@@ -167,7 +179,7 @@ def main(args=None):   # 발췌
     code = result.result().result.error_code.val           # 1 = SUCCESS, -4 = CONTROL_FAILED
 ```
 
-### 그룹과 이름 자세 - mobile_openarm.srdf 발췌
+### 계획 그룹 - mobile_openarm.srdf 발췌
 
 ```xml
 <!-- mobile_openarm_moveit_config/config/mobile_openarm.srdf (발췌) -->
@@ -181,6 +193,12 @@ def main(args=None):   # 발췌
   <group name="left_arm" />
   <group name="right_arm" />
 </group>
+```
+
+### 이름 자세 · 엔드이펙터 · 충돌 제외 - mobile_openarm.srdf 발췌
+
+```xml
+<!-- mobile_openarm.srdf (이어서) -->
 <group_state name="ready" group="left_arm">
   <joint name="openarm_left_joint4" value="1.65" />   <!-- 나머지 관절은 0 -->
 </group_state>
@@ -189,7 +207,7 @@ def main(args=None):   # 발췌
 <disable_collisions link1="openarm_left_hand" link2="openarm_left_link7" reason="Adjacent" />  <!-- 110 줄 -->
 ```
 
-### MoveIt 파라미터 - config.py parameters 함수 발췌
+### 로봇 모델 · 운동학 파라미터 - config.py parameters 함수 발췌
 
 ```python
 # mobile_openarm_moveit_config/config.py
@@ -199,6 +217,12 @@ def parameters(urdf=None):   # 발췌
         "robot_description_semantic": (folder / "mobile_openarm.srdf").read_text(),
         "robot_description_kinematics": load("kinematics.yaml"),          # KDL
         "robot_description_planning": load("joint_limits.yaml"),          # 속도 · 가속 한계
+```
+
+### 플래너 · 컨트롤러 · 실행 파라미터 - config.py parameters 함수 발췌
+
+```python
+# config.py parameters (이어서)
         "planning_pipelines": ["ompl"],
         "ompl": load("ompl_planning.yaml"),                               # RRTConnect
         **load("moveit_controllers.yaml"),
@@ -213,7 +237,7 @@ def parameters(urdf=None):   # 발췌
 
 ![moveit_controllers.yaml 과 브리지 액션](lesson08_controllers.png){width=1000}
 
-### moveit_controllers.yaml 발췌
+### 컨트롤러 목록 - moveit_controllers.yaml 발췌
 
 ```yaml
 # mobile_openarm_moveit_config/config/moveit_controllers.yaml (발췌)
@@ -224,6 +248,12 @@ moveit_simple_controller_manager:
   - left_gripper_controller
   - right_joint_trajectory_controller
   - right_gripper_controller
+```
+
+### 팔 · 그리퍼 컨트롤러 정의 - moveit_controllers.yaml 발췌
+
+```yaml
+# moveit_controllers.yaml (이어서)
   left_joint_trajectory_controller:
     type: FollowJointTrajectory
     action_ns: follow_joint_trajectory          # → /left_joint_trajectory_controller/follow_joint_trajectory
@@ -239,7 +269,7 @@ moveit_simple_controller_manager:
 
 ![브리지 액션 서버: goal 검사 → update](lesson08_bridge_goal.png){width=1000}
 
-### 궤적 받기 - actions.py Controllers.goal 함수 발췌
+### 실행 중 · 주행 중이면 거부 - actions.py Controllers.goal 함수 발췌
 
 ```python
 # mobile_openarm_mujoco/actions.py
@@ -247,6 +277,12 @@ def goal(self, key, request):   # 발췌
     p = self.physics
     if key in self.reserved or np.max(np.abs(p.twist)) > 0.04 or np.max(np.abs(p.command)) > 0.04:
         return GoalResponse.REJECT                                  # 실행 중 · 베이스가 움직이는 중
+```
+
+### 궤적 검사 후 받기 - actions.py Controllers.goal 함수 발췌
+
+```python
+# actions.py Controllers.goal (이어서)
     try:
         if "trajectory" in key:
             limits = {n: p.model.jnt_range[p.model.joint(n).id] for n in self.names[key]}
@@ -259,7 +295,7 @@ def goal(self, key, request):   # 발췌
     return GoalResponse.ACCEPT
 ```
 
-### 궤적 따라가기 - actions.py Controllers.update 함수 발췌
+### 궤적 점을 목표로 보내기 - actions.py Controllers.update 함수 발췌
 
 ```python
 # mobile_openarm_mujoco/actions.py
@@ -269,6 +305,12 @@ def update(self):   # 발췌: 물리 루프가 매 스텝 부른다
         traj = state["trajectory"]
         desired = traj.sample(t)                                    # 궤적 점 사이 보간
         p.set_targets(state["names"], desired)                      # position 액추에이터 목표
+```
+
+### 성공 · 시간 초과 판정 - actions.py Controllers.update 함수 발췌
+
+```python
+# actions.py Controllers.update (이어서)
         if t >= traj.times[-1] and not self.tolerance_failed(state, traj.positions[-1], True):
             result.error_code = result.SUCCESSFUL                   # 목표 ± 0.035 rad
             self.finish(key, state, result, "succeed")
@@ -282,7 +324,7 @@ def update(self):   # 발췌: 물리 루프가 매 스텝 부른다
 
 ![Hermite 보간 개념도](lesson08_hermite.png){width=1000}
 
-### 보간 - trajectory.py Trajectory.sample 함수
+### 궤적 양 끝 처리 - trajectory.py Trajectory.sample 함수
 
 ```python
 # mobile_openarm_mujoco/trajectory.py
@@ -291,6 +333,12 @@ def sample(self, t):
         return self.positions[0].copy()
     if t >= self.times[-1]:
         return self.positions[-1].copy()
+```
+
+### 구간 찾기와 직선 · Hermite 보간 - trajectory.py Trajectory.sample 함수
+
+```python
+# trajectory.py Trajectory.sample (이어서)
     i = np.searchsorted(self.times, t, side="right") - 1          # t 가 들어 있는 구간
     dt = self.times[i + 1] - self.times[i]
     u = (t - self.times[i]) / dt                                   # 구간 안 위치 0 ~ 1
@@ -306,7 +354,7 @@ def sample(self, t):
 
 ![인터록 세 가지](lesson08_interlock.png){width=1000}
 
-### 주행 명령 받기 - bridge.py receive_command 함수
+### 팔 실행 중이면 정지 - bridge.py receive_command 함수
 
 ```python
 # mobile_openarm_mujoco/bridge.py
@@ -316,6 +364,12 @@ def receive_command(self, msg):
     if self.controllers.reserved or not self.physics.transport_ready():
         self.command = (0.0, 0.0)                                  # 팔 실행 중 · 주행 자세 아님 → 정지
         return
+```
+
+### 속도 한계로 자르기 - bridge.py receive_command 함수
+
+```python
+# bridge.py receive_command (이어서)
     cfg = self.physics.settings["control"]
     self.command = (
         max(-cfg["max_linear"], min(cfg["max_linear"], msg.linear.x)),

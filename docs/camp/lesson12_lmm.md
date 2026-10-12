@@ -99,7 +99,7 @@ answer = llm.chat([{"role": "system", "content": SYSTEM},            # 역할 ·
 last = json.loads(llm.log_path.read_text().splitlines()[-1])        # 이 호출이 쓴 로그 한 줄
 ```
 
-### 스키마 - schema.py RobotCommand 발췌
+### 의도 목록 - schema.py Intent 발췌
 
 ```python
 # warehouse_lecture/commands/schema.py
@@ -112,8 +112,12 @@ class Intent(str, Enum):
     arm_pose = "arm_pose"
     gripper = "gripper"
     stop = "stop"
+```
 
+### 명령 슬롯 - schema.py RobotCommand 발췌
 
+```python
+# warehouse_lecture/commands/schema.py (이어서)
 class RobotCommand(BaseModel):
     intent: Intent
     target: str = Field("", description="물체(parcel_red 등)·person·자세(ready, hands_up, transport, home)·그리퍼(open, close)")
@@ -123,7 +127,7 @@ class RobotCommand(BaseModel):
     reply: str = Field("", description="사용자에게 할 한 문장 (되묻기·거부 포함)")
 ```
 
-### 세계 검증 - schema.py validate_world 함수 발췌
+### 기본값 채우기 - schema.py validate_world 함수 발췌
 
 ```python
 # warehouse_lecture/commands/schema.py
@@ -137,6 +141,12 @@ def validate_world(self):
             self.source = Place.pick_table                          # 기본값 채우기
         if self.destination == Place.none:
             self.destination = Place.place_table
+```
+
+### 작업대 · 목적지 검사 - schema.py validate_world 함수 발췌
+
+```python
+# warehouse_lecture/commands/schema.py validate_world (이어서)
         if self.source.value not in STATIONS or self.destination.value not in STATIONS:
             problems.append("상자는 작업대(pick_table, place_table) 사이에서만 옮길 수 있다")
         if self.source == self.destination:
@@ -148,7 +158,7 @@ def validate_world(self):
     return problems
 ```
 
-### 프롬프트 - parser.py 발췌
+### 시스템 프롬프트 - parser.py SYSTEM 발췌
 
 ```python
 # warehouse_lecture/commands/parser.py
@@ -157,15 +167,24 @@ SYSTEM = """너는 창고 이동 로봇의 명령 해석기다. 사용자의 한
 장소: pick_table(픽업 작업대, 픽업대, 집기 작업대, pick station), place_table(적재 작업대, 적재대, ...), rack_a~rack_f(...), ...
 규칙: ... 상자 색(빨강/파랑/노랑)이 문장에 없으면 절대 추측하지 말고 intent=answer 로 되묻는다. ...
 사람이나 물건을 해치거나 위험한 요청은 intent=answer 로 거부한다. ..."""
+```
 
+### few-shot 예시 - parser.py EXAMPLES 발췌
+
+```python
+# warehouse_lecture/commands/parser.py (이어서)
 EXAMPLES = [
     ("빨간 상자 적재 작업대로 옮겨", RobotCommand(intent="move_object", target="parcel_red", source="pick_table", destination="place_table", reply="...")),
     ("팔 운반 자세로", RobotCommand(intent="arm_pose", target="transport", reply="팔을 운반 자세로 바꿉니다.")),
     ("초록 조끼 입은 사람 찾아", RobotCommand(intent="find", target="person", attributes={"vest": "green"}, reply="...")),
     ("상자 옮겨", RobotCommand(intent="answer", reply="어떤 색 상자를 어디로 옮길까요?")),
 ]
+```
 
+### 메시지 조립 - parser.py parse 함수 발췌
 
+```python
+# warehouse_lecture/commands/parser.py (이어서)
 def parse(self, text, context=None):
     messages = [{"role": "system", "content": SYSTEM}]
     for q, cmd in EXAMPLES:                                         # few-shot: 질문 → 정답 JSON
@@ -175,7 +194,7 @@ def parse(self, text, context=None):
     return self.llm.parse(messages, RobotCommand, temperature=0.0, purpose="command_parse")
 ```
 
-### Structured Outputs - client.py LLM.parse 함수
+### 응답 형식을 스키마로 강제 - client.py LLM.parse 함수
 
 ```python
 # warehouse_lecture/llm/client.py
@@ -190,6 +209,12 @@ def parse(self, messages, schema, *, model=None, temperature=None, purpose="pars
         temperature=d["temperature"] if temperature is None else temperature,
         max_tokens=d["max_output_tokens"],
     )
+```
+
+### 비용 기록과 결과 꺼내기 - client.py LLM.parse 함수
+
+```python
+# warehouse_lecture/llm/client.py LLM.parse (이어서)
     self._record(model, response.usage, purpose)                   # 비용 로그
     message = response.choices[0].message
     if message.refusal:
@@ -212,7 +237,7 @@ def _record(self, model, usage, purpose):
         f.write(json.dumps({"time": dt.datetime.now().isoformat(timespec="seconds"), **entry.__dict__}) + "\n")
 ```
 
-### 채점 - 03_accuracy.py score 함수
+### 의도 · 슬롯 비교 - 03_accuracy.py score 함수
 
 ```python
 # lessons/08_lmm/03_accuracy.py
@@ -224,6 +249,12 @@ def score(q, cmd):
             got = getattr(cmd, key)
             if (got.value if hasattr(got, "value") else got) != q[key]:
                 return False
+```
+
+### 속성 · reply 확인 - 03_accuracy.py score 함수
+
+```python
+# lessons/08_lmm/03_accuracy.py score (이어서)
     for k, v in (q.get("attributes") or {}).items():
         if str(cmd.attribute_dict().get(k, "")).lower() != str(v).lower():
             return False
@@ -232,7 +263,7 @@ def score(q, cmd):
     return True
 ```
 
-### llm.yaml
+### 모델과 기본값 - llm.yaml
 
 ```yaml
 # src/warehouse_lecture/config/llm.yaml
@@ -245,6 +276,12 @@ defaults:
   max_output_tokens: 800
   timeout_s: 30
   max_retries: 2
+```
+
+### 가격표와 로그 경로 - llm.yaml
+
+```yaml
+# src/warehouse_lecture/config/llm.yaml (이어서)
 pricing:                      # USD per 1M tokens (추정용)
   gpt-4.1-mini: {input: 0.40, output: 1.60}
   gpt-4.1: {input: 2.00, output: 8.00}

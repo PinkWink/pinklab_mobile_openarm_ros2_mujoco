@@ -159,7 +159,7 @@ ros2 topic pub -1 /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
 
 ![goal.py 흐름](lesson05_goal_flow.png){width=1000}
 
-### 목표 보내기 - goal.py main 함수 발췌
+### Nav2 액션 서버 기다리기 - goal.py main 함수 발췌
 
 ```python
 # mobile_openarm_navigation/goal.py
@@ -169,12 +169,24 @@ def main(args=None):   # 발췌
     client = ActionClient(node, NavigateToPose, "/navigate_to_pose")
     if not client.wait_for_server(timeout_sec=30.0):
         raise RuntimeError("Nav2 action server did not become available in 30 seconds")
+```
+
+### map 좌표 목표 만들기 - goal.py main 함수 발췌
+
+```python
+# goal.py main (이어서)
     goal = NavigateToPose.Goal()
     goal.pose.header.frame_id = "map"                                   # 목표는 map 좌표
     goal.pose.header.stamp = node.get_clock().now().to_msg()
     goal.pose.pose.position.x, goal.pose.pose.position.y = options.x, options.y
     goal.pose.pose.orientation.z = math.sin(options.yaw / 2)            # yaw → 쿼터니언
     goal.pose.pose.orientation.w = math.cos(options.yaw / 2)
+```
+
+### 목표 보내고 결과 받기 - goal.py main 함수 발췌
+
+```python
+# goal.py main (이어서)
     future = client.send_goal_async(goal)
     rclpy.spin_until_future_complete(node, future, timeout_sec=10)
     handle = future.result()                                            # accepted 확인
@@ -188,7 +200,7 @@ def main(args=None):   # 발췌
 
 ![navigation.launch.py 의 nav 분기](lesson05_nav_branch.png){width=1000}
 
-### Nav2 노드 띄우기 - navigation.launch.py setup 함수 발췌
+### AMCL 초기 위치 정하기 - navigation.launch.py setup 함수 발췌
 
 ```python
 # mobile_openarm_navigation/launch/navigation.launch.py
@@ -198,6 +210,12 @@ def setup(context):   # 발췌
     if initial:                                                          # spawn 값 → AMCL 초기 위치
         x, y, yaw = (float(v) for v in initial.split(","))
         amcl_params.append({"initial_pose": {"x": x, "y": y, "z": 0.0, "yaw": yaw}})
+```
+
+### 지도가 있으면 map_server · amcl 띄우기 - navigation.launch.py setup 함수 발췌
+
+```python
+# navigation.launch.py setup (이어서)
     if mode == "nav":
         if mapfile:
             actions.extend([
@@ -206,6 +224,12 @@ def setup(context):   # 발췌
                 Node(package="nav2_amcl", executable="amcl", name="amcl", parameters=amcl_params),
             ])
             lifecycle += ["map_server", "amcl"]
+```
+
+### Nav2 서버 5개와 lifecycle manager - navigation.launch.py setup 함수 발췌
+
+```python
+# navigation.launch.py setup (이어서)
         for pkg, exe in [("nav2_controller", "controller_server"), ("nav2_planner", "planner_server"),
                          ("nav2_smoother", "smoother_server"), ("nav2_behaviors", "behavior_server"),
                          ("nav2_bt_navigator", "bt_navigator")]:
@@ -220,7 +244,7 @@ def setup(context):   # 발췌
 
 ![nav2.yaml 파라미터](lesson05_params.png){width=1000}
 
-### nav2.yaml
+### AMCL 위치 추정 - nav2.yaml 발췌
 
 ```yaml
 # mobile_openarm_navigation/config/nav2.yaml  (발췌)
@@ -231,6 +255,12 @@ amcl:
     laser_model_type: likelihood_field
     set_initial_pose: true
     initial_pose: {x: 0.0, y: 0.0, z: 0.0, yaw: 0.0}
+```
+
+### 컨트롤러 플러그인 (RotationShim + DWB) - nav2.yaml 발췌
+
+```yaml
+# nav2.yaml (이어서)
 controller_server:
   ros__parameters:
     controller_frequency: 15.0
@@ -238,12 +268,24 @@ controller_server:
       plugin: nav2_rotation_shim_controller::RotationShimController
       primary_controller: dwb_core::DWBLocalPlanner
       rotate_to_heading_angular_vel: 0.6
+```
+
+### 속도 · 가속 한계와 critic - nav2.yaml 발췌
+
+```yaml
+# nav2.yaml controller_server.FollowPath (이어서)
       max_vel_x: 0.3
       max_vel_theta: 0.65
       acc_lim_x: 0.4
       sim_time: 1.7
       xy_goal_tolerance: 0.08
       critics: [RotateToGoal, Oscillation, ObstacleFootprint, GoalAlign, PathAlign, PathDist, GoalDist]
+```
+
+### local costmap 과 footprint - nav2.yaml 발췌
+
+```yaml
+# nav2.yaml (이어서)
 local_costmap:
   local_costmap:
     ros__parameters:
@@ -254,6 +296,12 @@ local_costmap:
       plugins: [obstacle_layer, inflation_layer]
       inflation_layer: {plugin: nav2_costmap_2d::InflationLayer, cost_scaling_factor: 3.0, inflation_radius: 0.55}
       footprint: '[[0.38,0.32],[0.38,-0.32],[-0.38,-0.32],[-0.38,0.32]]'
+```
+
+### 전역 경로 planner - nav2.yaml 발췌
+
+```yaml
+# nav2.yaml (이어서)
 planner_server:
   ros__parameters:
     GridBased: {plugin: nav2_navfn_planner::NavfnPlanner, tolerance: 0.15, use_astar: true, allow_unknown: true}

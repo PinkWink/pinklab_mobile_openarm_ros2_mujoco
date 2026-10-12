@@ -96,7 +96,7 @@ python docs/camp/avoid_scenario.py --mode headon     # 새로 띄운 직후에 �
 
 ![nav2.yaml 파라미터](lesson06_params.png){width=1000}
 
-### 장애물 칠하기 - nav2.yaml local_costmap 발췌
+### 로봇을 따라다니는 5 m 창 - nav2.yaml local_costmap 발췌
 
 ```yaml
 # mobile_openarm_navigation/config/nav2.yaml  (발췌)
@@ -111,6 +111,12 @@ local_costmap:
       height: 5
       resolution: 0.05
       plugins: [obstacle_layer, inflation_layer]
+```
+
+### 라이다로 장애물 칠하고 지우기 - nav2.yaml local_costmap 발췌
+
+```yaml
+# nav2.yaml local_costmap (이어서)
       obstacle_layer:
         plugin: nav2_costmap_2d::ObstacleLayer
         observation_sources: scan
@@ -121,6 +127,12 @@ local_costmap:
           marking: true               # 레이가 멈춘 칸을 막힘으로
           raytrace_max_range: 20.0
           obstacle_max_range: 19.5
+```
+
+### 장애물 부풀리기와 footprint - nav2.yaml local_costmap 발췌
+
+```yaml
+# nav2.yaml local_costmap (이어서)
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         cost_scaling_factor: 3.0
@@ -128,7 +140,7 @@ local_costmap:
       footprint: '[[0.38,0.32],[0.38,-0.32],[-0.38,-0.32],[-0.38,0.32]]'
 ```
 
-### RViz 표시 추가 - navigation.rviz 발췌
+### Global · Local Costmap 표시 추가 - navigation.rviz 발췌
 
 ```yaml
 # mobile_openarm_navigation/config/navigation.rviz  (발췌: 이번에 추가한 표시)
@@ -142,6 +154,12 @@ local_costmap:
       Topic: {Value: /local_costmap/costmap, Durability Policy: Transient Local}
       Color Scheme: costmap
       Alpha: 0.7
+```
+
+### Footprint · DWB 궤적 · Local Plan 표시 추가 - navigation.rviz 발췌
+
+```yaml
+# navigation.rviz (이어서)
     - Class: rviz_default_plugins/Polygon
       Name: Footprint
       Topic: {Value: /local_costmap/published_footprint}

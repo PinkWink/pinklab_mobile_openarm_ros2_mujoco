@@ -97,7 +97,7 @@ source scripts/env.sh
 
 ## 3. 코드와 설정
 
-### 단계와 계획 - plan.py 발췌
+### 단계 종류 - plan.py StepAction 발췌
 
 ```python
 # warehouse_lecture/commands/plan.py
@@ -110,22 +110,30 @@ class StepAction(str, Enum):
     gripper = "gripper"
     report = "report"
     answer = "answer"
+```
 
+### 한 단계 - plan.py PlanStep 발췌
 
+```python
+# warehouse_lecture/commands/plan.py (이어서)
 class PlanStep(BaseModel):
     action: StepAction
     target: str = Field("", description="pick/detect: parcel_red|parcel_blue|parcel_yellow|person 등 ...")
     location: Place = Field(Place.none, description="navigate: 목적지. pick: 물체가 있는 작업대. place: 놓을 작업대")
     note: str = Field("", description="이 단계를 한국어 한 구절로 (예: 픽업 작업대로 이동)")
+```
 
+### 계획 전체 - plan.py RobotPlan 발췌
 
+```python
+# warehouse_lecture/commands/plan.py (이어서)
 class RobotPlan(BaseModel):
     summary: str = Field("", description="계획 전체를 한국어 한 문장으로")
     steps: List[PlanStep] = Field(default_factory=list, description="실행 순서대로. 되묻기·거부·단순 답변이면 비운다")
     reply: str = Field("", description="사용자에게 할 한 문장")
 ```
 
-### 계획 검증 - plan.py validate_world 함수 발췌
+### 현재 위치 따라가기 - plan.py validate_world 함수 발췌
 
 ```python
 # warehouse_lecture/commands/plan.py
@@ -134,6 +142,12 @@ for step in self.steps:
     a = step.action
     if a == StepAction.navigate:
         here = step.location                                       # 지금 어디 있나
+```
+
+### pick 검사와 빠진 이동 끼워 넣기 - plan.py validate_world 함수 발췌
+
+```python
+# warehouse_lecture/commands/plan.py validate_world (이어서)
     elif a == StepAction.pick:
         if step.location == Place.none:
             step.location = here if (here and here.value in STATIONS) else Place.pick_table
@@ -143,6 +157,12 @@ for step in self.steps:
             fixed.append(PlanStep(action=StepAction.navigate, location=step.location, note="... (자동 추가)"))
             here = step.location
         held = step.target                                         # 무엇을 들었나
+```
+
+### place 검사와 끝 상태 확인 - plan.py validate_world 함수 발췌
+
+```python
+# warehouse_lecture/commands/plan.py validate_world (이어서)
     elif a == StepAction.place:
         if held is None:
             problems.append("든 것이 없는데 놓으려 한다 (pick 단계가 먼저 필요)")
@@ -167,7 +187,7 @@ self.steps = fixed
 - 사람이나 물건을 해치거나 위험한 요청, 로봇이 할 수 없는 일(계단, 건물 밖)은 steps 를 비우고 reply 로 거부한다."""
 ```
 
-### 단계 실행 - task_manager.py execute_plan 함수 발췌
+### 서버 검증과 진행 알림 - task_manager.py execute_plan 함수 발췌
 
 ```python
 # warehouse_lecture/commands/task_manager.py
@@ -180,7 +200,12 @@ for i, step in enumerate(plan.steps):
         handle.publish_feedback(ExecutePlan.Feedback(step=int(_i), total=int(total), action=_step.action.value, phase=phase, detail=detail))
         if handle.is_cancel_requested or self.cancel_flag:
             raise CommandError("취소됨")
+```
 
+### 단계별 실행과 실패 단계 기록 - task_manager.py execute_plan 함수 발췌
+
+```python
+# warehouse_lecture/commands/task_manager.py execute_plan (이어서)
     feedback("start", step.note or step.describe())
     try:
         said.append(self.run_step(step, feedback))                 # navigate · detect · pick · place · ...
@@ -189,6 +214,12 @@ for i, step in enumerate(plan.steps):
         raise CommandError(f"{i + 1}단계({step.note or step.describe()}) 실패: {error}")
     result.steps_done = int(i + 1)
 ...
+```
+
+### 실패 문장 만들기 - task_manager.py execute_plan 함수 발췌
+
+```python
+# warehouse_lecture/commands/task_manager.py execute_plan (이어서)
 except CommandError as error:
     done = f"{result.steps_done}단계까지 마쳤지만 " if result.steps_done else ""
     result.spoken = f"{done}실패했습니다: {error}"
@@ -196,7 +227,7 @@ except CommandError as error:
         result.spoken += f" {TARGET_KO.get(self.held, self.held)}를 아직 들고 있습니다."
 ```
 
-### detect 와 pick - task_manager.py 발췌
+### detect: 카메라로 찾기 - task_manager.py step_detect 발췌
 
 ```python
 # warehouse_lecture/commands/task_manager.py
@@ -211,8 +242,12 @@ def step_detect(self, step, feedback):
         hits = self.matching_detections(cmd)
     if not hits:
         raise CommandError(f"{what}{subject_particle(what)} 카메라에 보이지 않는다")
+```
 
+### pick: PickPlace 액션 호출 - task_manager.py step_pick 발췌
 
+```python
+# warehouse_lecture/commands/task_manager.py (이어서)
 def step_pick(self, step, feedback):
     self.arms_to("transport", feedback)
     goal = PickPlace.Goal(object=step.target[7:], from_station=step.location.value, to_station="", arm="", phase="pick")
@@ -222,7 +257,7 @@ def step_pick(self, step, feedback):
     self.held = step.target
 ```
 
-### 되묻기와 확인 - dialog.py PlanDialogManager.handle 함수
+### 확인 대기와 계획 만들기 - dialog.py PlanDialogManager.handle 함수
 
 ```python
 # warehouse_lecture/commands/dialog.py
@@ -233,6 +268,12 @@ def handle(self, text):
     plan = self.parser.parse(utterance, context=self.context)
     problems = plan.validate_world()
     self._remember(utterance, plan)
+```
+
+### 되묻기 · 확인 · 실행 분기 - dialog.py PlanDialogManager.handle 함수
+
+```python
+# warehouse_lecture/commands/dialog.py handle (이어서)
     if not plan.steps or problems:
         reply = plan.reply or ("; ".join(problems) if problems else "")
         asks = bool(problems) or any(k in reply for k in ("?", "까요", "알려", "말씀", "어떤", "어디", "무엇", "무슨", "구체적"))
@@ -261,7 +302,7 @@ print(f"<< {status} success={r.success} steps_done={r.steps_done}/{len(plan.step
 print(f"   spoken: {r.spoken}")
 ```
 
-### ExecutePlan.action
+### 목표와 결과 - ExecutePlan.action
 
 ```text
 # src/warehouse_interfaces/action/ExecutePlan.action
@@ -274,6 +315,12 @@ string message
 string spoken            # 사용자에게 보여 줄 결과 문장
 int32 steps_done         # 성공한 단계 수
 int32 failed_step        # 실패한 단계 번호 (0 부터), 없으면 -1
+```
+
+### 피드백 - ExecutePlan.action
+
+```text
+# src/warehouse_interfaces/action/ExecutePlan.action (이어서)
 ---
 int32 step               # 현재 단계 (0 부터)
 int32 total

@@ -158,7 +158,7 @@ cat artifacts/maps/my_warehouse.yaml
 
 ![navigation.launch.py 의 분기](lesson04_launch_branch.png){width=1000}
 
-### navigation.launch 부르기 - warehouse.launch.py setup 함수 발췌
+### slam · nav 일 때 navigation.launch 부르기 - warehouse.launch.py setup 함수 발췌
 
 ```python
 # mobile_openarm_bringup/launch/warehouse.launch.py
@@ -172,6 +172,12 @@ def setup(context):   # 발췌
                 launch_arguments={"mode": mode, "map": LaunchConfiguration("map").perform(context), ...}.items(),
             )
         )
+```
+
+### RViz 띄우기와 Fixed Frame 고르기 - warehouse.launch.py setup 함수 발췌
+
+```python
+# warehouse.launch.py setup (이어서)
     if moveit:
         ...                                               # MoveIt 이 자기 RViz 를 띄운다
     elif rviz:
@@ -181,7 +187,7 @@ def setup(context):   # 발췌
                             parameters=[{"use_sim_time": True}]))
 ```
 
-### slam_toolbox 붙이기 - navigation.launch.py setup 함수 발췌
+### slam_toolbox launch 포함하기 - navigation.launch.py setup 함수 발췌
 
 ```python
 # mobile_openarm_navigation/launch/navigation.launch.py
@@ -196,6 +202,12 @@ def setup(context):   # 발췌
                 PythonLaunchDescriptionSource(
                     str(Path(get_package_share_directory("slam_toolbox")) / "launch/online_async_launch.py")
                 ),
+```
+
+### slam_toolbox 에 넘기는 인자 - navigation.launch.py setup 함수 발췌
+
+```python
+# navigation.launch.py setup (이어서)
                 launch_arguments={
                     "use_sim_time": "true",                                  # /clock 기준
                     "autostart": "true",                                     # lifecycle 을 바로 active 로
@@ -211,7 +223,7 @@ def setup(context):   # 발췌
 
 ![slam.yaml 파라미터](lesson04_params.png){width=1000}
 
-### slam.yaml
+### 좌표계와 입력 토픽 - slam.yaml 발췌
 
 ```yaml
 # mobile_openarm_navigation/config/slam.yaml  (발췌)
@@ -224,6 +236,12 @@ slam_toolbox:
     map_frame: map
     base_frame: base_footprint
     scan_topic: /scan
+```
+
+### 지도 해상도 · 갱신 주기 · 루프 클로징 - slam.yaml 발췌
+
+```yaml
+# slam.yaml (이어서)
     resolution: 0.05
     max_laser_range: 20.0
     minimum_time_interval: 0.1
