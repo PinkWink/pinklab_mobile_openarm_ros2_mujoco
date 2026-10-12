@@ -1,6 +1,6 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-10-12 (⑬ 웹 대시보드). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-10-12 저녁 (⑬ 웹 대시보드 + 광고 영상 2편, 세션 종료). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
 ## 0-000000000000000000000. 2026-10-12: ⑬ MuJoCo Web Dashboard — 다음 세션은 여기부터
 
@@ -10,10 +10,12 @@
 - Flask 를 requirements-lecture.txt 에 추가 (apt python3-flask 는 어떤 패키지 의존성도 아니라 새 PC 에 없을 수 있음; 04 순찰 대시보드도 해당).
 - Confluence 새 하위 페이지 3721003209 "MuJoCo Web Dashboard: 브라우저에서 작업 지령" (v1, 부모 3692396550) ← `docs/camp/lesson14_web_dashboard.md` (h3 38) + `lesson14_*.png` 19장. 그림: `python3 docs/camp/draw_lesson14_figures.py --shots 11` (개념 5 + 레이아웃 + 시간 흐름; 화면 캡처는 shot() 으로), 터미널: `python3 docs/camp/render_lesson14_terminals.py`. 캡처 도구 `docs/camp/cdp_capture.py` (headless Chrome DevTools, 패키지 없이 websocket 직접 구현). 데이터 `artifacts/dev/l13dash/` (final/f*.png 185장, sim/tm/server.log, final_*.log).
 - 실측 (최종 녹화): 빨강 5/5 243 s (이동 25 · 확인 <1 · 집기 98 · 이동 43 · 놓기 78), 랙 C 보고 2/2 확인 없이, 되묻기 → 취소 (집기 단계에서 canceled, 나머지 skipped). LLM 합계 $0.005.
+- 광고 영상 2편 (저장소 밖 `/home/pw/mujoco_ros2/promo/pinklab_part2_arm_llm_dashboard.mp4`, 35.4 s): 로봇팔 · LLM · 작업 지령 대시보드. 대시보드로 파랑 5/5 · 랙 C 보고 · 빨강 취소를 새로 실행해 상태를 기록(`promo/state_record.py` → footage2/run.pkl)하고 `promo/replay.py` 로 30 fps 오프라인 재렌더, 편집 `promo/compose2.py`. 사용자 확인 전 (손목 카메라의 forklift 오검출 박스 그대로 둠).
 - 또 오늘: 저사양 PC (lite 에서 뷰어 그림자 끔 · RViz 15 FPS, scripts/check_gpu.py, 설정 페이지 7절), 설치 스크립트 수정 (cffi, warehouse_skills 빌드), 강의 페이지 13개 코드 블록 12 줄 이하로 분할.
 
 **관찰 (고치지 않음 · 사용자 결정)**
 - 계획기 되묻기: "상자 옮겨" → "노란 거" 다음에 기본 목적지를 안 쓰고 "출발 작업대와 도착 작업대를 알려주세요" 로 한 번 더 물음. 오늘 4 번 중 3 번 (모두 앞에 다른 계획이 있었을 때). "픽업대에서 적재대로" 라고 답하면 진행. ⑭ 전에 plan_parser 프롬프트 · context 처리 손볼지 결정.
+- YOLO 가 손목 카메라에 보이는 그리퍼를 forklift 로 검출 → 랙 C 보고가 "지게차 두 대가 보입니다" (실제는 지게차 1 대 · 다른 곳). report 단계가 손목 카메라 검출을 빼거나 YOLO 를 head/base 카메라로 한정할지 결정.
 - 이전부터: LLM 계획기에 세계 상태(상자 위치) 넣을지, llm.yaml 모델(gpt-4.1-mini 유지 중).
 
 **작업 요령 (오늘 배운 것)**
