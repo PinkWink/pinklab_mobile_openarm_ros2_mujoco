@@ -36,7 +36,7 @@ echo "== .env"
 echo "== build"
 export MOBILE_ENV_MODE=native
 python -m colcon build --symlink-install --base-paths src \
-  --packages-up-to mobile_openarm_bringup warehouse_lecture
+  --packages-up-to mobile_openarm_bringup warehouse_lecture warehouse_skills
 
 echo "== quick test (no simulator)"
 source install/local_setup.bash
