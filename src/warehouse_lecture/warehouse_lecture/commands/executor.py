@@ -74,7 +74,7 @@ class CommandExecutor(Node):
             except Exception as error:  # noqa: BLE001 - no key: report/answer fall back to templates
                 self.get_logger().warning(f"LLM unavailable ({error}); report/answer use templates")
         self.server = ActionServer(self, ExecuteCommand, "/execute_command", execute_callback=self.execute, goal_callback=self.on_goal,
-                                   cancel_callback=lambda _: CancelResponse.ACCEPT, callback_group=group)
+                                   cancel_callback=self.on_cancel, callback_group=group)
         self.get_logger().info("ExecuteCommand server ready (/execute_command)")
 
     # --- goal handling --------------------------------------------------------
@@ -82,6 +82,11 @@ class CommandExecutor(Node):
         if request.command.intent == Intent.stop.value:
             return GoalResponse.ACCEPT
         return GoalResponse.ACCEPT if not self.busy.locked() else GoalResponse.REJECT
+
+    def on_cancel(self, _request):
+        """Cancel request from the client: call() polls this flag and cancels the running sub-action."""
+        self.cancel_flag = True
+        return CancelResponse.ACCEPT
 
     def execute(self, handle):
         cmd = RobotCommand.from_msg(handle.request.command)
@@ -137,7 +142,15 @@ class CommandExecutor(Node):
     def call(self, client, goal, timeout, name, on_feedback=None):
         if not client.wait_for_server(timeout_sec=10.0):
             raise CommandError(f"{name} 서버가 없다")
-        future = client.send_goal_async(goal, feedback_callback=on_feedback)
+        def relay(msg):
+            # Runs on a ROS callback thread: a CommandError ("취소됨") raised here would only reach the executor.
+            # Turn it into the flag so the loop below cancels the sub-action on the calling thread.
+            try:
+                on_feedback(msg)
+            except CommandError:
+                self.cancel_flag = True
+
+        future = client.send_goal_async(goal, feedback_callback=relay if on_feedback else None)
         self.wait(future, 10.0)
         gh = future.result()
         if gh is None or not gh.accepted:

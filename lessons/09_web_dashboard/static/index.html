@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/desk/desk.css">
+</head>
+<body>
+<header>
+  <div class="brand">Mobile OpenArm · 작업 지령 대시보드</div>
+  <div class="chips">
+    <span class="chip" id="conn">연결 중…</span>
+    <span class="chip">sim <b id="simtime">-</b> s</span>
+    <span class="chip">실시간 비율 <b id="rtf">-</b></span>
+    <span class="chip">LLM <b id="cost">$0.0000</b></span>
+  </div>
+</header>
+
+<main>
+  <section class="card map-card">
+    <div class="card-head">
+      <h2>지도</h2>
+      <div class="legend">
+        <span><i class="sw truth"></i>실제 (ground truth)</span>
+        <span><i class="sw amcl"></i>AMCL</span>
+        <span><i class="sw plan"></i>/plan</span>
+        <span><i class="sw scan"></i>/scan</span>
+        <span><i class="sw person"></i>사람</span>
+        <span><i class="sw place"></i>계획의 장소</span>
+      </div>
+    </div>
+    <canvas id="map"></canvas>
+  </section>
+
+  <section class="side">
+    <div class="card">
+      <div class="card-head">
+        <h2>작업 지령</h2>
+        <span class="state" id="phase">idle</span>
+      </div>
+      <ul class="chat" id="chat"></ul>
+      <form class="say" id="say">
+        <input id="text" autocomplete="off" placeholder="예: 빨간 상자 적재대로 옮겨">
+        <button id="send">보내기</button>
+      </form>
+      <div class="quick" id="quick">
+        <button type="button" class="ghost">빨간 상자 적재대로 옮겨</button>
+        <button type="button" class="ghost">랙 C 가서 뭐 있는지 알려줘</button>
+        <button type="button" class="ghost">응</button>
+        <button type="button" class="ghost">아니</button>
+      </div>
+      <div class="progress"><div id="bar"></div></div>
+      <ol class="steps" id="steps"></ol>
+      <div class="detail" id="detail"></div>
+      <div class="buttons">
+        <button id="task-cancel" class="ghost" disabled>실행 취소</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>로봇</h2></div>
+      <div class="kv">
+        <div><span>속도 v</span><b id="v">-</b></div>
+        <div><span>회전 w</span><b id="w">-</b></div>
+        <div><span>AMCL − 실제</span><b id="erra">-</b></div>
+        <div><span>odom − 실제</span><b id="erro">-</b></div>
+        <div><span>AMCL 표준편차</span><b id="cov">-</b></div>
+        <div><span>보이는 사람</span><b id="people">-</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>카메라</h2><span class="hint">박스 = /vision/detections</span></div>
+      <div class="cams" id="cams"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>이벤트</h2></div>
+      <ul class="log" id="log"></ul>
+    </div>
+  </section>
+</main>
+<script src="/static/app.js"></script>
+<script src="/desk/desk.js"></script>
+</body>
+</html>

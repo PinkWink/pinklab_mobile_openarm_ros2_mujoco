@@ -74,7 +74,7 @@ class PickPlaceServer(Node):
             "/pick_place",
             execute_callback=self.execute,
             goal_callback=lambda _: GoalResponse.ACCEPT if not self.busy.locked() else GoalResponse.REJECT,
-            cancel_callback=lambda _: CancelResponse.ACCEPT,
+            cancel_callback=self.on_cancel,
             callback_group=ReentrantCallbackGroup(),
         )
         self.get_logger().info("PickPlace server ready (/pick_place); waiting for MoveIt and Nav2")
@@ -315,6 +315,11 @@ class PickPlaceServer(Node):
             self.held = None
 
     # --- action -----------------------------------------------------------
+    def on_cancel(self, _request):
+        """Stop the base loops (dock, turn, drive, Nav2 wait) at once; the arm motions end on their own."""
+        self.nav.cancel_requested = True
+        return CancelResponse.ACCEPT
+
     def execute(self, handle):
         goal = handle.request
         result = PickPlace.Result()

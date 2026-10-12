@@ -1,8 +1,30 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-10-10 (세션 종료 hand-off). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-10-12 (⑬ 웹 대시보드). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
-## 0-00000000000000000000. 2026-10-10 hand-off (세션 종료) — 다음 세션은 여기부터
+## 0-000000000000000000000. 2026-10-12: ⑬ MuJoCo Web Dashboard — 다음 세션은 여기부터
+
+**한 일**
+- 새 모듈 `lessons/09_web_dashboard/` (README, server.py, static/index.html · desk.js · desk.css). 04 대시보드(`lessons/04_navigation/dashboard/server.py` RobotState · make_app, `static/app.js`, frame_tap)를 importlib 로 그대로 불러 쓰고, POST /api/say (→ 대화 스레드 → PlanDialogManager → /execute_plan), POST /api/task_cancel, SSE 의 task(chat · steps · feedback · result · cost)를 더함. 04 app.js 는 순찰 버튼이 있을 때만 바인딩하도록 한 줄 가드.
+- **버그 수정 (취소)**: Task Manager 가 /execute_plan · /execute_command 의 cancel 요청을 받아도 cancel_flag 를 안 세워서, 피드백 콜백 안의 "취소됨" 예외가 executor 로 사라지고 계획이 계속 감. `executor.py` on_cancel + call() 의 피드백 relay, `pick_place_server.py` on_cancel → nav.cancel_requested, `nav_client.py` turn · drive 가 취소 시 stop + 예외. 취소 결과 문장 "N단계까지 마치고 취소했습니다." 실측: 취소 → PickPlace 정지 0.4 s (팔 동작 중이면 그 동작 끝까지 약 7 s). 취소 뒤 같은 지령 재실행 5/5 성공. pytest 41 passed.
+- Flask 를 requirements-lecture.txt 에 추가 (apt python3-flask 는 어떤 패키지 의존성도 아니라 새 PC 에 없을 수 있음; 04 순찰 대시보드도 해당).
+- Confluence 새 하위 페이지 3721003209 "MuJoCo Web Dashboard: 브라우저에서 작업 지령" (v1, 부모 3692396550) ← `docs/camp/lesson14_web_dashboard.md` (h3 38) + `lesson14_*.png` 19장. 그림: `python3 docs/camp/draw_lesson14_figures.py --shots 11` (개념 5 + 레이아웃 + 시간 흐름; 화면 캡처는 shot() 으로), 터미널: `python3 docs/camp/render_lesson14_terminals.py`. 캡처 도구 `docs/camp/cdp_capture.py` (headless Chrome DevTools, 패키지 없이 websocket 직접 구현). 데이터 `artifacts/dev/l13dash/` (final/f*.png 185장, sim/tm/server.log, final_*.log).
+- 실측 (최종 녹화): 빨강 5/5 243 s (이동 25 · 확인 <1 · 집기 98 · 이동 43 · 놓기 78), 랙 C 보고 2/2 확인 없이, 되묻기 → 취소 (집기 단계에서 canceled, 나머지 skipped). LLM 합계 $0.005.
+- 또 오늘: 저사양 PC (lite 에서 뷰어 그림자 끔 · RViz 15 FPS, scripts/check_gpu.py, 설정 페이지 7절), 설치 스크립트 수정 (cffi, warehouse_skills 빌드), 강의 페이지 13개 코드 블록 12 줄 이하로 분할.
+
+**관찰 (고치지 않음 · 사용자 결정)**
+- 계획기 되묻기: "상자 옮겨" → "노란 거" 다음에 기본 목적지를 안 쓰고 "출발 작업대와 도착 작업대를 알려주세요" 로 한 번 더 물음. 오늘 4 번 중 3 번 (모두 앞에 다른 계획이 있었을 때). "픽업대에서 적재대로" 라고 답하면 진행. ⑭ 전에 plan_parser 프롬프트 · context 처리 손볼지 결정.
+- 이전부터: LLM 계획기에 세계 상태(상자 위치) 넣을지, llm.yaml 모델(gpt-4.1-mini 유지 중).
+
+**작업 요령 (오늘 배운 것)**
+- `&` 로 띄운 프로세스는 SIGINT 를 무시한 채로 시작한다 (비대화형 bash). 테스트 하네스에서 서버를 끌 때는 SIGTERM. 학생은 전경에서 Ctrl+C 라 문제 없음.
+- cdp_capture 를 kill 하면 Chrome 이 남아 9333 포트를 잡고, 다음 캡처가 옛 페이지(옛 JS)에 붙는다 → 이제 SIGTERM 처리 + 포트 사용 중이면 시작 거부. desk.js 도 서버 재시작(대화 수 감소) 시 대화창을 비움.
+- `pkill -f <패턴>` 은 그 패턴이 든 내 셸까지 죽인다 → `ps -eo pid,cmd | grep "[x]..."` 로 PID 골라 kill.
+- 프레임 고르기: capture 로그의 시각 ↔ tm.log 의 ROS 시각 ↔ server.log 의 POST 시각을 맞춰 프레임 번호로 바꾸면 빠름.
+
+**다음**: ⑭ Final Mission (`examples/m5_task_plan/04_final_mission.py` 기반, 폴더 `lessons/10_final_project`). 그 뒤 lessons README · INSTALL.md · check_env.sh.
+
+## 0-00000000000000000000. 2026-10-10 hand-off (세션 종료)
 
 **상태**
 - ROS 프로세스 · ros2 daemon · task_manager 모두 종료 (task_manager 는 cleanup_ros.sh 가 안 잡아서 PID 로 끔).

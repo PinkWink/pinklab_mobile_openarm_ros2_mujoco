@@ -22,3 +22,5 @@ ml-dtypes<0.6
 # Ubuntu의 python3-nacl(apt, python3-github 등이 끌어옴)은 cffi를 요구하지만 apt는 cffi-backend만 설치한다.
 # --system-site-packages venv에서 pip check가 실패하지 않도록 cffi를 함께 설치한다.
 cffi>=1.16
+# lessons/04_navigation/dashboard · lessons/09_web_dashboard 웹 서버. apt python3-flask 는 어떤 패키지의 의존성도 아니라 깔려 있다는 보장이 없다.
+flask>=3.0,<4

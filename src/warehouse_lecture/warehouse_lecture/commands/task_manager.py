@@ -17,7 +17,7 @@ Steps:
 import time
 
 import rclpy
-from rclpy.action import ActionServer, CancelResponse, GoalResponse
+from rclpy.action import ActionServer, GoalResponse
 from rclpy.executors import MultiThreadedExecutor
 from action_msgs.msg import GoalStatus
 from warehouse_interfaces.action import ExecutePlan, PickPlace
@@ -41,7 +41,7 @@ class TaskManager(CommandExecutor):
         self.held = None                     # parcel label held after a pick step
         self.plan_server = ActionServer(self, ExecutePlan, "/execute_plan", execute_callback=self.execute_plan,
                                         goal_callback=lambda _: GoalResponse.ACCEPT if not self.busy.locked() else GoalResponse.REJECT,
-                                        cancel_callback=lambda _: CancelResponse.ACCEPT, callback_group=self.group)
+                                        cancel_callback=self.on_cancel, callback_group=self.group)
         self.get_logger().info("ExecutePlan server ready (/execute_plan)")
 
     # --- plan execution -----------------------------------------------------------
@@ -79,8 +79,12 @@ class TaskManager(CommandExecutor):
             handle.succeed()
         except CommandError as error:
             result.success, result.message = False, str(error)
-            done = f"{result.steps_done}단계까지 마쳤지만 " if result.steps_done else ""
-            result.spoken = f"{done}실패했습니다: {error}"
+            if handle.is_cancel_requested:
+                done = f"{result.steps_done}단계까지 마치고 " if result.steps_done else ""
+                result.spoken = f"{done}취소했습니다."
+            else:
+                done = f"{result.steps_done}단계까지 마쳤지만 " if result.steps_done else ""
+                result.spoken = f"{done}실패했습니다: {error}"
             if self.held:
                 result.spoken += f" {TARGET_KO.get(self.held, self.held)}를 아직 들고 있습니다."
             self.get_logger().error(f"plan failed: {error}")

@@ -301,6 +301,9 @@ class NavClient:
         guard = time.monotonic() + 4 * (abs(angle) / speed + 3.0)      # if the simulator stops
         done = 0.0
         while self.now() < deadline and time.monotonic() < guard:
+            if self.cancel_requested:
+                self.stop()
+                raise SkillError("turn cancelled")
             q = self.odom.pose.pose.orientation
             yaw = 2 * math.atan2(q.z, q.w)
             done = math.atan2(math.sin(yaw - yaw0), math.cos(yaw - yaw0))
@@ -323,7 +326,8 @@ class NavClient:
         travelled = 0.0
         while self.now() < deadline and time.monotonic() < guard:
             if self.cancel_requested:
-                break
+                self.stop()
+                raise SkillError("drive cancelled")
             x, y = self._odom_xy()
             travelled = math.hypot(x - x0, y - y0)
             if travelled >= abs(distance) - 0.004:

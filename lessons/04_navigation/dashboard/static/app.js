@@ -168,8 +168,10 @@ async function command(cmd) {
   const r = await fetch("/api/command", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cmd }) });
   log(`명령 전송: ${cmd} (${r.ok ? "ok" : "실패"})`, r.ok ? "" : "bad");
 }
-$("start").onclick = () => command("start");
-$("cancel").onclick = () => command("cancel");
+if ($("start")) {                  // patrol page only (lesson 09 reuses this file without the buttons)
+  $("start").onclick = () => command("start");
+  $("cancel").onclick = () => command("cancel");
+}
 
 let camsReady = false, camsTried = 0;
 const es = new EventSource("/api/stream");
