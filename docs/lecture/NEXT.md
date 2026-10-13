@@ -12,8 +12,11 @@
 - `scripts/check_gpu.py` minimal 측정 · 권장 문구를 sim_config.yaml 기준으로. 설정 페이지 3692331054 v29 (7절 재구성, 그림 4장 새로/갱신).
 - 확인: pytest 41 passed; minimal + locate:=truth `pick red` 150 s · 슬롯 1.1 cm.
 
-**열린 일 (이번 변경과 무관, 기존 코드에서도 재현)**
-- headless `locate:=vision` 으로 `scripts/dev/run_pick.sh red` 가 grasp 에서 실패 ("finger stopped at 15 mm", 상자가 밀림). 같은 상자의 locate dy 가 실행마다 -0.12 ~ -0.26 으로 흔들리고 dx 가 truth 보다 2.5 cm 짧음 (vision 0.495~0.501, truth 0.525). stash 한 기존 코드 · lite 에서도 같음 → 비전 위치 추정 쪽 회귀로 보임. ⑨⑩⑫⑬ 수업 명령이 locate:=vision 이라 우선 확인 필요.
+**해결: headless `locate:=vision` 집기 실패 (기존 버그)**
+- 증상: `scripts/dev/run_pick.sh red` (기본 파이프라인 = ArUco + TruthDetector) 가 grasp 에서 "finger stopped at 15 mm" 로 실패, 상자가 밀림.
+- 원인: 깊이 카메라는 상자의 보이는 면까지 잰다. TruthDetector 는 그 점을 그대로 썼다 → 도킹 후 오차 dx -2.4 cm (반 변 2.25 cm) · z +1.3 cm → 손가락 중심이 상자 앞면보다 0.15 cm 앞, 앞 모서리를 스치며 닫힘. YoloDetector3D (수업 ⑨⑩ 명령) 와 예제 05 · 02 는 이미 HALF_DEPTH 만큼 시선 방향으로 보정하고 있었고, TruthDetector 만 빠져 있었다.
+- 고침: HALF_DEPTH 를 labels.py 로 옮겨 TruthDetector 도 같은 보정. 측정 도구: 검출마다 map 오차 · base_footprint 오차를 기록하는 프로브 (도킹 후 dx -2.4 · dy +1.0 cm 로 일정).
+- 확인 (원점에서 전체 운반, locate:=vision): 빨강 lite 5/5 (슬롯 0.5~3.2 cm), 파랑 2.6 cm, 노랑 2.4 cm, 빨강 minimal 1.4 cm, 수업 YOLO 파이프라인 빨강 2.0 cm. 보정 뒤 z 0.812~0.813 (정답 0.810). pytest 41 passed.
 
 ## 0-000000000000000000000. 2026-10-12: ⑬ MuJoCo Web Dashboard
 

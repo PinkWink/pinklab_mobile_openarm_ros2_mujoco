@@ -22,11 +22,9 @@ from mobile_openarm_mujoco.bridge import stamp as sim_stamp
 
 from ..ros.geometry import MapTransformer, median_depth, pixel_to_optical
 from ..ros.handler_base import WorkerHandler
+from .labels import HALF_DEPTH
 from .yolo import resolve_weights
 
-# Half thickness along the viewing ray: depth hits the visible face, the centre is further.
-HALF_DEPTH = {"parcel_red": 0.0225, "parcel_blue": 0.0225, "parcel_yellow": 0.0225, "person": 0.12, "forklift": 0.5,
-              "pallet": 0.3, "cone": 0.12, "extinguisher": 0.06, "helmet": 0.1, "safety_vest": 0.1}
 FLOOR_CLASSES = ("person", "forklift", "pallet", "cone", "extinguisher")
 
 

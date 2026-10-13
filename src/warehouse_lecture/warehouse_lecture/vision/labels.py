@@ -19,6 +19,10 @@ CLASSES = [
     "cone",
     "extinguisher",
 ]
+# Half thickness along the viewing ray: depth hits the visible face, the centre is further.
+HALF_DEPTH = {"parcel_red": 0.0225, "parcel_blue": 0.0225, "parcel_yellow": 0.0225, "person": 0.12, "forklift": 0.5,
+              "pallet": 0.3, "cone": 0.12, "extinguisher": 0.06, "helmet": 0.1, "safety_vest": 0.1}
+
 PARCEL_COLORS = {"parcel_1": "parcel_red", "parcel_2": "parcel_blue", "parcel_3": "parcel_yellow"}
 
 

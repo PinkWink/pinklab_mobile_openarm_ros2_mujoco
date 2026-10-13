@@ -17,7 +17,7 @@ from mobile_openarm_mujoco.bridge import stamp as sim_stamp
 
 from ..ros.geometry import MapTransformer, median_depth, pixel_to_optical
 from ..ros.handler_base import WorkerHandler
-from .labels import CLASSES, label_frame
+from .labels import CLASSES, HALF_DEPTH, label_frame
 
 
 class TruthDetector(WorkerHandler):
@@ -56,6 +56,10 @@ class TruthDetector(WorkerHandler):
                 if depth is not None:
                     u, v = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
                     point = pixel_to_optical(frame, u, v, depth)
+                if point is not None:
+                    # Depth hits the visible face; move to the centre as YoloDetector3D does
+                    # (without this a parcel lands 2.4 cm short and the fingers miss it).
+                    point = point * (1.0 + HALF_DEPTH.get(CLASSES[cls], 0.05) / np.linalg.norm(point))
                 out.append((name, frame, CLASSES[cls], box, point))
         return out
 
