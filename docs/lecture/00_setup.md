@@ -67,7 +67,7 @@ source .venv-mobile-openarm/bin/activate
   camera_depth:=true camera_segmentation:=true       # 정답 검출기 핸들러 (M1·M3 기준선)
 ```
 
-`profile:=lite`(기본)는 카메라 2대(`base_camera`, `head_camera`), 320×240, 2 FPS로 시작한다. `profile:=full`은 cameras.yaml의 4대·640×480·5 FPS를 쓴다. 개별 인자 `camera_names:=`, `camera_size:=`, `camera_fps:=`가 프로파일보다 우선한다. `actors:=none`을 붙이면 사람·소품 없이 원래 창고로 실행된다.
+실행 설정은 작업 공간 맨 위 `sim_config.yaml`에 있고 실행할 때마다 읽힌다(빌드 불필요, 명령줄 인자가 우선). `profile: lite`(기본)는 카메라 2대(`base_camera`, `head_camera`), 320×240, 2 FPS로 시작한다. `full`은 cameras.yaml의 4대·640×480·5 FPS, `minimal`은 lite에 더해 뷰어 로봇을 충돌 형상으로 그리고 카메라 그림자를 끈다. 개별 항목 `camera_names`, `camera_size`, `camera_fps` 등이 프로파일보다 우선한다. `actors:=none`을 붙이면 사람·소품 없이 원래 창고로 실행된다.
 
 ## 새로 추가된 것 (원본 ZIP 대비)
 

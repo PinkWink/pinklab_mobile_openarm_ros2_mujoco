@@ -25,7 +25,7 @@ class CameraFrame:
 
 
 class CameraRig:
-    def __init__(self, model, data, *, width=640, height=480):
+    def __init__(self, model, data, *, width=640, height=480, shadows=True):
         if (
             not isinstance(width, int)
             or not isinstance(height, int)
@@ -43,6 +43,8 @@ class CameraRig:
         self._closed = False
         self._options = mujoco.MjvOption()
         self._options.geomgroup[1] = 0  # Visible surfaces, not collision proxies.
+        self._options.geomgroup[3] = 1  # Visual meshes moved here by --viewer-simple-meshes.
+        self.shadows = shadows
 
     def _check(self, name=None):
         if self._closed:
@@ -73,6 +75,7 @@ class CameraRig:
         renderer.disable_depth_rendering()
         renderer.disable_segmentation_rendering()
         renderer.update_scene(self.data, camera=name, scene_option=self._options)
+        renderer.scene.flags[mujoco.mjtRndFlag.mjRND_SHADOW] = self.shadows
         rgb = renderer.render().copy()
         depth_m = None
         if depth:

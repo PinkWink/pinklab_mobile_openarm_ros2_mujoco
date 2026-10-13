@@ -16,6 +16,7 @@ fi
 export ROS_HOME="$_WS/.ros/mobile_openarm" ROS_LOG_DIR="$_WS/.ros/mobile_openarm/log"
 export MOBILE_OPENARM_MODEL_DIR="$_WS/artifacts/mobile_generated" PYTHONNOUSERSITE=1
 mkdir -p "$ROS_LOG_DIR" "$MOBILE_OPENARM_MODEL_DIR"
-# ros2 launch 는 자식(MuJoCo bridge)을 launch 프로세스의 인터프리터로 띄우므로 venv python으로 실행해야 한다.
+# warehouse.launch.py 는 활성 venv python 으로 시뮬레이터를 띄우므로 ros2 launch 를 그대로 써도 된다.
+# ros2launch 는 launch 프로세스까지 venv python 으로 실행한다 (다른 launch 파일용).
 ros2launch() { python "$(command -v ros2)" launch "$@"; }
 echo "mobile_openarm env: domain $ROS_DOMAIN_ID, rmw ${RMW_IMPLEMENTATION:-default}, venv $(python -c 'import sys;print(sys.prefix)')"

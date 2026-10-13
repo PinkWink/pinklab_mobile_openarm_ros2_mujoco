@@ -1,8 +1,21 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-10-12 저녁 (⑬ 웹 대시보드 + 광고 영상 2편, 세션 종료). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-10-13 (sim_config.yaml + minimal 프로파일). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
-## 0-000000000000000000000. 2026-10-12: ⑬ MuJoCo Web Dashboard — 다음 세션은 여기부터
+## 0-0000000000000000000000. 2026-10-13: sim_config.yaml 실행 설정 + minimal 프로파일 — 다음 세션은 여기부터
+
+**한 일**
+- 작업 공간 맨 위 `sim_config.yaml`: `warehouse.launch.py` 가 실행할 때마다 읽음 (wrapper · `ros2 launch` 공통, 빌드 불필요). 우선순위 = 명령줄 인자 > 파일 > profile 기본값. 실행 첫머리에 `[sim_config]` 두 줄로 적용 값 출력. `config:=PATH` · `$MOBILE_OPENARM_CONFIG` 로 다른 파일.
+- 프로파일 3개: full / lite(기본) / minimal. minimal = 뷰어 로봇을 충돌 형상으로 (`--viewer-simple-meshes`: 시각 메시를 group 2→3 으로 옮기고 CameraRig 는 group 3 도 그림, 충돌 형상 rgba 불투명) + 카메라 그림자 끔 (`--no-camera-shadows`) + RViz 10 FPS. 내장 그래픽 1280x720: full 19 · lite 121 · minimal 301 FPS, 카메라 한 장 46 → 6 ms.
+- `ros2 launch` 를 그대로 써도 동작: 시뮬레이터를 `$VIRTUAL_ENV` python 으로 띄움 (전에는 /usr/bin/python3 로 떠서 mujoco 없음 → 죽음; ros2launch 함수가 필요했음).
+- 종료 안정화: Ctrl+C 가 프로세스 그룹 + launch 로 두 번 와서 teardown 이 끊기던 것 (KeyboardInterrupt → munmap abort) → teardown 중 SIGINT 무시. 이후 GL 컨텍스트 해제가 뷰어 스레드와 경합 (GLXBadContext · segfault, 약 1/8) → ROS 정리 후 `os._exit(0)` 로 GL 해제 생략. 10/10 깨끗.
+- `scripts/check_gpu.py` minimal 측정 · 권장 문구를 sim_config.yaml 기준으로. 설정 페이지 3692331054 v29 (7절 재구성, 그림 4장 새로/갱신).
+- 확인: pytest 41 passed; minimal + locate:=truth `pick red` 150 s · 슬롯 1.1 cm.
+
+**열린 일 (이번 변경과 무관, 기존 코드에서도 재현)**
+- headless `locate:=vision` 으로 `scripts/dev/run_pick.sh red` 가 grasp 에서 실패 ("finger stopped at 15 mm", 상자가 밀림). 같은 상자의 locate dy 가 실행마다 -0.12 ~ -0.26 으로 흔들리고 dx 가 truth 보다 2.5 cm 짧음 (vision 0.495~0.501, truth 0.525). stash 한 기존 코드 · lite 에서도 같음 → 비전 위치 추정 쪽 회귀로 보임. ⑨⑩⑫⑬ 수업 명령이 locate:=vision 이라 우선 확인 필요.
+
+## 0-000000000000000000000. 2026-10-12: ⑬ MuJoCo Web Dashboard
 
 **한 일**
 - 새 모듈 `lessons/09_web_dashboard/` (README, server.py, static/index.html · desk.js · desk.css). 04 대시보드(`lessons/04_navigation/dashboard/server.py` RobotState · make_app, `static/app.js`, frame_tap)를 importlib 로 그대로 불러 쓰고, POST /api/say (→ 대화 스레드 → PlanDialogManager → /execute_plan), POST /api/task_cancel, SSE 의 task(chat · steps · feedback · result · cost)를 더함. 04 app.js 는 순찰 버튼이 있을 때만 바인딩하도록 한 줄 가드.

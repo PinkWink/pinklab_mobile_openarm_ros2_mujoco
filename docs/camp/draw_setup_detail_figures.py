@@ -152,8 +152,8 @@ def commands():
 def launch_args():
     fig, ax = fig_ax(14, 4.0)
     note(ax, 0.3, 3.8, "launch 인자  (start · drive · slam · moveit 뒤에  인자:=값)", bold=True, fs=12)
-    tiles(ax, [("rviz · viewer · moveit", ["기본 true", "RViz · MuJoCo 창 · MoveIt 기동", "느리면 rviz:=false"], C["blue"]),
-               ("profile", ["기본 lite", "lite: 카메라 2대 320×240 2 FPS", "full: 4대 640×480 5 FPS"], C["yellow"]),
+    tiles(ax, [("rviz · viewer · moveit", ["기본 true · rviz · viewer 는 파일로도", "RViz · MuJoCo 창 · MoveIt 기동", "느리면 rviz:=false"], C["blue"]),
+               ("profile", ["기본 sim_config.yaml 의 lite", "full · lite · minimal", "명령줄 값이 파일보다 우선"], C["yellow"]),
                ("spawn", ["기본 원점", "pick_table · place_table · rack_c …", "또는 X,Y,YAW · AMCL 초기 위치도 함께"], C["green"]),
                ("locate", ["기본 truth (시뮬레이터 정답)", "vision = 카메라 검출", "운반 스킬의 물체 위치"], C["orange"]),
                ("camera_handler", ["기본 LecturePipeline", "시뮬레이터 안 Python 핸들러", "none = 렌더 안 함"], C["purple"]),
@@ -295,8 +295,9 @@ def lesson_readme():
 # ================================================================ 7. config files
 def config_files():
     fig, ax = fig_ax(14, 5.4)
-    note(ax, 0.3, 5.1, "자주 수정하는 설정 (src/ 아래) — YAML만 바꾸면 재시작으로 반영, 새 파일을 추가했으면 build", bold=True, fs=11.5)
-    tiles(ax, [("mobile_openarm_mujoco/worlds", ["actors.yaml  사람 · 소품 배치 · 경로", "warehouse.yaml  랙 · 작업대 · 상자 · 마커"], C["green"]),
+    note(ax, 0.3, 5.1, "자주 수정하는 설정 — YAML만 바꾸면 재시작으로 반영, 새 파일을 추가했으면 build", bold=True, fs=11.5)
+    tiles(ax, [("sim_config.yaml (작업 공간 맨 위)", ["실행 설정: profile · 창 · 그림자 · 카메라", "빌드 없이 실행할 때마다 읽음"], C["red"]),
+               ("mobile_openarm_mujoco/worlds", ["actors.yaml  사람 · 소품 배치 · 경로", "warehouse.yaml  랙 · 작업대 · 상자 · 마커"], C["green"]),
                ("mobile_openarm_mujoco/config", ["mujoco.yaml  물리 · 주행 제한"], C["green"]),
                ("mobile_openarm_description/config", ["cameras.yaml  카메라 위치 · FOV"], C["yellow"]),
                ("mobile_openarm_navigation/config", ["nav2.yaml  Nav2"], C["blue"]),

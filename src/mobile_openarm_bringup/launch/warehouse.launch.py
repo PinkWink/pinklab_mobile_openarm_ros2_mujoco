@@ -24,14 +24,70 @@ from mobile_openarm_description.model import expand_urdf
 
 _lock = None
 
+# Per-profile defaults; sim_config.yaml overrides them, launch arguments override both.
+# "" for camera_* means the cameras.yaml value.
+PROFILES = {
+    "full": dict(viewer_shadows="true", viewer_meshes="visual", camera_shadows="true",
+                 camera_names="", camera_size="", camera_fps="", rviz_fps="30"),
+    "lite": dict(viewer_shadows="false", viewer_meshes="visual", camera_shadows="true",
+                 camera_names="base_camera,head_camera", camera_size="320x240", camera_fps="2", rviz_fps="15"),
+    "minimal": dict(viewer_shadows="false", viewer_meshes="simple", camera_shadows="false",
+                    camera_names="base_camera,head_camera", camera_size="320x240", camera_fps="2", rviz_fps="10"),
+}
+CHOICES = dict(profile=list(PROFILES), viewer=["true", "false"], rviz=["true", "false"],
+               viewer_shadows=["true", "false"], viewer_meshes=["visual", "simple"],
+               camera_shadows=["true", "false"])
+SETTINGS = ["profile", "viewer", "rviz", *PROFILES["full"]]
 
-def rviz_config(path, profile, root):
-    """lite: copy of the RViz config redrawn at 15 FPS instead of 30 (half the GPU load)."""
-    if profile != "lite":
+
+def config_file(context):
+    """config:=PATH, else $MOBILE_OPENARM_CONFIG, else sim_config.yaml in the workspace root."""
+    path = LaunchConfiguration("config").perform(context) or os.environ.get("MOBILE_OPENARM_CONFIG", "")
+    if path:
+        return Path(path).expanduser()
+    # <ws>/install/mobile_openarm_bringup/share/mobile_openarm_bringup
+    return Path(get_package_share_directory("mobile_openarm_bringup")).parents[3] / "sim_config.yaml"
+
+
+def load_settings(context):
+    """Launch argument > sim_config.yaml > profile defaults, read fresh on every launch."""
+    path = config_file(context)
+    data = {}
+    if path.exists():
+        import yaml
+
+        data = yaml.safe_load(path.read_text()) or {}
+    elif LaunchConfiguration("config").perform(context):
+        raise RuntimeError(f"config:={path} not found")
+
+    def pick(key):
+        value = LaunchConfiguration(key).perform(context)
+        if value == "" and data.get(key) is not None:
+            value = data[key]
+            value = str(value).lower() if isinstance(value, bool) else str(value)
+        return value
+
+    s = {k: pick(k) for k in SETTINGS}
+    s["profile"] = s["profile"] or "lite"
+    s["viewer"] = s["viewer"] or "true"
+    s["rviz"] = s["rviz"] or "true"
+    if s["profile"] not in PROFILES:
+        raise RuntimeError(f"profile {s['profile']!r} must be one of {list(PROFILES)} ({path})")
+    for key, default in PROFILES[s["profile"]].items():
+        s[key] = s[key] or default
+    for key, choices in CHOICES.items():
+        if s[key] not in choices:
+            raise RuntimeError(f"{key} {s[key]!r} must be one of {choices} ({path})")
+    return path if path.exists() else None, s
+
+
+def rviz_config(path, fps, root):
+    """A copy of the RViz config redrawn at fps instead of 30 (15 FPS = half the GPU load)."""
+    if fps == "30":
         return str(path)
-    lite = root / f"{path.stem}_lite.rviz"
-    lite.write_text(path.read_text().replace("Frame Rate: 30", "Frame Rate: 15"))
-    return str(lite)
+    copy = root / f"{path.stem}_{fps}fps.rviz"
+    copy.write_text(path.read_text().replace("Frame Rate: 30", f"Frame Rate: {int(fps)}"))
+    return str(copy)
 
 
 def setup(context):
@@ -49,17 +105,24 @@ def setup(context):
         raise RuntimeError(
             "Mobile OpenArm simulator is already running. Stop it before starting another session."
         )
-    viewer = LaunchConfiguration("viewer").perform(context) == "true"
-    rviz = LaunchConfiguration("rviz").perform(context) == "true"
+    config, s = load_settings(context)
+    print(f"[sim_config] {config or 'file not found, profile defaults'}", flush=True)
+    print("[sim_config] " + " ".join(f"{k}={v or '-'}" for k, v in s.items()), flush=True)
+    viewer = s["viewer"] == "true"
+    rviz = s["rviz"] == "true"
     moveit = LaunchConfiguration("moveit").perform(context) == "true"
     mode = LaunchConfiguration("mode").perform(context)
     urdf = expand_urdf()
     path = root / "robot.urdf"
     path.write_text(urdf)
+    # Plain `ros2 launch` runs under /usr/bin/python3 (the ros2 shebang); the simulator
+    # needs the activated venv (scripts/env.sh), which has mujoco.
+    venv = Path(os.environ.get("VIRTUAL_ENV", "")) / "bin/python3"
+    interpreter = str(venv) if os.environ.get("VIRTUAL_ENV") and venv.exists() else sys.executable
     python = (
-        str(Path(sys.executable).parent / "mjpython")
+        str(Path(interpreter).parent / "mjpython")
         if viewer and sys.platform == "darwin"
-        else sys.executable
+        else interpreter
     )
     command = [
         python,
@@ -70,13 +133,13 @@ def setup(context):
         "--output-dir",
         str(root),
     ]
-    profile = LaunchConfiguration("profile").perform(context)
     if viewer:
         command.append("--viewer")
-        if profile == "lite":
-            # Shadows cost one extra pass over the 2.7 M-triangle robot per light;
-            # the viewer drops them, camera images keep them for vision.
+        if s["viewer_shadows"] == "false":
+            # Shadows cost one extra pass over the 2.7 M-triangle robot per light.
             command.append("--no-viewer-shadows")
+        if s["viewer_meshes"] == "simple":
+            command.append("--viewer-simple-meshes")
     spawn = resolve_spawn(LaunchConfiguration("spawn").perform(context))
     if spawn:
         command += ["--spawn", ",".join(f"{v:.4f}" for v in spawn)]
@@ -88,14 +151,9 @@ def setup(context):
         camera_handler = ""
     if camera_handler:
         command += ["--camera-handler", camera_handler]
-        fps = LaunchConfiguration("camera_fps").perform(context)
-        names = LaunchConfiguration("camera_names").perform(context)
-        size = LaunchConfiguration("camera_size").perform(context)
-        if profile == "lite":
-            # Low-spec default: two cameras, quarter resolution, slow capture.
-            fps = fps or "2"
-            names = names or "base_camera,head_camera"
-            size = size or "320x240"
+        fps, names, size = s["camera_fps"], s["camera_names"], s["camera_size"]
+        if s["camera_shadows"] == "false":
+            command.append("--no-camera-shadows")
         if fps:
             command += ["--camera-fps", fps]
         if names:
@@ -145,7 +203,7 @@ def setup(context):
                 launch_arguments={
                     "urdf_file": str(path),
                     "rviz": str(rviz).lower(),
-                    "rviz_config": rviz_config(m / "config/moveit.rviz", profile, root),
+                    "rviz_config": rviz_config(m / "config/moveit.rviz", s["rviz_fps"], root),
                 }.items(),
             )
         )
@@ -165,7 +223,7 @@ def setup(context):
                 executable="rviz2",
                 arguments=[
                     "-d",
-                    rviz_config(nav / "config/navigation.rviz", profile, root),
+                    rviz_config(nav / "config/navigation.rviz", s["rviz_fps"], root),
                     "-f",
                     "odom" if mode == "drive" else "map",
                 ],
@@ -215,12 +273,19 @@ def generate_launch_description():
                     / "maps/warehouse.yaml"
                 ),
             ),
+            DeclareLaunchArgument("moveit", default_value="true", choices=["true", "false"]),
+            DeclareLaunchArgument(
+                "config",
+                default_value="",
+                description="Settings file; empty = $MOBILE_OPENARM_CONFIG or <workspace>/sim_config.yaml",
+            ),
             *[
-                DeclareLaunchArgument(
-                    k, default_value="true", choices=["true", "false"]
-                )
-                for k in ["viewer", "rviz", "moveit"]
+                DeclareLaunchArgument(k, default_value="", description=f"empty = sim_config.yaml / profile ({'|'.join(c)})")
+                for k, c in CHOICES.items()
             ],
+            DeclareLaunchArgument(
+                "rviz_fps", default_value="", description="RViz redraw rate; empty = sim_config.yaml / profile"
+            ),
             DeclareLaunchArgument(
                 "camera_handler",
                 default_value="warehouse_lecture.vision.pipeline:LecturePipeline",
@@ -229,7 +294,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "camera_fps",
                 default_value="",
-                description="Simulation-time capture rate; defaults to cameras.yaml",
+                description="Simulation-time capture rate; empty = sim_config.yaml / profile",
             ),
             DeclareLaunchArgument(
                 "camera_depth", default_value="true", choices=["true", "false"]
@@ -243,12 +308,12 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "camera_names",
                 default_value="",
-                description="Comma-separated cameras to render; empty = all (lite: base,head)",
+                description="Comma-separated cameras to render; empty = sim_config.yaml / profile",
             ),
             DeclareLaunchArgument(
                 "camera_size",
                 default_value="",
-                description="Render size WxH; empty = cameras.yaml (lite: 320x240)",
+                description="Render size WxH; empty = sim_config.yaml / profile",
             ),
             DeclareLaunchArgument(
                 "actors",
@@ -267,12 +332,6 @@ def generate_launch_description():
                 "spawn",
                 default_value="",
                 description="Robot start pose: a locations.yaml name (pick_table, place_table, rack_c, ...) or X,Y,YAW; empty = world origin. Also sets the AMCL initial pose",
-            ),
-            DeclareLaunchArgument(
-                "profile",
-                default_value="lite",
-                choices=["lite", "full"],
-                description="lite = low-spec camera defaults; full = cameras.yaml defaults",
             ),
             OpaqueFunction(function=setup),
         ]

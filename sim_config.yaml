@@ -1,0 +1,22 @@
+# 시뮬레이터 실행 설정
+# - ./scripts/mobile_openarm start · drive · slam · moveit 와
+#   ros2 launch mobile_openarm_bringup warehouse.launch.py 가 실행할 때마다 이 파일을 읽는다.
+# - 고친 뒤 다시 실행하면 바로 반영된다 (colcon build 필요 없음).
+# - 명령줄 인자(예: rviz:=false)가 이 파일보다 우선한다.
+
+# full    : 그림자 켬 · 카메라 4대 640x480 5 FPS · RViz 30 FPS           (외장 GPU)
+# lite    : 뷰어 그림자 끔 · 카메라 2대 320x240 2 FPS · RViz 15 FPS      (기본, 내장 그래픽)
+# minimal : lite + 뷰어 로봇을 단순 형상으로 · 카메라 그림자 끔 · RViz 10 FPS (저사양 노트북)
+profile: lite
+
+viewer: true      # MuJoCo 창
+rviz: true        # RViz 창
+
+# 아래는 비워 두면 profile 값을 따른다. 한 항목만 바꾸고 싶을 때 적는다.
+viewer_shadows:   # true | false
+viewer_meshes:    # visual(실제 메시) | simple(충돌 형상, 삼각형 1/23)
+camera_shadows:   # true | false (끄면 카메라 한 장 렌더가 약 8배 빠름)
+camera_names:     # 예: base_camera,head_camera
+camera_size:      # 예: 320x240
+camera_fps:       # 예: 2
+rviz_fps:         # 예: 15

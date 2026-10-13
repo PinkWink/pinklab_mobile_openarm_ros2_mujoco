@@ -134,7 +134,7 @@ source scripts/env.sh
 ![launch 인자](setup_launch_args.png){width=1000}
 
 - `start`, `drive`, `slam`, `moveit` 뒤에 `인자:=값` 형식으로 추가
-- 기본값 `profile:=lite`: 카메라 2대 320×240 2 FPS · 뷰어 그림자 끔 · RViz 15 FPS
+- 기본값은 작업 공간 맨 위 `sim_config.yaml` (`profile: lite`) · 명령줄 인자가 파일보다 우선
 - 느리면 7절 '저사양 PC' 참고
 
 ### description
@@ -205,13 +205,13 @@ ros2 launch mobile_openarm_description display.launch.py gui:=false   # 슬라�
 
 ## 7. 저사양 PC
 
-### lite 프로파일 (기본값)
+### 세 가지 프로파일
 
-![lite 프로파일: 뷰어 그림자를 끄면 내장 그래픽에서 6배 빠름](setup_lowspec_profile.png){width=1000}
+![full · lite · minimal: 뷰어 화면과 내장 그래픽 FPS](setup_lowspec_profile.png){width=1000}
 
 - 무거운 부분은 CPU가 아니라 그래픽: 로봇 메시 270만 삼각형을 조명 3개의 그림자마다 다시 그림
-- `profile:=lite`(기본값): MuJoCo 뷰어 그림자 끔 · RViz 15 FPS · 카메라 2대 320×240 2 FPS
-- 카메라 영상은 그림자를 유지 → 인식 · 데이터셋 결과는 프로파일과 무관
+- lite(기본값)는 뷰어 그림자 끔 · minimal은 뷰어의 로봇을 충돌 형상(삼각형 1/23)으로 그리고 카메라 그림자도 끔
+- 카메라 영상은 세 프로파일 모두 실제 메시 → 인식 · 도킹 결과는 프로파일과 무관
 
 ### 내 PC 렌더링 성능 확인
 
@@ -224,9 +224,28 @@ source scripts/env.sh
 
 ![check_gpu.py 실행 결과 (Ryzen 7 9700X 내장 그래픽)](setup_lowspec_check.png){width=1000}
 
+### 설정 파일 sim_config.yaml
+
+![작업 공간 맨 위의 sim_config.yaml](setup_lowspec_config_file.png){width=1000}
+
+- `./scripts/mobile_openarm`과 `ros2 launch` 모두 실행할 때마다 읽음 → 고친 뒤 빌드 없이 다시 실행
+- 우선순위: 명령줄 인자(`rviz:=false`) > `sim_config.yaml` > profile 기본값
+- 실행 첫머리 `[sim_config]` 줄에 실제로 적용된 값이 표시됨
+
+### sim_config.yaml 바꿔 실행하기
+
+```bash
+sed -i 's/^profile: lite/profile: minimal/' sim_config.yaml     # 편집기로 고쳐도 같음
+./scripts/mobile_openarm drive
+ros2 launch mobile_openarm_bringup warehouse.launch.py mode:=drive moveit:=false rviz:=false
+```
+
+![wrapper와 ros2 launch 모두 sim_config.yaml을 읽고, 명령줄 rviz:=false가 우선](setup_lowspec_config.png){width=1000}
+
 ### 더 가볍게 실행하기
 
 ```bash
+./scripts/mobile_openarm start profile:=minimal     # 이번 실행만 minimal
 ./scripts/mobile_openarm start viewer:=false        # MuJoCo 창 없이 RViz만
 ./scripts/mobile_openarm start rviz:=false          # RViz 없이 MuJoCo 창만
 ./scripts/mobile_openarm drive                      # MoveIt · Nav2 없이 주행만 (Day 1 실습)

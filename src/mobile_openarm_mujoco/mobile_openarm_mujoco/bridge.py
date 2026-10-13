@@ -5,7 +5,11 @@ from contextlib import nullcontext
 import math
 import os
 from pathlib import Path
+import signal
+import sys
 import time
+
+import mujoco
 
 import rclpy
 from rclpy.node import Node
@@ -238,6 +242,18 @@ def parse_size(text):
     return width, height
 
 
+def show_simple_meshes(model):
+    """Viewer draws collision hulls (group 1, made opaque) instead of the visual meshes.
+
+    Visual meshes move from group 2 to 3: the viewer's default groups (0-2) skip them,
+    CameraRig draws group 3 too. Visual primitives (floor lines, ArUco plates) stay in 2.
+    Only geom_group and geom_rgba change, which physics and the lidar never read.
+    """
+    visual = (model.geom_group == 2) & (model.geom_type == mujoco.mjtGeom.mjGEOM_MESH)
+    model.geom_group[visual] = 3
+    model.geom_rgba[model.geom_group == 1] = (0.72, 0.74, 0.78, 1.0)
+
+
 def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--viewer", action="store_true")
@@ -245,6 +261,16 @@ def main(args=None):
         "--no-viewer-shadows",
         action="store_true",
         help="Draw the viewer without shadows (camera images keep them); 6x cheaper on integrated GPUs",
+    )
+    parser.add_argument(
+        "--viewer-simple-meshes",
+        action="store_true",
+        help="Draw the robot as its collision hulls in the viewer (1/23 of the triangles); cameras keep the real meshes",
+    )
+    parser.add_argument(
+        "--no-camera-shadows",
+        action="store_true",
+        help="Render camera images without shadows; about 8x faster per image",
     )
     parser.add_argument("--urdf-file")
     parser.add_argument("--physics-config")
@@ -318,7 +344,10 @@ def main(args=None):
 
             cfg = camera_settings()["render"]
             width, height = options.camera_size or (cfg["width"], cfg["height"])
-            cameras = CameraRig(p.model, p.data, width=width, height=height)
+            cameras = CameraRig(
+                p.model, p.data, width=width, height=height,
+                shadows=not options.no_camera_shadows,
+            )
             names = (
                 tuple(n.strip() for n in options.camera_names.split(",") if n.strip())
                 if options.camera_names
@@ -357,12 +386,15 @@ def main(args=None):
         if options.viewer:
             import mujoco.viewer
 
+            if options.viewer_simple_meshes:
+                show_simple_meshes(p.model)
             viewer = mujoco.viewer.launch_passive(p.model, p.data)
             viewer.cam.lookat[:] = [0, 0, 0.5]
             viewer.cam.distance = 14
             viewer.cam.azimuth = 130
             viewer.cam.elevation = -50
-            viewer.opt.geomgroup[1] = 0
+            if not options.viewer_simple_meshes:
+                viewer.opt.geomgroup[1] = 0
             if options.no_viewer_shadows:
                 # user_scn flags are copied to the viewer's own scene on sync().
                 viewer.user_scn.flags[mujoco.mjtRndFlag.mjRND_SHADOW] = 0
@@ -388,18 +420,23 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
+        # Ctrl+C reaches this process twice (terminal process group + ros2 launch);
+        # the second one must not cut the teardown short (GL contexts, worker threads).
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         if handler is not None and hasattr(handler, "close"):
             try:
                 handler.close()
             except Exception as error:  # noqa: BLE001 - shutdown must continue
                 node.get_logger().warning(f"Camera handler close failed: {error}")
-        if cameras:
-            cameras.close()
-        if viewer:
-            viewer.close()
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
+        if viewer or cameras:
+            # The viewer thread and the camera renderer share one X connection; destroying
+            # their GL contexts at exit races (GLXBadContext, segfault). The OS frees them.
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os._exit(0)
 
 
 if __name__ == "__main__":
