@@ -1,8 +1,19 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-10-13 (sim_config.yaml + minimal 프로파일). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-10-15 (용어 LMM → LLM). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
-## 0-0000000000000000000000. 2026-10-13: sim_config.yaml 실행 설정 + minimal 프로파일 — 다음 세션은 여기부터
+## 0-00000000000000000000000. 2026-10-15: 용어 LMM → LLM — 다음 세션은 여기부터
+
+**한 일**
+- 이유: 파이프라인은 텍스트 입력 → 텍스트 출력이라 LMM(멀티모달)이 아니라 LLM 이 맞다.
+- Confluence (부모 3692396550): ⑪ 3719496070 · ⑫ 3719430326 제목을 "LLM + OpenAI API: …" · "LLM → ROS 2 Task Pipeline: …" 으로 (v3), 환경 설정 3692331054 본문 2곳 (v30). 웹 수정이 덮이지 않도록 md 재게시가 아니라 게시본 storage 에서 단어만 치환. 소개 3692331022 는 사용자가 이미 웹에서 고쳐 둠 (v18). 16 페이지 전체 제목·본문 LMM 0 확인.
+- 그림: draw 스크립트 7개 · render_lesson12/13_terminals 의 LMM → LLM, 다시 그려 바뀐 png 19장 중 페이지가 참조하는 18장을 같은 파일명으로 재첨부 (setup_modules.png 는 어느 페이지에도 없음).
+- 로컬 원고 intro_curriculum.md · setup_usage.md · lesson12_lmm.md, README.md, lessons/08_lmm/README.md 도 치환. 커밋 7a41cc6 (push 함).
+- 일부러 둔 것: 폴더 `lessons/08_lmm` · 파일명 `lesson12_lmm.md` · `intro_lmm.png` 등 (페이지에 경로가 적혀 있음), 코드 주석 · .action/.msg 주석 · 이 문서의 옛 기록 · promo/compose.py.
+
+**다음**: ⑭ Final Mission (`examples/m5_task_plan/04_final_mission.py` 기반, 폴더 `lessons/10_final_project`). 그 뒤 lessons README · INSTALL.md · check_env.sh.
+
+## 0-0000000000000000000000. 2026-10-13: sim_config.yaml 실행 설정 + minimal 프로파일
 
 **한 일**
 - 작업 공간 맨 위 `sim_config.yaml`: `warehouse.launch.py` 가 실행할 때마다 읽음 (wrapper · `ros2 launch` 공통, 빌드 불필요). 우선순위 = 명령줄 인자 > 파일 > profile 기본값. 실행 첫머리에 `[sim_config]` 두 줄로 적용 값 출력. `config:=PATH` · `$MOBILE_OPENARM_CONFIG` 로 다른 파일.
