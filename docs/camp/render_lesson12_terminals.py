@@ -1,4 +1,4 @@
-"""Terminal captures for the lesson-12 (LMM + OpenAI API) page. Text below is copied from real runs on 2026-10-10
+"""Terminal captures for the lesson-12 (LLM + OpenAI API) page. Text below is copied from real runs on 2026-10-10
 (gpt-4.1-mini, lessons/08_lmm). Output: docs/camp/lesson12_cli_*.png
 """
 import sys

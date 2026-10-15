@@ -1,8 +1,8 @@
-## 1. LMM 은 무엇을 맡나
+## 1. LLM 은 무엇을 맡나
 
-### LMM 의 역할
+### LLM 의 역할
 
-![LMM 이 하는 일 · 하지 않는 일](lesson12_why.png){width=1000}
+![LLM 이 하는 일 · 하지 않는 일](lesson12_why.png){width=1000}
 
 ### 자연어에서 실행까지
 

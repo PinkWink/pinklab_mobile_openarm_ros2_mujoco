@@ -79,7 +79,7 @@ source /opt/ros/jazzy/setup.bash
 cp .env.example .env      # OPENAI_API_KEY=sk-...
 ```
 
-- LMM 모듈부터 필요
+- LLM 모듈부터 필요
 - 주행 · MoveIt · Pick & Place 모듈은 키 없이 동작
 - 모델 · 가격표: `src/warehouse_lecture/config/llm.yaml` · 호출 기록: `logs/openai_usage.jsonl`
 
@@ -171,7 +171,7 @@ ros2 launch mobile_openarm_description display.launch.py gui:=false   # 슬라�
 - `pick_table` 픽업 작업대 (2.6, −3.6) · `place_table` 적재 작업대 (2.6, 3.6)
 - `rack_a` ~ `rack_f` 랙 A~F · `center_aisle` · `east_wall` · `west_wall`
 - 삼각형 = `base_goal` — Nav2 목표이자 사전 도킹 지점
-- 한국어 별칭은 LMM 파서가 그대로 사용
+- 한국어 별칭은 LLM 파서가 그대로 사용
 
 ### 상자 · 작업대 · 마커
 

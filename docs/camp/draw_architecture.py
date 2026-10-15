@@ -70,7 +70,7 @@ def path(points, color=INK, lw=1.5, style="-|>"):
 
 # --- layer 1: command --------------------------------------------------------------------------
 box(2.2, 5.0, 7.45, 8.95, "사용자", ["텍스트 콘솔 · 웹 대시보드", "/warehouse/utterance"], BOX["user"])
-box(5.7, 9.1, 7.45, 8.95, "LMM (OpenAI API)", ["자연어 → 작업 단계 목록", "Structured Outputs (RobotPlan)"], BOX["llm"])
+box(5.7, 9.1, 7.45, 8.95, "LLM (OpenAI API)", ["자연어 → 작업 단계 목록", "Structured Outputs (RobotPlan)"], BOX["llm"])
 box(9.8, 13.7, 7.45, 8.95, "ROS 2 Task Manager", ["단계 순차 실행 · 확인 · 실패 보고", "/execute_plan"], BOX["tm"])
 arrow((5.0, 8.2), (5.7, 8.2))
 label(5.35, 8.42, "지령", fs=9)

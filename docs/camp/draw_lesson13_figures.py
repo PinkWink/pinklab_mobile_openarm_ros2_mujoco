@@ -1,4 +1,4 @@
-"""Figures for the lesson-13 Confluence page (LMM -> ROS 2 Task Pipeline). Output: docs/camp/lesson13_*.png
+"""Figures for the lesson-13 Confluence page (LLM -> ROS 2 Task Pipeline). Output: docs/camp/lesson13_*.png
 
     python3 docs/camp/draw_lesson13_figures.py
 Data (2026-10-10, gpt-4.1-mini, Task Manager, `start camera_depth:=true locate:=vision`):
@@ -57,7 +57,7 @@ def pipeline():
     arrow(ax, (12.0, 1.05), (1.4, 1.05))
     arrow(ax, (1.4, 1.05), (1.4, 1.6))
     label(ax, 6.7, 1.05, "결과 문장 (spoken): \"파란 상자를 적재 작업대에 놓았습니다.\" / 실패면 몇 단계까지 했는지", fs=9.4)
-    note(ax, 0.3, 0.45, "LMM 은 단계만 정한다. 관절 · 속도 · 경로 · 도킹 거리는 아래 층이 정한다.", fs=9.6)
+    note(ax, 0.3, 0.45, "LLM 은 단계만 정한다. 관절 · 속도 · 경로 · 도킹 거리는 아래 층이 정한다.", fs=9.6)
     save(fig, "lesson13_pipeline.png")
 
 

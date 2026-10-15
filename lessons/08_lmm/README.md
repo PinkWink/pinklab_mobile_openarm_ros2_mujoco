@@ -1,4 +1,4 @@
-# 08. LMM + OpenAI API (Day 2 ⑪) · LMM → ROS 2 Task Pipeline (⑫)
+# 08. LLM + OpenAI API (Day 2 ⑪) · LLM → ROS 2 Task Pipeline (⑫)
 
 ## 목표
 
@@ -47,7 +47,7 @@ cp .env.example .env        # OPENAI_API_KEY=sk-... 기입. .env 는 git 에 올
 
 ---
 
-## ⑫ LMM → ROS 2 Task Pipeline (05 ~ 08)
+## ⑫ LLM → ROS 2 Task Pipeline (05 ~ 08)
 
 ### 목표
 

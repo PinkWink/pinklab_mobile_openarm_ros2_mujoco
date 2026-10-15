@@ -1,4 +1,4 @@
-"""Figures for the lesson-12 Confluence page (LMM + OpenAI API). Output: docs/camp/lesson12_*.png
+"""Figures for the lesson-12 Confluence page (LLM + OpenAI API). Output: docs/camp/lesson12_*.png
 
     python3 docs/camp/draw_lesson12_figures.py
 Data (2026-10-10, gpt-4.1-mini, lessons/08_lmm):
@@ -24,9 +24,9 @@ INTENTS = ["move_object", "go_to", "find", "report", "answer", "arm_pose", "grip
 # ================================================================ 1. 개념
 def why():
     fig, ax = fig_ax(14, 4.6)
-    note(ax, 0.3, 4.35, "LMM 은 '무엇을 할지' 만 정한다. '어떻게 움직일지' 는 ROS 2 가 정한다.", bold=True, fs=12)
-    tiles(ax, [("LMM 이 하는 일", ["한국어 문장 → 의도 + 대상 + 장소", "모호하면 되묻기, 위험하면 거부", "결과를 사람 말로 보고"], C["green"]),
-               ("LMM 이 하지 않는 일", ["관절 각도 · 속도 · 좌표 계산", "경로 계획 · 충돌 판단", "실행 중 실시간 제어 (호출 ~1 s)"], C["red"]),
+    note(ax, 0.3, 4.35, "LLM 은 '무엇을 할지' 만 정한다. '어떻게 움직일지' 는 ROS 2 가 정한다.", bold=True, fs=12)
+    tiles(ax, [("LLM 이 하는 일", ["한국어 문장 → 의도 + 대상 + 장소", "모호하면 되묻기, 위험하면 거부", "결과를 사람 말로 보고"], C["green"]),
+               ("LLM 이 하지 않는 일", ["관절 각도 · 속도 · 좌표 계산", "경로 계획 · 충돌 판단", "실행 중 실시간 제어 (호출 ~1 s)"], C["red"]),
                ("그래서 필요한 것", ["정해진 모양의 출력 (스키마)", "실행 전 세계 검증", "정확도 · 비용 측정"], C["blue"])],
           cols=3, y_top=3.9, gap=0.3, h=2.2, tfs=11, fs=9)
     note(ax, 0.3, 1.25, "예제: lessons/08_lmm/  01_hello · 02_structured_command · 03_accuracy · 04_cost_log   (시뮬레이터 없이 돈다)", fs=9.8)

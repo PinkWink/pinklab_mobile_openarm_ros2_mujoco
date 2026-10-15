@@ -14,7 +14,7 @@ from matplotlib.patches import Rectangle  # noqa: E402
 def env_cards():
     fig, ax = fig_ax(14, 2.8)
     tiles(ax, [("지원 환경", ["Ubuntu 24.04 native + ROS 2 Jazzy", "4코어 · 16 GB · 내장 그래픽 (OpenGL 3.3+)", "외장 GPU · CUDA 불필요 (검출은 CPU)", "미지원: Windows · macOS · VM · WSL · 도커"], C["blue"]),
-               ("필요한 것", ["GitHub 공개 저장소 clone", "디스크 20 GB 여유", "네트워크: apt · GitHub · api.openai.com", "OpenAI 키는 LMM 모듈부터 (강사 배포)"], C["yellow"]),
+               ("필요한 것", ["GitHub 공개 저장소 clone", "디스크 20 GB 여유", "네트워크: apt · GitHub · api.openai.com", "OpenAI 키는 LLM 모듈부터 (강사 배포)"], C["yellow"]),
                ("소요 시간", ["ROS 2 Jazzy 설치 20~30분", "저장소 설치 스크립트 10~20분", "설치 확인 5분 (+ 운반 1회 3분)", "수업 중 설치 작업 없음 → 캠프 전에 끝낸다"], C["green"])],
           cols=3, y_top=2.6, h=2.4, tfs=12, fs=9.2)
     save(fig, "setup_env_cards.png")
@@ -75,11 +75,11 @@ def openai_signup():
 # ================================================================ 1-3. OpenAI key
 def openai_key():
     fig, ax = fig_ax(14, 3.8)
-    note(ax, 0.3, 3.5, "④ OpenAI 키: LMM 모듈부터 필요하다", bold=True, fs=12)
+    note(ax, 0.3, 3.5, "④ OpenAI 키: LLM 모듈부터 필요하다", bold=True, fs=12)
     chain(ax, [(".env.example", ["저장소에 포함"]), (".env", ["OPENAI_API_KEY=sk-…", "수업용 키는 강사가 배포"]),
                ("llm.yaml", ["모델 · 가격표", "src/warehouse_lecture/config"]), ("openai_usage.jsonl", ["호출 기록: 토큰 · 비용", "logs/"])],
           y=1.3, h=1.8, x1=13.7, colors=[C["grey"], C["red"], C["yellow"], C["green"]], tfs=10.5, fs=8.8)
-    note(ax, 0.3, 0.6, "키 없이 동작:  주행 · MoveIt · Pick & Place 모듈          키 필요:  ⑪ LMM 이후", fs=9.5)
+    note(ax, 0.3, 0.6, "키 없이 동작:  주행 · MoveIt · Pick & Place 모듈          키 필요:  ⑪ LLM 이후", fs=9.5)
     save(fig, "setup_openai_key.png")
 
 
@@ -128,7 +128,7 @@ def commands():
     fig, ax = fig_ax(14, 6.4)
     note(ax, 0.3, 6.1, "./scripts/mobile_openarm <명령>", bold=True, fs=12)
     note(ax, 0.3, 5.7, "시뮬레이터 띄우기 (한 번에 하나만)", bold=True, fs=10.5, color="#1f4e79")
-    tiles(ax, [("start (= nav)", ["MuJoCo + Nav2 + MoveIt", "+ RViz + 운반 스킬 + 카메라", "기본 · 통합 · LMM"], C["blue"]),
+    tiles(ax, [("start (= nav)", ["MuJoCo + Nav2 + MoveIt", "+ RViz + 운반 스킬 + 카메라", "기본 · 통합 · LLM"], C["blue"]),
                ("drive", ["MuJoCo + 주행 RViz", "Nav2 · MoveIt 없음", "브리지 · 센서"], C["blue"]),
                ("slam", ["SLAM Toolbox 지도 작성", "", "SLAM"], C["blue"]),
                ("moveit", ["MuJoCo + MoveIt", "Nav2 없음", "팔 제어"], C["blue"]),
@@ -180,7 +180,7 @@ def locations():
     tiles(ax, [("작업대", ["pick_table 픽업 작업대 (2.6, -3.6)", "place_table 적재 작업대 (2.6, 3.6)"], C["green"]),
                ("랙 · 통로 · 벽", ["rack_a ~ rack_f 랙 A~F", "center_aisle · east_wall · west_wall"], C["yellow"]),
                ("base_goal (▲)", ["Nav2 목표 = 사전 도킹 지점", "방향 = 진행 방향"], C["blue"]),
-               ("한국어 별칭", ["locations.yaml 의 aliases", "LMM 파서가 그대로 쓴다"], C["orange"])],
+               ("한국어 별칭", ["locations.yaml 의 aliases", "LLM 파서가 그대로 쓴다"], C["orange"])],
           cols=4, y_top=1.8, h=1.5, gap=0.25, tfs=11, fs=8.8)
     save(fig, "setup_locations.png")
 
@@ -277,7 +277,7 @@ def modules():
                ("⑦ MoveIt · ⑧ EE 제어", ["moveit", "arm both ready", "lessons/05_moveit/ee_control.py demo"], C["green"]),
                ("⑨ Pick & Place", ["start spawn:=pick_table", "lessons/06_pick_place/pick_then_place.py red"], C["green"]),
                ("⑩ 통합 운반", ["start locate:=vision", "pick red"], C["green"]),
-               ("⑪ LMM", ["시뮬레이터 불필요", "examples/m3_llm/04_openai_hello.py", "m4 …/02_nl_to_command.py · m5 …/02_nl_to_plan.py"], C["red"]),
+               ("⑪ LLM", ["시뮬레이터 불필요", "examples/m3_llm/04_openai_hello.py", "m4 …/02_nl_to_command.py · m5 …/02_nl_to_plan.py"], C["red"]),
                ("⑫ Task Pipeline · ⑭ Final Mission", ["start locate:=vision", "ros2 run warehouse_lecture task_manager", "examples/m5_task_plan/04_final_mission.py"], C["purple"])],
           cols=3, y_top=5.0, h=1.5, gap=0.25, tfs=10.5, fs=8.4)
     save(fig, "setup_modules.png")
@@ -327,7 +327,7 @@ def trouble_run():
     tiles(ax, [("numpy.dtype size changed", ["원인: 가상환경에 numpy 2 가 들어감", "조치: pip install \"numpy<2\"", "→ rm -rf build/warehouse_interfaces install/warehouse_interfaces → build"], C["red"]),
                ("화면이 느림 · 바탕화면까지 버벅임", ["원인: 내장 그래픽의 렌더 부하 (뷰어 · RViz · 카메라)", "확인: scripts/check_gpu.py → 권장 실행 방법 출력", "조치: viewer:=false 또는 rviz:=false (7절 저사양 PC)"], C["yellow"]),
                ("command_executor 와 task_manager 동시 실행", ["원인: 둘 다 /execute_command 를 서비스", "조치: 하나만 띄운다", "시뮬레이터를 다시 띄우면 task_manager 도 다시"], C["blue"]),
-               ("OpenAI 429 insufficient_quota", ["원인: 키의 크레딧 · 사용 한도 소진", "조치: 강사에게 문의", "LMM 이전 모듈은 키 없이 진행"], C["orange"])],
+               ("OpenAI 429 insufficient_quota", ["원인: 키의 크레딧 · 사용 한도 소진", "조치: 강사에게 문의", "LLM 이전 모듈은 키 없이 진행"], C["orange"])],
           cols=2, y_top=3.8, h=1.6, gap=0.3, tfs=10.5, fs=8.6)
     save(fig, "setup_trouble_run.png")
 

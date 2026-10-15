@@ -36,7 +36,7 @@ def install_flow():
         ("1  ROS 2 Jazzy", ["ros-jazzy-desktop", "Nav2 · SLAM Toolbox", "MoveIt · RViz · xacro", "rosdep init / update"], "#E3EEFF"),
         ("2  저장소 받기", ["git clone <GitHub 저장소>", "cd pinklab_mobile_…", "source /opt/ros/jazzy/", "        setup.bash"], "#FFF3D6"),
         ("3  install_lecture.sh", ["rosdep 확인", "venv (.venv-mobile-openarm)", "pip: torch CPU · ultralytics", "colcon build · pytest"], "#E6F7E6"),
-        ("4  .env", ["cp .env.example .env", "OPENAI_API_KEY=…", "LMM 모듈에서만 필요", "키는 강사가 배포"], "#FFE0E0"),
+        ("4  .env", ["cp .env.example .env", "OPENAI_API_KEY=…", "LLM 모듈에서만 필요", "키는 강사가 배포"], "#FFE0E0"),
         ("5  확인", ["pytest 41개 PASS", "start → 준비 완료 3줄", "goal 1.0 0.6 0", "pick red (약 3분)"], "#EDE7F6"),
     ]
     w, gap, x = 2.45, 0.35, 0.3

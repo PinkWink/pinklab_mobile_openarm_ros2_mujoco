@@ -208,24 +208,24 @@ def camera_path():
     save(fig, "intro_camera.png")
 
 
-# ================================================================ 6. LMM role
+# ================================================================ 6. LLM role
 def lmm_role():
     fig, ax = fig_ax(14, 4.2)
-    note(ax, 0.3, 3.9, "LMM은 순서를 정하고, 움직임은 ROS 2가 맡는다", bold=True, fs=12)
-    chain(ax, [("자연어 지령", ["\"빨간 상자를 적재 작업대로\""]), ("LMM (OpenAI API)", ["Structured Outputs", "RobotPlan"]),
+    note(ax, 0.3, 3.9, "LLM은 순서를 정하고, 움직임은 ROS 2가 맡는다", bold=True, fs=12)
+    chain(ax, [("자연어 지령", ["\"빨간 상자를 적재 작업대로\""]), ("LLM (OpenAI API)", ["Structured Outputs", "RobotPlan"]),
                ("작업 단계 목록", ["이동 → 확인 → 집기", "→ 이동 → 놓기"]), ("ROS 2 Task Manager", ["단계 순차 실행", "확인 · 실패 보고"]),
                ("Nav2 / MoveIt", ["실제 주행 · 팔 동작"])],
           y=1.3, h=2.1, colors=[C["orange"], C["red"], C["yellow"], C["blue"], C["blue"]], tfs=10.5, fs=8.6)
     ax.plot([3.3, 11.4], [0.55, 0.55], color="#999999", lw=1.4, ls="--", zorder=3)
     cross(ax, 7.35, 0.55)
-    note(ax, 7.35, 0.2, "LMM → 관절 · 속도 직접 제어는 없다", fs=9.5, color="#C62828", ha="center")
+    note(ax, 7.35, 0.2, "LLM → 관절 · 속도 직접 제어는 없다", fs=9.5, color="#C62828", ha="center")
     save(fig, "intro_lmm.png")
 
 
 # ================================================================ 7. four layers summary
 def layers_roles():
     fig, ax = fig_ax(14, 4.4)
-    rows = [("지령 층", "사용자 · LMM · Task Manager", "무엇을 · 어떤 순서로  (좌표 · 관절 값 없음)", "#FBF4E4"),
+    rows = [("지령 층", "사용자 · LLM · Task Manager", "무엇을 · 어떤 순서로  (좌표 · 관절 값 없음)", "#FBF4E4"),
             ("실행 층", "Nav2 · PickPlace 스킬 · MoveIt", "어디로 · 어떻게 움직일지", "#E9F1FB"),
             ("브리지 층", "MuJoCo ↔ ROS 2 브리지 · 카메라 핸들러", "표준 ROS 2 인터페이스 · 검출 결과만 발행", "#EFEAF7"),
             ("물리 층", "MuJoCo 세계", "로봇 · 창고 · 작업대 · 상자 · 배우 · 센서", "#E9F5EA")]
@@ -242,7 +242,7 @@ def layers_roles():
 def pipeline():
     fig, ax = fig_ax(14, 3.0)
     note(ax, 0.3, 2.75, "한 줄 요약: 하나의 워크스페이스에 파이프라인 전체가 들어 있다", bold=True, fs=12)
-    chain(ax, ["자연어 지령", "LMM", "Task Planning", "ROS 2", "Nav2 / MoveIt", "MuJoCo", "로봇 행동"], y=0.9, h=1.2, gap=0.3,
+    chain(ax, ["자연어 지령", "LLM", "Task Planning", "ROS 2", "Nav2 / MoveIt", "MuJoCo", "로봇 행동"], y=0.9, h=1.2, gap=0.3,
           colors=[C["orange"], C["red"], C["yellow"], C["blue"], C["blue"], C["green"], C["teal"]], tfs=10.5)
     note(ax, 0.3, 0.45, "검증 환경: Ubuntu 24.04 · ROS 2 Jazzy · 4코어 노트북 · 외장 GPU 없음", fs=9.5)
     save(fig, "intro_pipeline.png")
@@ -291,7 +291,7 @@ def goals():
     note(ax, 0.3, 4.1, "전반부 목표: 창고 자율주행", bold=True, fs=12, color="#1f4e79")
     chain(ax, ["ROS 2 Launch", "MuJoCo", "LiDAR", "SLAM", "Nav2", "자율주행"], y=2.6, h=1.1, colors=[C["blue"]], tfs=10.5)
     note(ax, 0.3, 2.1, "후반부 목표: 자연어 → 로봇 행동 파이프라인 완성", bold=True, fs=12, color="#2e7d32")
-    chain(ax, ["자연어", "LMM", "Task Planning", "ROS 2", "Nav2 / MoveIt", "MuJoCo", "로봇 행동"], y=0.6, h=1.1, gap=0.28,
+    chain(ax, ["자연어", "LLM", "Task Planning", "ROS 2", "Nav2 / MoveIt", "MuJoCo", "로봇 행동"], y=0.6, h=1.1, gap=0.28,
           colors=[C["green"]], tfs=10.5)
     save(fig, "intro_goals.png")
 
@@ -310,7 +310,7 @@ def curriculum_back():
     fig, ax = fig_ax(14, 4.0)
     flow_rows(ax, [("⑦ MoveIt + MuJoCo", "planning group · scene"), ("⑧ Arm · End-Effector", "IK · Cartesian · 그리퍼"),
                    ("⑨ Pick & Place", "확인 → 파지 → 놓기"), ("⑩ Nav + Pick & Place", "ArUco 도킹 · 상태 기계"),
-                   ("⑪ LMM + OpenAI API", "Structured Command"), ("⑫ LMM → ROS 2", "Task Manager 파이프라인"),
+                   ("⑪ LLM + OpenAI API", "Structured Command"), ("⑫ LLM → ROS 2", "Task Manager 파이프라인"),
                    ("⑬ Web Dashboard", "상태 · 지령 입력"), ("⑭ Final Mission", "End-to-End 운반")],
               per_row=4, colors=[C["blue"], C["blue"], C["yellow"], C["yellow"], C["red"], C["red"], C["purple"], C["green"]])
     save(fig, "intro_curriculum_back.png")
@@ -320,13 +320,13 @@ def curriculum_back():
 def pipeline_example():
     fig, ax = fig_ax(14, 4.8)
     note(ax, 0.3, 4.5, "핵심 파이프라인과 예시 지령", bold=True, fs=12)
-    chain(ax, ["자연어 명령", "LMM (OpenAI API)", "Task Planning", "Task Manager", "Nav2 / MoveIt", "MuJoCo", "로봇 행동"],
+    chain(ax, ["자연어 명령", "LLM (OpenAI API)", "Task Planning", "Task Manager", "Nav2 / MoveIt", "MuJoCo", "로봇 행동"],
           y=3.0, h=1.1, gap=0.28, colors=[C["orange"], C["red"], C["yellow"], C["blue"], C["blue"], C["green"], C["teal"]], tfs=9.8)
     rbox(ax, 0.3, 1.2, 4.0, 1.4, "\"픽업 작업대로 이동해서", ["빨간 상자를 집고", "적재 작업대로 옮겨.\""], fc=C["orange"], tfs=10.5, fs=10)
     arrow(ax, (4.3, 1.9), (5.0, 1.9))
     chain(ax, ["Navigate\n(pick_table)", "Detect\n(red parcel)", "Pick", "Navigate\n(place_table)", "Place"], y=1.2, h=1.4, x0=5.0, gap=0.25,
           colors=[C["blue"], C["yellow"], C["green"], C["blue"], C["green"]], tfs=10)
-    note(ax, 0.3, 0.6, "LMM 출력은 단계 목록(RobotPlan)이다.  좌표 · 관절 값은 ROS 2 쪽이 정한다.", fs=9.5)
+    note(ax, 0.3, 0.6, "LLM 출력은 단계 목록(RobotPlan)이다.  좌표 · 관절 값은 ROS 2 쪽이 정한다.", fs=9.5)
     save(fig, "intro_pipeline_example.png")
 
 
@@ -357,8 +357,8 @@ def stack_motion():
 
 
 def stack_lmm():
-    stack_group("intro_stack_lmm.png", "기술 스택 C: LMM · Task Planning · UI · 개발 도구  (모듈 ⑪~⑭)", [
-        ("LMM · 프롬프트 엔지니어링  ⑪⑫", ["OpenAI API · Structured Outputs (pydantic)", "few-shot · 스키마 검증 / 세계 검증 분리", "테스트셋 정확도 · 비용 로그"], C["red"]),
+    stack_group("intro_stack_lmm.png", "기술 스택 C: LLM · Task Planning · UI · 개발 도구  (모듈 ⑪~⑭)", [
+        ("LLM · 프롬프트 엔지니어링  ⑪⑫", ["OpenAI API · Structured Outputs (pydantic)", "few-shot · 스키마 검증 / 세계 검증 분리", "테스트셋 정확도 · 비용 로그"], C["red"]),
         ("Task Planning · 시스템 통합  ⑫⑭", ["ROS 2 Task Manager (액션 서버)", "단계 순차 실행 · 확인 · 되묻기 · 인터록", "Nav2 / MoveIt / 스킬 액션으로 실행"], C["blue"]),
         ("운영 · UI  ⑬", ["텍스트 콘솔 (Utterance 토픽)", "웹 대시보드 (websocket ↔ ROS 2)", "RViz · MuJoCo viewer"], C["purple"]),
         ("개발 도구  전체", ["Ubuntu 24.04 · Python 3.12 venv · colcon · git", "설치 · 점검 스크립트", "저사양 설정: 카메라 2대 320×240 2 FPS · CPU 추론"], C["grey"]),
@@ -370,7 +370,7 @@ def stack_order():
     fig, ax = fig_ax(14, 3.0)
     note(ax, 0.3, 2.75, "쌓이는 순서", bold=True, fs=12)
     chain(ax, [("시뮬레이션", ["MuJoCo"]), ("ROS 2", ["브리지 · 모델"]), ("주행", ["SLAM · Nav2"]), ("Manipulation", ["MoveIt"]),
-               ("인지", ["ArUco · YOLO"]), ("LMM", ["OpenAI API"]), ("통합", ["Task Manager"])], y=0.9, h=1.3, gap=0.28,
+               ("인지", ["ArUco · YOLO"]), ("LLM", ["OpenAI API"]), ("통합", ["Task Manager"])], y=0.9, h=1.3, gap=0.28,
           colors=[C["green"], C["blue"], C["yellow"], C["blue"], C["orange"], C["red"], C["teal"]], tfs=10.5, fs=8.8)
     note(ax, 0.3, 0.45, "각 층의 코드는 블록선도의 상자 하나에 대응한다", fs=9.5)
     save(fig, "intro_stack_order.png")

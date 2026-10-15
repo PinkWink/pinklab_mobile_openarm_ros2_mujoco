@@ -1,4 +1,4 @@
-"""Terminal captures for the lesson-13 (LMM -> ROS 2 Task Pipeline) page. Text below is copied from real runs on 2026-10-10
+"""Terminal captures for the lesson-13 (LLM -> ROS 2 Task Pipeline) page. Text below is copied from real runs on 2026-10-10
 (gpt-4.1-mini, lessons/08_lmm 05-08, Task Manager). "남은 거리" / "visual dock" feedback lines are left out. Output: docs/camp/lesson13_cli_*.png
 """
 import sys

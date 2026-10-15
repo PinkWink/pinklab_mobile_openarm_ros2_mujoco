@@ -20,9 +20,9 @@
 
 ![카메라 처리 경로](intro_camera.png){width=1000}
 
-### LMM 연결
+### LLM 연결
 
-![LMM의 역할](intro_lmm.png){width=1000}
+![LLM의 역할](intro_lmm.png){width=1000}
 
 ### 전체 구조
 
@@ -36,7 +36,7 @@
 
 ![핵심 파이프라인](intro_pipeline.png){width=1000}
 
-- **자연어 지령 → LMM → Task Planning → ROS 2 → Nav2 / MoveIt → MuJoCo → 로봇 행동**
+- **자연어 지령 → LLM → Task Planning → ROS 2 → Nav2 / MoveIt → MuJoCo → 로봇 행동**
 - 전체 파이프라인이 하나의 워크스페이스에 포함
 - 검증 환경: Ubuntu 24.04, ROS 2 Jazzy, 외장 GPU 없는 4코어 노트북
 
@@ -62,7 +62,7 @@
 ![전반부 · 후반부 목표](intro_goals.png){width=1000}
 
 - 전반부: ROS 2 Launch → MuJoCo → LiDAR → SLAM → Nav2 연결 → 양팔 로봇의 창고 자율주행
-- 후반부: 자연어 명령 → LMM → Task Planning → ROS 2 → Nav2 / MoveIt → MuJoCo → 로봇 행동 파이프라인 완성
+- 후반부: 자연어 명령 → LLM → Task Planning → ROS 2 → Nav2 / MoveIt → MuJoCo → 로봇 행동 파이프라인 완성
 
 ## 3. 커리큘럼
 
@@ -70,7 +70,7 @@
 
 ![전반부 모듈](intro_curriculum_front.png){width=1000}
 
-### 후반부 — MoveIt + Mobile Manipulation + LMM
+### 후반부 — MoveIt + Mobile Manipulation + LLM
 
 ![후반부 모듈](intro_curriculum_back.png){width=1000}
 
@@ -88,7 +88,7 @@
 
 ![기술 스택 B](intro_stack_motion.png){width=1000}
 
-### C. LMM · Task Planning · UI · 개발 도구 (모듈 ⑪~⑭)
+### C. LLM · Task Planning · UI · 개발 도구 (모듈 ⑪~⑭)
 
 ![기술 스택 C](intro_stack_lmm.png){width=1000}
 

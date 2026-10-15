@@ -179,7 +179,7 @@ def goal_ways():
     note(ax, 0.3, 4.1, "목표를 보내는 세 가지 방법 (모두 map 좌표)", bold=True, fs=12)
     tiles(ax, [("goal 명령", ["./scripts/mobile_openarm goal X Y YAW", "NavigateToPose 액션 클라이언트", "결과(SUCCEEDED)까지 기다린다"], C["orange"]),
                ("RViz: 2D Goal Pose", ["버튼 → 지도 위를 누르고 끌어 방향", "/goal_pose 토픽 → bt_navigator", "결과는 터미널 1 로그로 본다"], C["blue"]),
-               ("코드 (Day 2)", ["warehouse_skills 가 같은 액션을 부른다", "pick & place · LMM 작업 순서", "locations.yaml 의 이름 → 좌표"], C["green"])],
+               ("코드 (Day 2)", ["warehouse_skills 가 같은 액션을 부른다", "pick & place · LLM 작업 순서", "locations.yaml 의 이름 → 좌표"], C["green"])],
           cols=3, y_top=3.6, gap=0.3, h=2.1, tfs=11, fs=8.8)
     note(ax, 0.3, 0.9, "장소 좌표: warehouse_lecture/worlds/locations.yaml  (pick_table 의 base_goal = [1.2, -3.6, 0.0])", fs=9.4)
     save(fig, "lesson05_goal_ways.png")
