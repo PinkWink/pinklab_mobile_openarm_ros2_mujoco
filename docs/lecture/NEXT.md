@@ -1,8 +1,26 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-10-15 (용어 LMM → LLM). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-10-18 (설치 페이지 RViz · ① 수업 페이지 관절 명령 절). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
-## 0-00000000000000000000000. 2026-10-15: 용어 LMM → LLM — 다음 세션은 여기부터
+## 0-000000000000000000000000. 2026-10-18: RViz 장면 반투명 · ① 수업 페이지 관절 명령 절 — 다음 세션은 여기부터
+
+**한 일**
+- 설치 경고 문의 (고치지 않음): `install_lecture.sh` 의 rosdep `pkg_resources` DeprecationWarning 은 /usr/bin/rosdep 자체 문제. pip 의 `Skipping .../pybind11-2.11.1.dist-info` 는 apt `python3-pybind11` 의 dist-info 에 METADATA 가 없어서이고, venv 가 `--system-site-packages` 라 보임. 둘 다 무해.
+- RViz 녹색 = MoveIt planning scene (`scene.py` 의 창고 박스 + warehouse_floor). `moveit.rviz` Scene Alpha 1 → 0.3 (커밋 0b9fa00, push 함). 설치 페이지 ⑤ 캡처 `setup_start_result.png` 는 아직 옛 진한 녹색 — 다시 찍을지 사용자 미결정.
+- ① 페이지 3692920898 "MuJoCo와 ROS2를 연결하기" (v24 → v28): 학생이 브리지만 띄우고 팔이 수직(카메라 하늘)이라 혼란 — "실행 결과" 그림이 [0.6, 1.5] 를 보낸 뒤 화면이었음.
+  - "실행 결과" 그림 = 초기 자세 (새 캡처), 새 h3 "터미널 2: 관절 명령 보내기" · "관절 명령을 보낸 뒤의 실행 결과" · "터미널 2: 초기 자세로 되돌리기" ([0.0, 0.0] → 뒤쪽 [0.6, 1.5] 전후 실습이 초기 자세에서 시작).
+  - "터미널 2: rqt_image_view" 를 h3 두 개로 분리 (슬라이드용): 명령 + 터미널 그림 / rqt 창 그림.
+  - 사용자가 웹에서 추가한 "MuJoCo 상태값: qpos · qvel · xpos · xvel" 절 + `lesson01_qpos_xpos.png` 를 먼저 로컬 md 로 가져옴 (게시 전 live storage 와 md 변환본 diff 로 확인).
+  - 캡처: X11 에서 실제 minimal_bridge --viewer + rqt_image_view 를 띄우고 `import -window` (rqt 는 `xdotool search --pid` 창을 900x760 으로 키움), 합성 · 터미널 그림 `python3 docs/camp/draw_lesson01_cmd_figures.py <캡처 폴더>`.
+- `publish_confluence.py` 버그: 자동 첨부 정규식이 그림 설명의 `[..]` 를 못 읽어 `lesson01_t2_cmd.png` · `lesson01_cmd_result.png` 가 안 올라가 깨짐 → 본문 변환과 같은 정규식으로. 다른 페이지 중 해당 그림은 ⑥ `lesson07_dash_waiting.png` 하나 (이미 첨부돼 있음).
+
+**작업 요령**
+- rqt_image_view 는 SIGINT · SIGTERM 으로 안 죽는 경우가 있음 → PID 로 `kill -9`.
+- 페이지 게시 전에 live version 을 확인하고, 사용자가 웹에서 고쳤으면 먼저 md 로 가져온다.
+
+**다음**: ⑭ Final Mission (`examples/m5_task_plan/04_final_mission.py` 기반, 폴더 `lessons/10_final_project`). 그 뒤 lessons README · INSTALL.md · check_env.sh.
+
+## 0-00000000000000000000000. 2026-10-15: 용어 LMM → LLM
 
 **한 일**
 - 이유: 파이프라인은 텍스트 입력 → 텍스트 출력이라 LMM(멀티모달)이 아니라 LLM 이 맞다.
