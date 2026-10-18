@@ -270,6 +270,34 @@ python lessons/01_mujoco_ros2/minimal_bridge.py --viewer     # MuJoCo 창 포함
 
 ![minimal_bridge.py 실행 결과: MuJoCo 창(왼쪽)과 팔 끝 카메라 영상(오른쪽)](lesson01_run_result.png){width=1000}
 
+- 관절 목표 초기값 [0.0, 0.0] → 팔이 수직으로 서고 팔 끝 카메라는 하늘을 향함 (영상이 검은 것이 정상)
+- 오른쪽 카메라 창은 아래 rqt_image_view 절에서 실행하는 화면
+
+### 터미널 2: 관절 명령 보내기
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source scripts/env.sh
+ros2 topic pub -1 /cmd std_msgs/msg/Float64MultiArray "{data: [0.6, 1.5]}"
+```
+
+![터미널 2: 관절 명령 [0.6, 1.5]](lesson01_t2_cmd.png){width=1000}
+
+### 관절 명령을 보낸 뒤의 실행 결과
+
+![관절 명령 [0.6, 1.5] 후: MuJoCo 창(왼쪽)과 팔 끝 카메라 영상(오른쪽)](lesson01_cmd_result.png){width=1000}
+
+- joint1 0.6 rad · joint2 1.5 rad → 팔이 앞으로 숙여지고 카메라가 빨강 · 파랑 상자를 향함
+- 다음 절로 넘어가기 전에 [0.0, 0.0]으로 초기 자세 복귀 → 아래 실습을 같은 상태에서 시작
+
+### 터미널 2: 초기 자세로 되돌리기
+
+```bash
+ros2 topic pub -1 /cmd std_msgs/msg/Float64MultiArray "{data: [0.0, 0.0]}"
+```
+
+![터미널 2: 관절 명령 [0.0, 0.0]](lesson01_t2_pub2.png){width=1000}
+
 ### 터미널 2: 환경 설정
 
 ```bash
@@ -311,6 +339,8 @@ ros2 run rqt_image_view rqt_image_view /tip_camera/image_raw
 
 ![rqt_image_view 실행](lesson01_t2_rqt_cmd.png){width=1000}
 
+### rqt_image_view 창: 팔 끝 카메라 영상
+
 ![rqt_image_view 창: 팔 끝 카메라 영상](lesson01_t2_rqt_window.png){width=600}
 
 ### 터미널 2: ros2 topic pub /cmd [0.6, 1.5]
@@ -350,6 +380,10 @@ ros2 topic echo --once /tip_camera/image_raw --no-arr
 ```
 
 ![ros2 topic echo /tip_camera/image_raw](lesson01_cli_image.png){width=1000}
+
+### MuJoCo 상태값: qpos · qvel · xpos · xvel
+
+![MuJoCo 상태값: qpos · qvel · xpos · xvel](lesson01_qpos_xpos.png){width=1000}
 
 ### TF 트리
 

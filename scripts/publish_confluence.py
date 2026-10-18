@@ -186,7 +186,7 @@ def main():
         print("created page", page_id, page["_links"]["base"] + page["_links"]["webui"])
     # Every image the markdown references is attached (next to the .md), whether or not it was listed:
     # a hand-written glob once missed lesson10_t1.png (digits) and the page showed a broken image.
-    referenced = re.findall(r"!\[[^\]]*\]\(([^)]+\.png)\)", Path(md_file).read_text())
+    referenced = re.findall(r"!\[(?:[^\[\]]|\[[^\]]*\])*\]\(([^)]+\.png)\)",Path(md_file).read_text())
     names = {Path(a).name for a in attachments}
     for ref in referenced:
         path = Path(md_file).parent / ref
