@@ -5,13 +5,7 @@
 
 ## 1. 터미널 준비
 
-모든 터미널에서 먼저 실행한다. 셸이 zsh이면 `setup.zsh`, bash이면 `setup.bash`.
-
-```bash
-cd ~/mujoco_ros2/mobile_openarm_ws
-source /opt/ros/jazzy/setup.zsh
-source .venv-mobile-openarm/bin/activate
-```
+`./scripts/mobile_openarm ...`은 source 없이 어느 터미널에서든 실행된다(ROS 2 Jazzy와 강좌 venv를 스스로 켠다). `ros2 ...`를 직접 치려면 그 터미널에서 `source scripts/env.sh`만 실행한다. 환경이 이상하면 `./scripts/mobile_openarm doctor`.
 
 **ros2 CLI는 wrapper를 거치거나(`exec`), `scripts/env.sh`를 source 한 셸에서 실행한다.** wrapper가 CycloneDDS, `ROS_DOMAIN_ID=43`, localhost 통신을 설정하므로, 아무 설정 없는 셸에서 `ros2 topic list`를 치면 다른 미들웨어로 붙어 아무것도 보이지 않는다. 직접 실행 방법은 2-1절.
 
@@ -44,8 +38,7 @@ source .venv-mobile-openarm/bin/activate
 wrapper는 환경변수를 설정하고 아래 명령을 대신 실행할 뿐이다. 직접 실행하려면 먼저 같은 환경을 만든다.
 
 ```bash
-source /opt/ros/jazzy/setup.zsh      # bash: setup.bash
-source scripts/env.sh                # venv 활성화, install/local_setup, domain 43, CycloneDDS, 모델 캐시 경로
+source scripts/env.sh                # ROS·venv 활성화(꺼져 있으면), install/local_setup, install/local_setup, domain 43, CycloneDDS, 모델 캐시 경로
 ```
 
 `scripts/env.sh`가 설정하는 것: `ROS_DOMAIN_ID=43`, `ROS_LOCALHOST_ONLY=1`, `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` + `CYCLONEDDS_URI`, `ROS_HOME`/`ROS_LOG_DIR`(`.ros/mobile_openarm`), `MOBILE_OPENARM_MODEL_DIR`(`artifacts/mobile_generated`), `PYTHONNOUSERSITE=1`.

@@ -1,10 +1,13 @@
 # source 해서 쓰는 환경 설정. wrapper(scripts/mobile_openarm)와 같은 환경을 현재 셸에 만든다.
-#   source /opt/ros/jazzy/setup.bash    (zsh: setup.zsh)
-#   source scripts/env.sh
+#   source scripts/env.sh      (ROS 2 Jazzy와 venv가 꺼져 있으면 자동으로 켠다)
 # 이후 ros2 launch / ros2 run / ros2 topic ... 을 직접 실행할 수 있다.
 _WS="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
-if [[ "${ROS_DISTRO:-}" != jazzy ]]; then echo "source /opt/ros/jazzy/setup.{bash,zsh} first" >&2; return 1 2>/dev/null || exit 1; fi
-[[ -n "${VIRTUAL_ENV:-}" ]] || source "$_WS/.venv-mobile-openarm/bin/activate"
+if [[ "${ROS_DISTRO:-}" != jazzy ]]; then
+  if [[ -n "${ZSH_VERSION:-}" && -f /opt/ros/jazzy/setup.zsh ]]; then source /opt/ros/jazzy/setup.zsh
+  elif [[ -f /opt/ros/jazzy/setup.bash ]]; then source /opt/ros/jazzy/setup.bash
+  else echo "ROS 2 Jazzy(/opt/ros/jazzy)가 없습니다." >&2; return 1 2>/dev/null || exit 1; fi
+fi
+[[ "${VIRTUAL_ENV:-}" == "$_WS/.venv-mobile-openarm" ]] || source "$_WS/.venv-mobile-openarm/bin/activate"
 if [[ -f "$_WS/install/local_setup.bash" ]]; then
   if [[ -n "${ZSH_VERSION:-}" ]]; then source "$_WS/install/local_setup.zsh"; else source "$_WS/install/local_setup.bash"; fi
 fi

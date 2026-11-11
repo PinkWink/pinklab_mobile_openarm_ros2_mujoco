@@ -15,19 +15,28 @@
 
 ## 설치
 
+ROS 2 Jazzy(`ros-jazzy-desktop`)를 [공식 안내](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)대로 설치한 뒤, 나머지는 스크립트 하나로 끝난다.
+
 ```bash
-sudo apt install python3-venv python3-colcon-common-extensions python3-rosdep portaudio19-dev \
-  ros-jazzy-navigation2 ros-jazzy-nav2-bringup ros-jazzy-slam-toolbox \
-  ros-jazzy-moveit-ros-move-group ros-jazzy-moveit-kinematics ros-jazzy-moveit-planners-ompl \
-  ros-jazzy-moveit-simple-controller-manager ros-jazzy-moveit-ros-visualization ros-jazzy-moveit-configs-utils \
-  ros-jazzy-teleop-twist-keyboard ros-jazzy-rmw-cyclonedds-cpp ros-jazzy-xacro ros-jazzy-robot-state-publisher \
-  ros-jazzy-rviz2 ros-jazzy-vision-msgs ros-jazzy-message-filters ros-jazzy-tf2-geometry-msgs
-source /opt/ros/jazzy/setup.bash
-# 처음 한 번: sudo rosdep init && rosdep update
-./scripts/install_lecture.sh
+git clone -b lecture-2026-11 https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
+cd pinklab_mobile_openarm_ros2_mujoco
+./scripts/install_lecture.sh        # sudo 비밀번호를 한 번 묻는다
+./scripts/mobile_openarm doctor     # 환경 점검. 결과를 강사에게 보낸다
 ```
 
-설치 스크립트는 `.venv-mobile-openarm`(시스템 site-packages 공유)을 만들고 `requirements-mobile-openarm.txt`, `requirements-lecture.txt`를 설치한 뒤 9개 패키지를 빌드하고 단위 테스트를 돌린다.
+- `-b lecture-2026-11`: 강좌용으로 고정한 버전이다. 강좌 기간에 main이 바뀌어도 수강생 환경은 그대로다.
+- `install_lecture.sh`가 하는 일: ROS 환경 자동 source → `scripts/apt_packages.txt`의 apt 패키지 중 빠진 것 설치 → `rosdep init/update`(처음 한 번) → `.venv-mobile-openarm`(시스템 Python + 시스템 site-packages 공유) 생성 → `requirements-mobile-openarm.txt`, `requirements-lecture.txt` 설치 → 의존성 충돌 검사 → 9개 패키지 빌드 → 단위 테스트. 여러 번 실행해도 안전하다.
+- conda base가 켜진 터미널이어도 된다. venv는 항상 `/usr/bin/python3`로 만들고, 예전에 conda Python으로 만든 venv가 있으면 다시 만든다.
+- 의존성 충돌 검사(`scripts/check_pip_deps.py`)는 강의와 무관한 apt 패키지끼리의 충돌(예: `yt-dlp ... has requirement websockets>=12.0, but you have websockets 10.4`)은 `WARN`으로만 보여 주고 넘어간다. `ERROR`가 나오면 그 줄을 강사에게 보낸다.
+
+### 수업 전 점검 (`doctor`)
+
+```bash
+./scripts/mobile_openarm doctor          # 약 10초
+./scripts/mobile_openarm doctor --api    # OpenAI 키를 넣은 뒤: API 실제 호출까지 확인
+```
+
+OS·CPU·RAM·디스크, apt 패키지, venv·Python 패키지 버전, 빌드, MuJoCo 오프스크린 렌더링 속도, OpenAI 키를 ✅/⚠️/❌로 보여 준다. ❌가 하나도 없으면 수업 준비 완료다. 결과는 `artifacts/doctor_report.txt`에 저장되므로 이 파일이나 화면 캡처를 수업 1주 전까지 강사에게 보낸다.
 
 `requirements-lecture.txt`의 고정 버전은 이유가 있다. 바꾸기 전에 읽어 둘 것.
 
@@ -51,12 +60,7 @@ cp .env.example .env    # OPENAI_API_KEY=sk-... 입력
 
 명령 전체 목록과 인터페이스는 [../USAGE.md](../USAGE.md)에 있다. ros2 CLI는 `./scripts/mobile_openarm exec ros2 ...`로 실행한다(wrapper가 CycloneDDS와 domain 43을 설정한다).
 
-새 터미널마다:
-
-```bash
-source /opt/ros/jazzy/setup.bash
-source .venv-mobile-openarm/bin/activate
-```
+**새 터미널에서 source 할 필요가 없다.** `./scripts/mobile_openarm`이 ROS 2 Jazzy와 강좌 venv를 스스로 켠다. `ros2 ...`를 직접 치고 싶으면 그 터미널에서 `source scripts/env.sh` 한 줄만 실행한다(ROS·venv·domain 43·CycloneDDS를 한 번에 설정).
 
 ```bash
 ./scripts/mobile_openarm start                       # MuJoCo viewer + Nav2 + MoveIt + RViz, lite 프로파일
@@ -113,7 +117,10 @@ python scripts/check_actors_live.py --nav                   # 배우·정답 검
 
 ## 자주 겪는 문제
 
-- **`ModuleNotFoundError: mujoco`로 bridge가 죽음**: venv를 활성화하지 않고 `ros2 launch`를 직접 실행한 경우. `./scripts/mobile_openarm start`를 쓰거나 venv를 먼저 활성화한다.
+- **설치 중 `pip 의존성 충돌이 있습니다`**: `ERROR:` 줄을 확인한다. `WARN`만 있으면 문제없다(강의와 무관한 apt 패키지 충돌). `ERROR`는 venv 패키지 버전 문제이므로 `requirements-lecture.txt`를 고치지 말고 그 줄을 강사에게 보낸다.
+- **`강좌 venv(.venv-mobile-openarm)가 없습니다`**: 설치가 중간에 멈춘 경우. `./scripts/install_lecture.sh`를 다시 실행한다.
+- **무엇이 문제인지 모를 때**: `./scripts/mobile_openarm doctor`의 ❌ 줄부터 해결한다.
+- **`ModuleNotFoundError: mujoco`로 bridge가 죽음**: wrapper 없이 `ros2 launch`를 직접 실행한 경우. `./scripts/mobile_openarm start`를 쓰거나 `source scripts/env.sh` 후 `ros2launch ...`로 실행한다.
 - **`numpy.dtype size changed`**: venv에 numpy 2가 들어간 경우. `pip install "numpy<2"` 후 `rm -rf build/warehouse_interfaces install/warehouse_interfaces`하고 다시 빌드한다(CMake가 numpy 헤더 경로를 캐시한다).
 - **zsh에서 `setup.bash` 오류**: ROS 스크립트는 bash 전용이다. bash를 쓰거나 `setup.zsh`를 source한다.
 - **음성 없음**: 강좌는 텍스트 입출력만 쓴다(마이크·스피커 불필요).
