@@ -2,7 +2,7 @@
 # 사용: set -a; source ../confluence_token.txt; set +a; python3 scripts/publish_confluence.py <md> "<제목>" <parentId> <spaceId> [첨부 png...]
 #       md 가 참조하는 png ( ![..](x.png) ) 는 목록에 없어도 md 옆에서 찾아 자동 첨부한다.
 #       갱신: python3 scripts/publish_confluence.py <md> "<제목>" --update <pageId> [첨부 png...]
-# 부모 페이지 3683418127 (MuJoCo + ROS2 패키지 구성), spaceId 3419570180 (PD). 지원 문법: ##~#### 제목, 단락, - 목록, 1. 목록, | 표 |, ``` 코드, ![..](png){width=900}, **굵게**, `코드`,\n#   :::info|tip|note|warning|panel 제목 ... ::: (패널), :::cards(2|3) ::card 제목 ... ::: (카드 다단)
+# 부모 페이지 3683418127 (MuJoCo + ROS2 패키지 구성), spaceId 3419570180 (PD). 지원 문법: ##~#### 제목, 단락, - 목록, 1. 목록, | 표 |, ``` 코드, ![..](png){width=900}, **굵게**, `코드`, [글](https://..),\n#   :::info|tip|note|warning|panel 제목 ... ::: (패널), :::cards(2|3) ::card 제목 ... ::: (카드 다단)
 import html
 import json
 import os
@@ -29,6 +29,7 @@ def inline(text):
     text = html.escape(text, quote=False)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", r'<a href="\2">\1</a>', text)
     return text
 
 

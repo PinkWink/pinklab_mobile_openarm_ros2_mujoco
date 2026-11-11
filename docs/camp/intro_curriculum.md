@@ -102,6 +102,8 @@
 
 ![저장소 구성](intro_repo.png){width=1000}
 
+### 저장소 구성: 폴더 안내
+
 - 완성 코드 GitHub 공개 저장소: **https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco**
 - `src/`: ROS 2 패키지 10개 (로봇 description, MuJoCo 브리지, bringup, navigation, moveit_config, warehouse_interfaces / skills / lecture)
 - `lessons/`: 모듈별 실습 안내 · `examples/`: 단계별 예제 · `weights/`: 배포용 검출 가중치

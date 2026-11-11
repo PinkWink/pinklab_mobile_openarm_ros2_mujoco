@@ -14,7 +14,8 @@
 ![설치 흐름](setup_flow.png){width=1000}
 
 - 다섯 단계를 순서대로 1회만 수행 (10~20분 소요)
-- 매 터미널마다 `source /opt/ros/jazzy/setup.bash` → `source scripts/env.sh` 실행
+- 새 터미널에서 source 불필요 — `./scripts/mobile_openarm ...`이 ROS 2 Jazzy와 venv를 스스로 활성화 (26.11.11 개정)
+- 설치 후 `./scripts/mobile_openarm doctor`로 점검 → ❌ 0건이면 수업 준비 완료
 
 ### ① ROS 2 Jazzy + 추가 패키지
 
@@ -23,16 +24,13 @@
 ### ① ROS 2 Jazzy + 추가 패키지 설치 명령
 
 - 공식 안내에 따라 `ros-jazzy-desktop` 설치: https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html
-- 이 패키지가 사용하는 추가 항목 설치
+- 추가 apt 패키지(Nav2 · MoveIt · SLAM 등 24개)와 `rosdep init/update`는 ③ 설치 스크립트가 자동 처리 (목록: `scripts/apt_packages.txt`)
+- 미리 직접 설치하려면 아래 명령 (선택)
 
 ```bash
-sudo apt install python3-venv python3-colcon-common-extensions python3-rosdep git \
-  ros-jazzy-navigation2 ros-jazzy-nav2-bringup ros-jazzy-slam-toolbox \
-  ros-jazzy-moveit-ros-move-group ros-jazzy-moveit-kinematics ros-jazzy-moveit-planners-ompl \
-  ros-jazzy-moveit-simple-controller-manager ros-jazzy-moveit-ros-visualization ros-jazzy-moveit-configs-utils \
-  ros-jazzy-teleop-twist-keyboard ros-jazzy-rmw-cyclonedds-cpp ros-jazzy-xacro ros-jazzy-robot-state-publisher \
-  ros-jazzy-rviz2 ros-jazzy-vision-msgs ros-jazzy-message-filters ros-jazzy-tf2-geometry-msgs ros-jazzy-tf2-tools
-sudo rosdep init && rosdep update
+sudo apt install git
+# (선택) 추가 패키지 미리 설치
+grep -v '^#' scripts/apt_packages.txt | xargs sudo apt install -y
 ```
 
 ### ② 저장소 받기 → ③ 설치 스크립트
@@ -42,15 +40,22 @@ sudo rosdep init && rosdep update
 ### ③ 설치 스크립트
 
 ```bash
-git clone https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
+git clone -b lecture-2026-11 https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
 cd pinklab_mobile_openarm_ros2_mujoco
-source /opt/ros/jazzy/setup.bash
-./scripts/install_lecture.sh
+./scripts/install_lecture.sh        # sudo 비밀번호를 한 번 묻는다
+./scripts/mobile_openarm doctor     # 환경 점검
 ```
 
-- 스크립트 수행 순서: rosdep 확인 → 가상환경 → pip → `.env` 생성 → `colcon build` → 단위 테스트
+- `-b lecture-2026-11`: 강좌용 고정 버전 (강좌 중 main이 바뀌어도 영향 없음)
+- 수행 순서: apt 패키지 → rosdep → 가상환경 → pip → 충돌 검사 → `colcon build` → 단위 테스트
 - 마지막에 "설치 완료" 출력 시 성공
-- 고정 버전(`numpy<2`, `opencv-python<4.11`, `setuptools<80`, `ml-dtypes<0.6`) 업그레이드 금지 — ROS Jazzy Python 스택 · colcon 호환 목적
+
+### ③ 설치 스크립트: 주의할 점
+
+- 여러 번 실행해도 안전 — 네트워크 끊김 등으로 멈추면 다시 실행
+- conda base가 켜진 터미널도 가능 (venv는 항상 시스템 Python으로 생성)
+- 충돌 검사의 `WARN`은 무시 (예: `yt-dlp` ↔ `websockets`), `ERROR`는 강사에게 전달
+- 고정 버전(`numpy<2`, `opencv-python<4.11`, `setuptools<80`, `ml-dtypes<0.6`) 업그레이드 금지 — ROS Jazzy · colcon 호환
 
 ### install_lecture.sh 가 하는 일
 
@@ -83,20 +88,19 @@ cp .env.example .env      # OPENAI_API_KEY=sk-...
 - 주행 · MoveIt · Pick & Place 모듈은 키 없이 동작
 - 모델 · 가격표: `src/warehouse_lecture/config/llm.yaml` · 호출 기록: `logs/openai_usage.jsonl`
 
-### 새 터미널마다 (env.sh)
+### ros2 명령을 직접 칠 때 (env.sh)
 
 ![env.sh](setup_env_sh.png){width=1000}
 
-### 터미널을 열 때마다 하는 명령
+### ros2 CLI를 직접 쓰는 터미널에서
 
 ```bash
 cd ~/pinklab_mobile_openarm_ros2_mujoco
-source /opt/ros/jazzy/setup.bash      # zsh 는 setup.zsh
-source scripts/env.sh
+source scripts/env.sh      # ROS 2 Jazzy · venv 가 꺼져 있으면 자동으로 켠다 (bash · zsh)
 ```
 
 - `env.sh` 설정 항목: 가상환경 + install 환경 + `ROS_DOMAIN_ID=43` + CycloneDDS(localhost)
-- source 안 한 터미널에서는 `./scripts/mobile_openarm exec <명령>` 사용
+- source 안 한 터미널에서도 `./scripts/mobile_openarm <명령>` 바로 사용 가능 (ROS · venv 자동 활성화, ros2 CLI는 `exec ros2 ...`)
 - localhost 통신이라 같은 강의실 다른 노트북과 토픽 혼선 없음
 
 ### env.sh 가 하는 일
@@ -109,7 +113,21 @@ source scripts/env.sh
 
 ### ⑤ 설치 확인
 
-- `./scripts/mobile_openarm start` 실행 결과 (왼쪽: MuJoCo 창, 오른쪽: RViz2)
+```bash
+./scripts/mobile_openarm doctor          # 약 10초
+./scripts/mobile_openarm doctor --api    # .env 에 키를 넣은 뒤: OpenAI API 실제 호출까지 확인
+```
+
+- OS · CPU · RAM · 디스크, apt 패키지, venv · Python 패키지 버전, 빌드, MuJoCo 렌더링 속도, OpenAI 키를 ✅/⚠️/❌로 표시
+- ❌ 0건이면 준비 완료 · 결과 파일 `artifacts/doctor_report.txt` 또는 화면 캡처를 수업 1주 전까지 강사에게 제출
+
+### ⑤ 설치 확인: 시뮬레이터 실행
+
+```bash
+./scripts/mobile_openarm start
+```
+
+- 실행 결과 (왼쪽: MuJoCo 창, 오른쪽: RViz2)
 
 ![./scripts/mobile_openarm start 실행 화면: MuJoCo 창(왼쪽)과 RViz2(오른쪽)](setup_start_result.png){width=1000}
 
@@ -203,6 +221,14 @@ ros2 launch mobile_openarm_description display.launch.py gui:=false   # 슬라�
 
 ![동작 · 성능 · 키 문제](setup_trouble_run.png){width=1000}
 
+### 설치 문제 (26.11.11 추가)
+
+- **무엇이 문제인지 모를 때**: `./scripts/mobile_openarm doctor`의 ❌ 줄부터 해결
+- **pip 의존성 충돌이 있습니다**: `WARN`만 있으면 무시(강의 무관 apt 패키지 충돌). `ERROR` 줄은 강사에게 전달 — `requirements-lecture.txt` 임의 수정 금지
+- **apt 다운로드 실패**: 강의실 와이파이 끊김 → `./scripts/install_lecture.sh` 다시 실행 (받은 패키지는 보존)
+- **강좌 venv(.venv-mobile-openarm)가 없습니다**: 설치가 중간에 멈춘 경우 → 설치 스크립트 다시 실행
+- **이미 받은 저장소를 강좌 버전으로**: `git fetch --tags && git checkout lecture-2026-11` 후 설치 스크립트 실행
+
 ## 7. 저사양 PC
 
 ### 세 가지 프로파일
@@ -251,13 +277,6 @@ ros2 launch mobile_openarm_bringup warehouse.launch.py mode:=drive moveit:=false
 ./scripts/mobile_openarm drive                      # MoveIt · Nav2 없이 주행만 (Day 1 실습)
 ```
 
+### 더 가볍게 실행하기: MuJoCo 창 없이 실행한 화면
+
 ![start viewer:=false 실행 화면: RViz만 15 FPS로 동작](setup_lowspec_noviewer.png){width=1000}
-
-### NVIDIA 그래픽이 있는 노트북
-
-```bash
-__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia ./scripts/mobile_openarm exec python3 scripts/check_gpu.py
-__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia ./scripts/mobile_openarm start
-```
-
-![NVIDIA로 렌더링할 때의 check_gpu.py 결과](setup_lowspec_nvidia.png){width=1000}

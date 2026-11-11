@@ -59,7 +59,7 @@ ros2 topic list
 
 ### 라이다 광선 준비 - __init__ 발췌
 
-```python
+```py
 # mobile_openarm_mujoco/model.py  (Physics)
 def __init__(self, model_path, config_file=None):   # 발췌
     self.angles = np.linspace(-math.pi, math.pi, self.settings["lidar"]["samples"], endpoint=False)   # 360개
@@ -70,7 +70,7 @@ def __init__(self, model_path, config_file=None):   # 발췌
 
 ### 라이다 거리 측정 - scan 함수
 
-```python
+```py
 # mobile_openarm_mujoco/model.py  (Physics)
 def scan(self):
     self.mj.mj_forward(self.model, self.data)
@@ -89,7 +89,7 @@ def scan(self):
 
 ### /scan 발행자 만들기 - Bridge.__init__ 발췌
 
-```python
+```py
 # mobile_openarm_mujoco/bridge.py  (Bridge)
 def __init__(self, physics, world_file=None, actors=None):   # 발췌
     self.scan_pub = self.create_publisher(LaserScan, "/scan", qos_profile_sensor_data)
@@ -97,7 +97,7 @@ def __init__(self, physics, world_file=None, actors=None):   # 발췌
 
 ### /scan 10 Hz 주기와 헤더 - advance 함수 발췌
 
-```python
+```py
 # mobile_openarm_mujoco/bridge.py  (Bridge)
 def advance(self):   # 발췌: 100 Hz 루프 한 바퀴
     p = self.physics
@@ -113,7 +113,7 @@ def advance(self):   # 발췌: 100 Hz 루프 한 바퀴
 
 ### /scan 각도 · 거리 범위 · ranges 채워 발행 - advance 함수 발췌
 
-```python
+```py
         # advance 함수 scan 부분 (이어서)
         scan.angle_min = float(p.angles[0])                        # -π
         scan.angle_max = float(p.angles[-1])                       # +π - 1°
@@ -166,11 +166,6 @@ ros2 run tf2_tools view_frames -o frames     # frames.pdf 생성
 
 ![view_frames 결과의 윗부분: odom → base_footprint → base_link → …](lesson03_tf_tree_top.png){width=1000}
 
-- odom → base_footprint: 브리지가 50 Hz로 갱신
-- 나머지 링크: robot_state_publisher가 발행
-- 고정 관절(캐스터 · 카메라 · laser_link)은 /tf_static
-- 그래서 "Average rate 10000"으로 표시
-
 ### 발행 주기
 
 ![발행 주기: 설정값과 실측](lesson03_rates.png){width=1000}
@@ -198,7 +193,7 @@ ros2 topic hz /clock
 
 ### 명령 → 바퀴 목표 속도 - step 함수 앞부분
 
-```python
+```py
 # mobile_openarm_mujoco/model.py  (Physics)
 def step(self, linear=0.0, angular=0.0, steps=None):
     steps = steps or round(self.bridge_period / self.model.opt.timestep)      # 5
@@ -211,13 +206,17 @@ def step(self, linear=0.0, angular=0.0, steps=None):
     self.data.ctrl[self.wheel_ctrl] = np.clip(wheel, -max_speed, max_speed)
 ```
 
+### 바퀴가 굴러간 호의 길이: dl · dr → ds · da
+
+![](lesson03_wheel_arc.png){width=1000}
+
 ### 바퀴 회전 → 자세 적분
 
 ![step 뒷부분](lesson03_step_odom.png){width=1000}
 
 ### 바퀴 회전 → 자세 적분 - step 함수 뒷부분
 
-```python
+```py
     before = self.data.qpos[self.wheel_q].copy()
     self.mj.mj_step(self.model, self.data, nstep=steps)
     dl, dr = (self.data.qpos[self.wheel_q] - before) * self.radius   # 바퀴가 굴러간 호 길이
@@ -233,7 +232,7 @@ def step(self, linear=0.0, angular=0.0, steps=None):
 
 ### /odom 메시지: 자세 · 속도 · 공분산 - publish_state 함수
 
-```python
+```py
 # mobile_openarm_mujoco/bridge.py
 def publish_state(self, now):
     p = self.physics
@@ -248,9 +247,20 @@ def publish_state(self, now):
     self.odom_pub.publish(odom)
 ```
 
+### 공분산 대각선 [0.0025, 0.0025, 1e6, 1e6, 1e6, 0.01] 의 의미
+
+| 값 (분산) | pose 축 | twist 축 | 의미 (표준편차) |
+|---|---|---|---|
+| 0.0025 | x · y | vx · vy | ± 5 cm · ± 0.05 m/s |
+| 1e6 | z · roll · pitch | vz · ωx · ωy | 재지 않음 → 무시하라는 표시 |
+| 0.01 | yaw | ωz | ± 0.1 rad (약 6°) · ± 0.1 rad/s |
+
+- 6×6 행렬의 대각선 (`covariance[7 * i]`) = 각 축의 분산 · 순서 x, y, z, roll, pitch, yaw
+- 손으로 정한 고정값 · AMCL 은 사용하지 않음 (robot_localization EKF 같은 센서 융합 노드가 사용)
+
 ### odom → base_footprint TF - publish_state 함수
 
-```python
+```py
     # publish_state (이어서)
     tf = TransformStamped()
     tf.header, tf.child_frame_id = odom.header, odom.child_frame_id
@@ -281,13 +291,6 @@ ros2 run tf2_ros tf2_echo odom base_footprint
 ### 프레임 셋: world · odom · base_footprint
 
 ![프레임 셋](lesson03_frames.png){width=1000}
-
-- world: MuJoCo의 절대 좌표
-- /ground_truth 토픽으로만 확인 가능 · 실제 로봇에는 없음
-- odom: 시작 자세를 원점으로 한 적분 좌표
-- 연속적이지만 오차 누적
-- 시뮬레이터라서 정답(world)과 추정(odom)의 직접 비교 가능
-- 이 비교가 실험의 핵심
 
 ### 터미널 2: ros2 topic echo /ground_truth
 
@@ -347,7 +350,11 @@ ros2 topic echo --once /ground_truth                                            
 ros2 topic echo --once /odom
 ```
 
+### 실행 결과: spawn 위치 (/ground_truth) 와 odom (/odom)
+
 ![spawn:=pick_table 일 때 /ground_truth 는 (1.2, -3.6), /odom 은 (0, 0)](lesson03_cli_spawn.png){width=1000}
+
+### 실행 결과 해석: odom은 출발 위치를 모름
 
 - 로봇 위치는 픽업 작업대 앞 (1.2, -3.6)
 - odom 값은 (0, 0, 0)

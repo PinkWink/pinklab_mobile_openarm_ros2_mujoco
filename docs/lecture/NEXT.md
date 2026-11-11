@@ -1,8 +1,24 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-10-18 (설치 페이지 RViz · ① 수업 페이지 관절 명령 절). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-11-12 (다른 PC 의 GitHub · Confluence 수정 되받기). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
-## 0-000000000000000000000000. 2026-10-18: RViz 장면 반투명 · ① 수업 페이지 관절 명령 절 — 다음 세션은 여기부터
+## 0-0000000000000000000000000. 2026-11-12: 다른 PC 작업 되받기 (GitHub d0c1a97 · Confluence 11/11 수정) — 다음 세션은 여기부터
+
+**한 일**
+- GitHub: 다른 PC 커밋 d0c1a97 (설치 fail-safe: apt/rosdep 자동, `check_pip_deps.py`, `doctor`, env.sh 자동 활성화) + 태그 `lecture-2026-11` 를 fast-forward pull.
+- Confluence (부모 3692396550) 16 페이지 live storage 와 `md_to_storage(md)` 정규화 비교: 11/11 웹 수정 5 페이지를 md 로 되받음 (왕복 변환 일치 확인).
+  - 소개 3692331022 v19: h3 "저장소 구성: 폴더 안내" 추가.
+  - 환경 설정 3692331054 v35: 설치 3단계 (clone `-b lecture-2026-11` → install → doctor), source 불필요, "③ 설치 스크립트: 주의할 점" · doctor · "⑤ 설치 확인" · "설치 문제 (26.11.11 추가)" 절, NVIDIA 노트북 절 삭제.
+  - ① 3692920898 v29: "자동 계산 질량은 근사치" · "MJCF에서 질량 직접 적기" 절.
+  - ③ 3697442817 v15: 코드 절 h3 제목 정리, 핑크랩 링크, "URDF 와 MJCF 의 크기 비교: 결과" 분리.
+  - ④ 3696820239 v27: 호 길이 · 공분산 표 · spawn 결과 해석 절 + 새 그림 `lesson03_wheel_arc.png` (Confluence 에서 내려받음).
+  - SLAM 3701112888 은 웹 편집기의 이미지 정렬 속성 · 코드 언어 `py` 만 달라 md 그대로 둠. 나머지 10 페이지는 md 와 동일.
+- `publish_confluence.py`: 인라인 링크 `[글](https://..)` 지원 추가 (③ 페이지 링크 보존용).
+- 새 스크립트 `scripts/pull_confluence.py` (웹 수정 되받기): `--status 3692396550 docs/camp` 로 페이지별 SAME/DIFF, `<pageId> <md> --write` 로 왕복 검사 통과 시 md 덮어쓰기 + 바뀐 그림 받기. 게시 전에 `--status` 로 웹 수정 여부부터 확인.
+
+**다음**: ⑭ Final Mission (아래 2026-10-18 절 '다음' 참고).
+
+## 0-000000000000000000000000. 2026-10-18: RViz 장면 반투명 · ① 수업 페이지 관절 명령 절
 
 **한 일**
 - 설치 경고 문의 (고치지 않음): `install_lecture.sh` 의 rosdep `pkg_resources` DeprecationWarning 은 /usr/bin/rosdep 자체 문제. pip 의 `Skipping .../pybind11-2.11.1.dist-info` 는 apt `python3-pybind11` 의 dist-info 에 METADATA 가 없어서이고, venv 가 `--system-site-packages` 라 보임. 둘 다 무해.
@@ -425,6 +441,7 @@ M4 전체 데모(시뮬레이터 + 실행기 + 텍스트 대화)는 `docs/lectur
 | `scripts/dev/monitor_parcel.py <log>` | parcel_1 높이·오른손가락·스킬 단계 기록 |
 | `scripts/dev/grasp_physics.py` | ROS 없이 파지 유지 물리 실험 |
 | `scripts/publish_confluence.py` | md → Confluence 하위 페이지 (토큰은 `../confluence_token.txt`) |
+| `scripts/pull_confluence.py` | Confluence 웹 수정 → md (왕복 검사, `--status` 로 전체 비교) |
 | `scripts/cleanup_ros.sh` | 잔여 ROS 프로세스 정리 |
 
 ## 5. 알아 두어야 할 함정

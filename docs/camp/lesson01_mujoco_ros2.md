@@ -42,6 +42,28 @@
 
 ![단위와 기본값](lesson01_xml_units_v2.png){width=1000}
 
+### 자동 계산 질량은 근사치
+
+- 기본 밀도 1000 kg/m³(물) · 속이 꽉 찬 균일한 덩어리로 가정
+- 실제 링크는 속이 비어 있고 모터 · 감속기가 몰려 있어 질량 · 무게중심이 다름
+- 충돌을 끈 geom(`contype=0`)도 질량에 포함
+- 이 레슨의 팔: 실물 없는 연습용 · 위치 제어라 영향이 작음 (link1 약 0.41 kg, link2 약 0.28 kg)
+- 토크 제어 · 중력 보상 · sim2real · 무거운 물체 파지에서는 실제 값 필요
+
+### MJCF에서 질량 직접 적기
+
+```xml
+<body name="link1" pos="0 0 0.06">
+  <inertial pos="0 0 0.15" mass="0.8" diaginertia="0.0062 0.0062 0.0002"/>
+  <joint name="joint1" type="hinge" axis="0 1 0"/>
+  <geom type="capsule" fromto="0 0 0 0 0 0.30" size="0.02"/>
+</body>
+```
+
+- `<inertial>`: 무게중심 `pos` · `mass` · `diaginertia`(또는 URDF식 `fullinertia`) — CAD · URDF 값 사용
+- 간단히: `<geom mass="0.8">`(질량만) 또는 `density="2700"`(알루미늄)
+- 강좌 로봇은 `<compiler inertiafromgeom="false">` + URDF `<inertial>` 그대로 사용 (`model.py`)
+
 ### 모델만 먼저 보기: mujoco.viewer
 
 ```bash
@@ -296,7 +318,7 @@ ros2 topic pub -1 /cmd std_msgs/msg/Float64MultiArray "{data: [0.6, 1.5]}"
 ros2 topic pub -1 /cmd std_msgs/msg/Float64MultiArray "{data: [0.0, 0.0]}"
 ```
 
-![터미널 2: 관절 명령 [0.0, 0.0]](lesson01_t2_pub2.png){width=1000}
+![ros2 topic pub /cmd [0.0, 0.0]](lesson01_t2_pub2.png){width=1000}
 
 ### 터미널 2: 환경 설정
 
