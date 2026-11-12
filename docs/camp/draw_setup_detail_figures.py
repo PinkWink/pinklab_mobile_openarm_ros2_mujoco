@@ -36,11 +36,11 @@ def ros2_packages():
 # ================================================================ 1-2. install script
 def install_script():
     fig, ax = fig_ax(14, 3.9)
-    note(ax, 0.3, 3.6, "② git clone  →  ③ ./scripts/install_lecture.sh 가 하는 일", bold=True, fs=12)
-    chain(ax, [("rosdep 확인", ["빠진 ROS 패키지 안내"]), ("가상환경", [".venv-mobile-openarm", "ROS Python과 분리"]),
-               ("pip", ["torch CPU · ultralytics", "openai · mujoco …"]), (".env 생성", [".env.example 복사", "OpenAI 키 자리"]),
-               ("colcon build", ["ROS 2 워크스페이스"]), ("단위 테스트", ["\"설치 완료\" 출력", "= 성공"])],
-          y=1.2, h=1.9, gap=0.25, colors=[C["grey"], C["purple"], C["purple"], C["yellow"], C["blue"], C["green"]], tfs=10.5, fs=8.6)
+    note(ax, 0.3, 3.6, "② git clone  →  ③ ./scripts/install_lecture.sh 가 하는 일 (여러 번 실행해도 안전)", bold=True, fs=12)
+    chain(ax, [("apt 패키지", ["apt_packages.txt 24개", "빠진 것만 설치"]), ("rosdep", ["처음이면 init · update", "src/ 의존성 설치"]),
+               ("가상환경", [".venv-mobile-openarm", "항상 /usr/bin/python3"]), ("pip + 충돌 검사", ["torch CPU · openai …", "강의 무관 충돌은 WARN"]),
+               ("colcon build", ["ROS 2 워크스페이스", ".env 도 이때 생성"]), ("단위 테스트", ["\"설치 완료\" 출력", "→ doctor 로 점검"])],
+          y=1.2, h=1.9, gap=0.25, colors=[C["blue"], C["grey"], C["purple"], C["purple"], C["blue"], C["green"]], tfs=10.5, fs=8.6)
     note(ax, 0.3, 0.6, "고정 버전은 올리지 않는다:  numpy<2 · opencv-python<4.11 · setuptools<80 · ml-dtypes<0.6   (ROS Jazzy Python 스택 · colcon 호환)", fs=9.2, color="#C62828")
     save(fig, "setup_install_script.png")
 
@@ -48,15 +48,15 @@ def install_script():
 # ================================================================ 1-2b. install_lecture.sh step by step
 def install_script_detail():
     fig, ax = fig_ax(14, 5.2)
-    note(ax, 0.3, 4.9, "scripts/install_lecture.sh 안에서 일어나는 일 (실패하면 그 단계에서 멈춘다: set -e)", bold=True, fs=12)
-    flow_rows(ax, [("1  사전 검사", "ROS_DISTRO=jazzy · Linux 인지"), ("2  rosdep install", "src/ 의 package.xml 의존성"),
-                   ("3  apt 누락 검사", "빠지면 안내 후 종료"), ("4  venv 생성", "system-site-packages"),
-                   ("5  pip 설치", "requirements-*.txt 2개"), ("6  pip check", "의존성 충돌이면 종료"),
+    note(ax, 0.3, 4.9, "scripts/install_lecture.sh 안에서 일어나는 일 (실패하면 그 단계에서 멈춘다 → 고친 뒤 다시 실행)", bold=True, fs=12)
+    flow_rows(ax, [("1  사전 준비", "Linux · ROS 자동 source"), ("2  apt 패키지", "빠진 것 설치 · 끊기면 재시도"),
+                   ("3  rosdep", "처음이면 init · update"), ("4  venv 생성", "항상 /usr/bin/python3"),
+                   ("5  pip 설치", "requirements 2개 · 재시도 10회"), ("6  충돌 검사", "check_pip_deps.py"),
                    ("7  .env", "없으면 .env.example 복사"), ("8  colcon build", "symlink · 필요한 패키지만"),
-                   ("9  pytest -x", "시뮬레이터 없이"), ("10  완료 안내", "\"설치 완료\" 출력")],
+                   ("9  pytest -x", "시뮬레이터 없이"), ("10  완료 안내", "\"설치 완료\" → doctor")],
               per_row=5, y_top=4.5, h=1.35, gap=0.25, row_gap=0.7,
               colors=[C["grey"], C["blue"], C["blue"], C["purple"], C["purple"], C["purple"], C["yellow"], C["blue"], C["green"], C["green"]], tfs=10.5, fs=8.4)
-    note(ax, 0.3, 0.35, "빌드 환경 변수: MOBILE_ENV_MODE=native      테스트 환경 변수: MOBILE_OPENARM_MODEL_DIR=artifacts/mobile_generated", fs=9.2)
+    note(ax, 0.3, 0.35, "conda 가 켜진 터미널도 된다 (conda Python 으로 만든 venv 는 다시 만든다)      충돌 검사: 강의와 무관한 apt 패키지끼리의 충돌은 WARN 만", fs=9.2)
     save(fig, "setup_install_script_detail.png")
 
 
@@ -86,12 +86,12 @@ def openai_key():
 # ================================================================ 1-4. env.sh per terminal
 def env_sh():
     fig, ax = fig_ax(14, 4.0)
-    note(ax, 0.3, 3.7, "새 터미널마다: setup.bash → scripts/env.sh", bold=True, fs=12)
-    chain(ax, [("source /opt/ros/jazzy/setup.bash", ["zsh 는 setup.zsh"]), ("source scripts/env.sh", ["가상환경 + install 환경", "ROS_DOMAIN_ID=43 · CycloneDDS(localhost)"]),
-               ("ros2 · 예제 스크립트", ["이 터미널에서 바로 실행"])],
+    note(ax, 0.3, 3.7, "평소엔 source 불필요:  ./scripts/mobile_openarm <명령> 이 ROS 2 Jazzy 와 venv 를 스스로 켠다", bold=True, fs=12)
+    chain(ax, [("새 터미널", ["ROS · venv 꺼진 그대로", "mobile_openarm 명령은 바로 실행"]), ("source scripts/env.sh", ["ros2 CLI 를 직접 칠 때만 한 줄", "ROS · venv 자동 · bash / zsh"]),
+               ("ros2 · 예제 스크립트", ["이 터미널에서 바로 실행", "ROS_DOMAIN_ID=43 · CycloneDDS"])],
           y=1.5, h=1.8, colors=[C["blue"], C["purple"], C["green"]], tfs=10.5, fs=8.8)
     ax.add_patch(Rectangle((0.3, 0.3), 13.4, 0.85, fc="#FFFBF0", ec="#D9C48A", lw=1.0, zorder=1))
-    note(ax, 0.5, 0.72, "source 안 한 터미널:  ./scripts/mobile_openarm exec <명령>", fs=9.5, color="#7a4b00")
+    note(ax, 0.5, 0.72, "ros2 한 번만:  ./scripts/mobile_openarm exec ros2 <…>", fs=9.5, color="#7a4b00")
     note(ax, 13.5, 0.72, "localhost 통신 → 강의실의 다른 노트북과 토픽이 섞이지 않는다", fs=9.5, ha="right", color="#7a4b00")
     save(fig, "setup_env_sh.png")
 
@@ -100,7 +100,7 @@ def env_sh():
 def env_sh_detail():
     fig, ax = fig_ax(14, 4.6)
     note(ax, 0.3, 4.3, "scripts/env.sh 안에서 일어나는 일 (source 해서 현재 셸에 적용)", bold=True, fs=12)
-    flow_rows(ax, [("1  ROS 확인", "ROS_DISTRO=jazzy 아니면 중단"), ("2  가상환경 활성화", ".venv-mobile-openarm"),
+    flow_rows(ax, [("1  ROS 켜기", "꺼져 있으면 setup.bash · zsh 자동"), ("2  가상환경 활성화", ".venv-mobile-openarm"),
                    ("3  워크스페이스", "install/local_setup.bash · zsh"), ("4  통신 범위", "DOMAIN_ID=43 · localhost 만"),
                    ("5  DDS", "CycloneDDS + cyclonedds.xml"), ("6  로그 위치", "ROS_HOME · ROS_LOG_DIR → .ros/"),
                    ("7  모델 · 파이썬", "MODEL_DIR · PYTHONNOUSERSITE=1"), ("8  ros2launch 함수", "venv python 으로 launch")],
@@ -316,7 +316,7 @@ def trouble_env():
     tiles(ax, [("ros2 CLI에 아무것도 안 보임", ["원인: env.sh 미적용 · wrapper 없이 실행", "조치: source scripts/env.sh 또는 mobile_openarm exec ros2 …", "토픽이 2개만 보이면 ros2 daemon stop 후 다시"], C["blue"]),
                ("액션 거부 · Nav2 없음 · 노드 중복", ["원인: 이전 실행 프로세스가 남아 있음", "조치: ./scripts/cleanup_ros.sh → 다시 start"], C["yellow"]),
                ("bridge가 ModuleNotFoundError: mujoco 로 죽음", ["원인: 가상환경 없이 ros2 launch 직접 실행", "조치: wrapper (./scripts/mobile_openarm start) 사용"], C["red"]),
-               ("zsh에서 setup.bash 오류", ["원인: ROS 스크립트는 셸별 파일이 있다", "조치: source /opt/ros/jazzy/setup.zsh"], C["grey"])],
+               ("zsh에서 setup.bash 오류", ["원인: ROS 스크립트는 셸별 파일이 있다", "조치: source scripts/env.sh (zsh 자동 처리)", "직접 켤 때는 source /opt/ros/jazzy/setup.zsh"], C["grey"])],
           cols=2, y_top=3.8, h=1.6, gap=0.3, tfs=10.5, fs=8.6)
     save(fig, "setup_trouble_env.png")
 
