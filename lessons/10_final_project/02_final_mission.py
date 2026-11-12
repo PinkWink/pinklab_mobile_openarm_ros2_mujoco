@@ -34,7 +34,7 @@ SCENARIOS = {
 
 
 def plan_client():
-    """03_task_manager.PlanClient from lessons/08_lmm (ExecutePlan action client with feedback print)."""
+    """PlanClient from lessons/08_lmm/07_run_plan.py (ExecutePlan action client with feedback print)."""
     path = Path(__file__).resolve().parents[1] / "08_lmm" / "07_run_plan.py"
     spec = importlib.util.spec_from_file_location("run_plan", path)
     mod = importlib.util.module_from_spec(spec)

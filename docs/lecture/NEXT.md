@@ -12,9 +12,11 @@
 - 시뮬레이터 실측: 02 세 시나리오 5/5 · 5/5 · 5/5 (179 · 178 · 140 s), 7 턴, $0.0043. 로그 `artifacts/dev/l14/final_run2.log` · `.json`, 기록 `artifacts/dev/l14/final_mission.pkl` (pick_record, sim 900 s). 단계 직접 입력 정 · 역 운반도 성공 (`fwd_red.log` 152 s, `rev_red.log` 155 s).
 - 첫 실행 실패 원인 = 내 정리 실수: 첫 스택을 끌 때 `pick_place_server` · `warehouse_scene` 이 남아 PickPlace 서버가 둘 → 한 goal 을 두 번 실행 → "Cannot push a new trajectory while another is being executed" → Cartesian 52 % · MoveIt -4 → move_group segfault. 백그라운드로 띄운 launch 는 SIGINT 를 무시함 (SIGTERM 필요).
 - 재발 방지 (사용자 요청): `scripts/stack_procs.py` (환경변수 ROS_HOME=<ws>/.ros/mobile_openarm 로 이 워크스페이스 프로세스 판별, `--all`, `--kill`), `./scripts/mobile_openarm stop`, start/drive/slam/moveit/display 는 남은 시뮬레이터 프로세스가 있으면 목록을 보여 주고 멈춤 (`MOBILE_SKIP_PROC_CHECK=1` 로 우회), doctor 에 '남은 프로세스' 경고. README · 00_setup FAQ 에 기록. 실제 스택으로 거부 · stop · 재시작 확인. 테스트 45 passed.
-- 커밋 안 함.
+- 커밋 · push 5e6acb5.
+- Confluence 새 하위 페이지 3779067905 "Final Mission: 자연어 한 문장으로 창고 운반 End-to-End" (v1, 부모 3692396550) ← `docs/camp/lesson15_final_mission.md` (h3 33: 1 개념 5 → 2 실행 17 (01 · start · task_manager(⑫ lesson13_t2.png 재사용) · 02 시나리오 1~3 · 경로 · 장면 · 시간 · dry-run · stop) → 3 코드 10 → 해 볼 것) + `lesson15_*.png` 15장. 그림: `MUJOCO_GL=egl ./scripts/mobile_openarm exec python docs/camp/draw_lesson15_figures.py`, 터미널: `python3 docs/camp/render_lesson15_terminals.py` (로그를 걸러서 그림, 손으로 친 줄 없음). 데이터 `artifacts/dev/l14/` (final_run2.log · final_mission.pkl · 01_run1~8.log · 01_final.log · dry_s3.log · start_refused.log · stop.log).
+- 정확도 그림의 막대 4개 = 표 없음 (run3 · 4 · 5 · final), '이미 있으면 비워라' 를 LLM 에 (run1 · 2), 판정은 코드 (run3 · 4 · 5), + '말한 도착지 그대로' (run6 · 7 · 8 · final).
 
-**다음**: ⑭ Confluence 페이지 (부모 3692396550, `docs/camp/lesson15_final_mission.md` 예정): 개념(왜 위치표 · 역할 분리: LLM=의도, 코드=사실 검사) → 01 결과 그래프 → 02 실행(대화 · 단계 · 표 변화) → 기록 pkl 로 오프스크린 렌더 · 경로 그림 → 코드(WorldState · parse · dialog) → 해 볼 것. 그 뒤 lessons README · INSTALL.md · check_env.sh.
+**다음**: lessons README (01~10 목차) · INSTALL.md · check_env.sh (doctor 로 대체됐는지 확인), 페이지 순서 확인.
 
 ## 0-0000000000000000000000000. 2026-11-12: 다른 PC 작업 되받기 (GitHub d0c1a97 · Confluence 11/11 수정) 
 

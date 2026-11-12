@@ -21,7 +21,7 @@ UNKNOWN = "unknown"    # a pick/place failed half-way: look before trusting the 
 class WorldState:
     def __init__(self, parcels=None):
         self.parcels = dict(parcels or {p: "pick_table" for p in PARCELS})
-        self.history = []     # (utterance, before, after) per executed plan
+        self.history = []     # (before, after) per executed plan
 
     # --- the planner's view --------------------------------------------------
     def where(self, parcel):
