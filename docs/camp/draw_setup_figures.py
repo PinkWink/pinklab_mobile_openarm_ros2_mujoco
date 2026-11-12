@@ -34,7 +34,7 @@ def install_flow():
     ax.set_xlim(0, 14); ax.set_ylim(0, 4.2); ax.axis("off")
     steps = [
         ("1  ROS 2 Jazzy", ["ros-jazzy-desktop", "(공식 안내 · 직접)", "sudo apt install git"], "#E3EEFF"),
-        ("2  저장소 받기", ["git clone -b lecture-2026-11", "  <GitHub 저장소>", "cd pinklab_mobile_…"], "#FFF3D6"),
+        ("2  저장소 받기", ["git clone <GitHub 저장소>", "cd pinklab_mobile_…"], "#FFF3D6"),
         ("3  install_lecture.sh", ["apt 추가 패키지 · rosdep", "venv · pip · 충돌 검사", "colcon build · pytest", "→ doctor 로 점검"], "#E6F7E6"),
         ("4  .env", ["cp .env.example .env", "OPENAI_API_KEY=…", "LLM 모듈에서만 필요", "키는 강사가 배포"], "#FFE0E0"),
         ("5  확인", ["doctor 실패 0건", "start → MuJoCo + RViz", "goal 1.0 0.6 0", "pick red (약 3분)"], "#EDE7F6"),

@@ -38,13 +38,12 @@ sudo apt install git
 ### ③ 설치 스크립트
 
 ```bash
-git clone -b lecture-2026-11 https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
+git clone https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
 cd pinklab_mobile_openarm_ros2_mujoco
 ./scripts/install_lecture.sh        # sudo 비밀번호를 한 번 묻는다
 ./scripts/mobile_openarm doctor     # 환경 점검
 ```
 
-- `-b lecture-2026-11`: 강좌용 고정 버전 (강좌 중 main이 바뀌어도 영향 없음)
 - 수행 순서: apt 패키지 → rosdep → 가상환경 → pip → 충돌 검사 → `colcon build` → 단위 테스트
 - 마지막에 "설치 완료" 출력 시 성공
 
