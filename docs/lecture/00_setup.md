@@ -18,13 +18,12 @@
 ROS 2 Jazzy(`ros-jazzy-desktop`)를 [공식 안내](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)대로 설치한 뒤, 나머지는 스크립트 하나로 끝난다.
 
 ```bash
-git clone -b lecture-2026-11 https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
+git clone https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
 cd pinklab_mobile_openarm_ros2_mujoco
 ./scripts/install_lecture.sh        # sudo 비밀번호를 한 번 묻는다
 ./scripts/mobile_openarm doctor     # 환경 점검. 결과를 강사에게 보낸다
 ```
 
-- `-b lecture-2026-11`: 강좌용으로 고정한 버전이다. 강좌 기간에 main이 바뀌어도 수강생 환경은 그대로다.
 - `install_lecture.sh`가 하는 일: ROS 환경 자동 source → `scripts/apt_packages.txt`의 apt 패키지 중 빠진 것 설치 → `rosdep init/update`(처음 한 번) → `.venv-mobile-openarm`(시스템 Python + 시스템 site-packages 공유) 생성 → `requirements-mobile-openarm.txt`, `requirements-lecture.txt` 설치 → 의존성 충돌 검사 → 9개 패키지 빌드 → 단위 테스트. 여러 번 실행해도 안전하다.
 - conda base가 켜진 터미널이어도 된다. venv는 항상 `/usr/bin/python3`로 만들고, 예전에 conda Python으로 만든 venv가 있으면 다시 만든다.
 - 의존성 충돌 검사(`scripts/check_pip_deps.py`)는 강의와 무관한 apt 패키지끼리의 충돌(예: `yt-dlp ... has requirement websockets>=12.0, but you have websockets 10.4`)은 `WARN`으로만 보여 주고 넘어간다. `ERROR`가 나오면 그 줄을 강사에게 보낸다.

@@ -20,7 +20,7 @@ Ubuntu 24.04, ROS 2 Jazzy(native), Python 3.12, 4코어·16 GB 이상, 내장 �
 ## 설치와 실행
 
 ```bash
-git clone -b lecture-2026-11 https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
+git clone https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
 cd pinklab_mobile_openarm_ros2_mujoco
 ./scripts/install_lecture.sh            # apt·rosdep·venv·의존성·colcon build·테스트 (docs/lecture/00_setup.md)
 ./scripts/mobile_openarm doctor         # 환경 점검 (✅/⚠️/❌)
@@ -29,7 +29,7 @@ cd pinklab_mobile_openarm_ros2_mujoco
 ./scripts/mobile_openarm stop           # 끝낼 때 · 이전 실행이 남았을 때: 이 워크스페이스의 노드를 모두 종료
 ```
 
-ROS 2 Jazzy만 미리 설치되어 있으면 됩니다. 새 터미널에서 `source` 없이 `./scripts/mobile_openarm ...`을 바로 실행하세요(wrapper가 ROS와 venv를 스스로 켭니다). OpenAI 키는 설치 때 만들어지는 `.env`에 넣습니다(LLM 모듈에서만 필요). `-b lecture-2026-11`는 강좌용으로 고정한 버전이며, 최신 개발 버전은 `-b` 없이 받습니다.
+ROS 2 Jazzy만 미리 설치되어 있으면 됩니다. 새 터미널에서 `source` 없이 `./scripts/mobile_openarm ...`을 바로 실행하세요(wrapper가 ROS와 venv를 스스로 켭니다). OpenAI 키는 설치 때 만들어지는 `.env`에 넣습니다(LLM 모듈에서만 필요). 이미 받은 저장소는 `git pull` 후 설치 스크립트를 다시 실행하면 최신이 됩니다.
 
 자세한 명령과 launch 인자는 [docs/USAGE.md](docs/USAGE.md)를 보세요.
 

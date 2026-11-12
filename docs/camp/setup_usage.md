@@ -225,7 +225,7 @@ ros2 launch mobile_openarm_description display.launch.py gui:=false   # 슬라�
 - **pip 의존성 충돌이 있습니다**: `WARN`만 있으면 무시(강의 무관 apt 패키지 충돌). `ERROR` 줄은 강사에게 전달 — `requirements-lecture.txt` 임의 수정 금지
 - **apt 다운로드 실패**: 강의실 와이파이 끊김 → `./scripts/install_lecture.sh` 다시 실행 (받은 패키지는 보존)
 - **강좌 venv(.venv-mobile-openarm)가 없습니다**: 설치가 중간에 멈춘 경우 → 설치 스크립트 다시 실행
-- **이미 받은 저장소를 강좌 버전으로**: `git fetch --tags && git checkout lecture-2026-11` 후 설치 스크립트 실행
+- **이미 받은 저장소를 최신으로**: 저장소 폴더에서 `git pull` 후 설치 스크립트 실행
 
 ## 7. 저사양 PC
 
