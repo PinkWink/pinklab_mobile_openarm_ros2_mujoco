@@ -52,6 +52,10 @@ grep -v '^#' scripts/apt_packages.txt | xargs sudo apt install -y   # 추가 apt
 
 ![install_lecture.sh 끝부분: colcon build 10 개 → 단위 테스트 45 passed → 설치 완료](setup_install_result.png){width=1000}
 
+### doctor 실행 결과
+
+![doctor 끝부분: ✅ 수업 준비 완료 (경고 1건: OpenAI 키는 ④ 에서 입력)](setup_doctor_result.png){width=1000}
+
 ### ③ 설치 스크립트: 주의할 점
 
 - 여러 번 실행해도 안전 — 네트워크 끊김 등으로 멈추면 다시 실행
