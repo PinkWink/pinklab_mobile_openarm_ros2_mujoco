@@ -62,6 +62,11 @@ def setup(context):
                 ]
             )
             lifecycle += ["map_server", "amcl"]
+        # Replan only when the path becomes invalid (blocked) instead of every second. Each new path resets the
+        # RotationShim's "inside the goal tolerance" latch; with AMCL drifting a few cm while the robot turns in place,
+        # the robot then fell out of the tolerance and turned back toward the goal point (left-right swings at the goal).
+        bt_xml = str(Path(get_package_share_directory("nav2_bt_navigator"))
+                     / "behavior_trees/navigate_w_recovery_and_replanning_only_if_path_becomes_invalid.xml")
         for pkg, exe in [
             ("nav2_controller", "controller_server"),
             ("nav2_planner", "planner_server"),
@@ -74,7 +79,7 @@ def setup(context):
                     package=pkg,
                     executable=exe,
                     name=exe,
-                    parameters=[params],
+                    parameters=[params, {"default_nav_to_pose_bt_xml": bt_xml}] if exe == "bt_navigator" else [params],
                     output="screen",
                 )
             )

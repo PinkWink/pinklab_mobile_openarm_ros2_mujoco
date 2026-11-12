@@ -44,13 +44,13 @@ python docs/camp/avoid_scenario.py              # 근로자가 x = 3.4 에서 �
 
 ### RViz2 로 본 회피 과정
 
-![① 접근 → ② 감지 · 우회 → ③ 멈춤 · 대기 → ④ 재개](lesson06_rviz_sequence.png){width=1000}
+![① 접근 → ② 감지 · 우회 → ③ 북쪽으로 · 제자리 회전 → ④ 재개](lesson06_rviz_sequence.png){width=1000}
 
 ### 같은 순간의 MuJoCo 창
 
 ![MuJoCo 창의 네 장면](lesson06_mujoco_sequence.png){width=1000}
 
-### Global Costmap 을 켠 넓은 화면
+### Global Costmap 을 켠 화면
 
 ![근로자 · 콘 · 선반 다리가 모두 막힘으로 칠해진 global costmap](lesson06_rviz_wide.png){width=1000}
 
@@ -64,7 +64,7 @@ python docs/camp/avoid_scenario.py              # 근로자가 x = 3.4 에서 �
 
 ### 실측: 위에서 본 궤적
 
-![/plan 이 매번 새로 그려진다](lesson06_paths.png){width=1000}
+![/plan 은 길이 막힐 때만 새로 그려진다](lesson06_paths.png){width=1000}
 
 ## 3. 한계: 마주 오는 근로자
 
@@ -76,7 +76,7 @@ python docs/camp/avoid_scenario.py --mode headon     # 새로 띄운 직후에 �
 
 ### 실행 결과: headon
 
-![headon 출력: 최소 거리 0.30 m](lesson06_cli_headon.png){width=1000}
+![headon 출력: 최소 거리 0.15 m](lesson06_cli_headon.png){width=1000}
 
 ### headon 의 궤적과 거리
 
@@ -140,6 +140,19 @@ local_costmap:
       footprint: '[[0.38,0.32],[0.38,-0.32],[-0.38,-0.32],[-0.38,0.32]]'
 ```
 
+### 길이 막힐 때만 다시 계획 - navigation.launch.py 발췌
+
+```python
+# mobile_openarm_navigation/launch/navigation.launch.py  (발췌)
+bt_xml = str(Path(get_package_share_directory("nav2_bt_navigator"))
+             / "behavior_trees/navigate_w_recovery_and_replanning_only_if_path_becomes_invalid.xml")
+for pkg, exe in [..., ("nav2_bt_navigator", "bt_navigator")]:
+    actions.append(Node(
+        package=pkg, executable=exe, name=exe,
+        parameters=[params, {"default_nav_to_pose_bt_xml": bt_xml}] if exe == "bt_navigator" else [params],
+    ))
+```
+
 ### Global · Local Costmap 표시 추가 - navigation.rviz 발췌
 
 ```yaml
@@ -191,3 +204,4 @@ handle = n.nav.send_goal_async(goal)                                      # /nav
 - `--speed 0.2` 로 근로자를 천천히 걷게 해 headon 다시 실행 → 최소 거리 비교
 - `nav2.yaml` 의 `inflation_radius` 를 0.8 로 키워 headon 다시 실행 → 더 일찍 피하는지 확인
 - RViz 에서 Local Costmap 만 켜고 근로자가 지나간 칸이 비워지는(clearing) 순간 관찰
+- `navigation.launch.py` 의 `default_nav_to_pose_bt_xml` 을 빼고(기본 BT: 1 초마다 다시 계획) crossing 다시 실행 → /plan 횟수와 목표에서 좌우로 도는지 비교

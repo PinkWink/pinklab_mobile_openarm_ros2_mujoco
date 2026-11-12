@@ -1,7 +1,8 @@
 """Figures for the lesson-06 Confluence page (Nav2 collision avoidance with a walking worker). Output: docs/camp/lesson06_*.png
 
-Run from the workspace root. Data: artifacts/dev/nav_crossing.pkl (close-up crossing run), nav_crossing_wide.pkl,
-nav_headon.pkl (docs/camp/nav_record.py) and screenshots in artifacts/dev/avoid_frames/.
+Run from the workspace root. Data: artifacts/dev/nav_crossing_v2.pkl, nav_headon_v2.pkl (docs/camp/nav_record.py, 2026-11-12, BT = replan only when
+the path becomes invalid), nav_crossing_wide.pkl (map for the scenario figure) and full-screen captures in
+artifacts/dev/avoid_frames_v2/ (MuJoCo | RViz close-up | RViz wide with the global costmap, one per sim second).
 """
 import pickle
 import sys
@@ -17,8 +18,10 @@ import numpy as np  # noqa: E402
 from PIL import Image  # noqa: E402
 
 RED, BLUE, GREEN, BROWN, GREY, ORANGE = "#C62828", "#1f4e79", "#2e7d32", "#7a4b00", "#9e9e9e", "#EF6C00"
-FR = Path("artifacts/dev/avoid_frames")
-PHASES = [(0.0, 6.0, "① 접근", "#E3F2FD"), (6.0, 8.8, "② 감지 · 우회", "#FFF3E0"), (8.8, 10.3, "③ 멈춤 · 대기", "#FFEBEE"), (10.3, 16.0, "④ 재개", "#E8F5E9")]
+FR = Path("artifacts/dev/avoid_frames_v2")
+MJ, RV, WIDE = (345, 200, 1195, 1000), (1830, 130, 2430, 1040), (2840, 380, 3440, 900)     # crop boxes
+PHASES = [(0.0, 6.6, "① 접근", "#E3F2FD"), (6.6, 8.9, "② 감지 · 우회", "#FFF3E0"), (8.9, 11.6, "③ 북쪽으로 · 제자리 회전", "#FFEBEE"), (11.6, 16.0, "④ 재개", "#E8F5E9")]
+PICKS = (6.0, 8.0, 10.0, 13.0)        # sim seconds of the four moments ①~④
 
 
 def load(name):
@@ -72,7 +75,7 @@ def flow():
     rbox(ax, 8.1, 2.4, 3.6, 0.95, "local costmap", ["odom 기준 · 5 m 창 · 10 Hz"], fc=C["grey"], tfs=10, fs=8.2)
     ax.plot([8.3, 8.3], [4.0, 3.7], color=INK, lw=1.6); ax.plot([5.5, 9.9], [3.7, 3.7], color=INK, lw=1.6)
     arrow(ax, (5.5, 3.7), (5.5, 3.35)); arrow(ax, (9.9, 3.7), (9.9, 3.35))
-    rbox(ax, 3.7, 0.7, 3.6, 1.25, "④ Planner (약 1 초마다)", ["새 /plan: 근로자의 지금 자리를 돌아감"], fc=C["purple"], tfs=10, fs=8.2)
+    rbox(ax, 3.7, 0.7, 3.6, 1.25, "④ Planner (경로가 막힐 때)", ["새 /plan: 근로자의 지금 자리를 돌아감"], fc=C["purple"], tfs=10, fs=8.2)
     rbox(ax, 8.1, 0.7, 3.6, 1.25, "⑤ Controller DWB (15 Hz)", ["부딪히는 속도 후보는 버림"], fc=C["blue"], tfs=10, fs=8.2)
     rbox(ax, 12.2, 0.7, 1.5, 1.25, "브리지", ["바퀴"], fc=C["teal"], tfs=10, fs=8.2)
     arrow(ax, (5.5, 2.4), (5.5, 1.95)); arrow(ax, (9.9, 2.4), (9.9, 1.95))
@@ -82,7 +85,7 @@ def flow():
     note(ax, 0.3, 2.45, "근로자의 '속도' 는", fs=9.2)
     note(ax, 0.3, 2.05, "어디에도 없다.", fs=9.2)
     note(ax, 0.3, 1.65, "지금 막힌 칸만 본다.", fs=9.2)
-    note(ax, 0.3, 0.3, "Planner 는 global costmap, Controller 는 local costmap 을 본다. 둘 다 같은 /scan 으로 근로자를 칠한다.", fs=9.6)
+    note(ax, 0.3, 0.3, "Planner 는 global costmap, Controller 는 local costmap 을 본다. 둘 다 같은 /scan 으로 근로자를 칠한다. Planner 는 지금 경로가 막혔을 때만 새로 그린다.", fs=9.4)
     save(fig, "lesson06_flow.png")
 
 
@@ -129,37 +132,37 @@ def rviz_displays():
 
 # ================================================================ 2. 실측
 def rviz_sequence():
-    frames = [("crossing_s09.png", "① 접근: 앞에 근로자(오른쪽 위 블롭) · 콘"), ("crossing_s13.png", "② 감지 · 우회: /plan 이 남쪽으로 휘고 로봇이 튼다"),
-              ("crossing_s15.png", "③ 멈춤 · 대기: 근로자가 막 앞을 지나간다"), ("crossing_s19.png", "④ 재개: 근로자 뒤로 지나 목표로")]
-    fig, axs = plt.subplots(2, 2, figsize=(14, 13.6), dpi=150)
-    for ax, (f, t) in zip(axs.flat, frames):
-        ax.imshow(Image.open(FR / f).crop((1470, 130, 2230, 866))); ax.axis("off"); ax.set_title(t, fontsize=12)
-    fig.suptitle("RViz2 (Global Costmap 끔): Local Costmap · Footprint · Global/Local Plan · DWB Trajectories · Lidar", fontsize=13, fontweight="bold", x=0.01, ha="left")
-    fig.tight_layout(rect=(0, 0, 1, 0.97))
+    frames = [("crossing_s06.png", "① 접근: 앞에 근로자 · 콘 (/plan 은 처음 그대로)"), ("crossing_s08.png", "② 감지 · 우회: 길이 막혀 /plan 이 남쪽으로 휜다"),
+              ("crossing_s10.png", "③ 근로자도 남쪽으로 → 북쪽 /plan, 제자리 회전"), ("crossing_s13.png", "④ 재개: 근로자 뒤(북쪽)로 지나 목표로")]
+    fig, axs = plt.subplots(1, 4, figsize=(14, 6.4), dpi=150)
+    for ax, (f, t) in zip(axs, frames):
+        ax.imshow(Image.open(FR / f).crop(RV)); ax.axis("off"); ax.set_title(t, fontsize=9.6)
+    fig.suptitle("RViz2 (Global Costmap 끔): Local Costmap · Footprint · Global/Local Plan · DWB Trajectories · Lidar", fontsize=12, fontweight="bold", x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
     save(fig, "lesson06_rviz_sequence.png")
 
 
 def mujoco_sequence():
-    frames = [("crossing_s09.png", "① 접근"), ("crossing_s13.png", "② 감지 · 우회"), ("crossing_s15.png", "③ 멈춤 · 대기"), ("crossing_s19.png", "④ 재개")]
-    fig, axs = plt.subplots(1, 4, figsize=(14, 4.4), dpi=150)
+    frames = [("crossing_s06.png", "① 접근"), ("crossing_s08.png", "② 감지 · 우회"), ("crossing_s10.png", "③ 북쪽으로 · 제자리 회전"), ("crossing_s13.png", "④ 재개")]
+    fig, axs = plt.subplots(1, 4, figsize=(14, 3.9), dpi=150)
     for ax, (f, t) in zip(axs, frames):
-        ax.imshow(Image.open(FR / f).crop((380, 330, 1000, 866))); ax.axis("off"); ax.set_title(t, fontsize=11)
+        ax.imshow(Image.open(FR / f).crop(MJ)); ax.axis("off"); ax.set_title(t, fontsize=11)
     fig.suptitle("같은 순간의 MuJoCo 창 (근로자가 오른쪽에서 통로를 가로지른다)", fontsize=12, fontweight="bold", x=0.01, ha="left")
     fig.tight_layout(rect=(0, 0, 1, 0.92))
     save(fig, "lesson06_mujoco_sequence.png")
 
 
 def wide_view():
-    fig, ax = plt.subplots(figsize=(14, 7.2), dpi=150)
-    ax.imshow(Image.open(FR / "wide_s10.png").crop((1470, 130, 2230, 866))); ax.axis("off")
-    ax.set_title("Global Costmap 을 켠 넓은 화면: 근로자 · 콘 · 선반 다리가 모두 막힘으로 칠해지고, 지나간 자리는 옅어진다", fontsize=11.5)
+    fig, ax = plt.subplots(figsize=(10, 9.4), dpi=150)
+    ax.imshow(Image.open(FR / "crossing_s10.png").crop(WIDE)); ax.axis("off")
+    ax.set_title("Global Costmap 을 켠 화면 (10 s): 근로자 · 콘 · 선반 다리가 모두 막힘으로 칠해진다\n초록 = 북쪽으로 바꾼 /plan", fontsize=11)
     fig.tight_layout()
     save(fig, "lesson06_rviz_wide.png")
 
 
 def local_snapshots():
-    d = load("nav_crossing")
-    picks = [4.5, 7.5, 9.0, 11.5]
+    d = load("nav_crossing_v2")
+    picks = PICKS
     fig, axs = plt.subplots(1, 4, figsize=(14, 4.4), dpi=150)
     for ax, ts, (a, b, name, _) in zip(axs, picks, [PHASES[0], PHASES[1], PHASES[2], PHASES[3]]):
         t = d["t0"] + ts
@@ -168,7 +171,7 @@ def local_snapshots():
         r = at(d, "tr", g["t"]); w = worker(d, g["t"])
         footprint(ax, r[1], r[2], r[3], fc="none", ec=RED, lw=1.8)
         ax.add_patch(Circle(w, 0.22, fc="none", ec=ORANGE, lw=2.0, ls="--", zorder=6))
-        pl = min(d["plans"], key=lambda p: abs(p["t"] - g["t"]))
+        pl = [p for p in d["plans"] if p["t"] <= g["t"]][-1]          # the /plan in force at that moment
         ax.plot(pl["xy"][:, 0], pl["xy"][:, 1], color="#2E7D32", lw=1.8)
         lp = min(d["local_plans"], key=lambda p: abs(p["t"] - g["t"]))
         if len(lp["xy"]):
@@ -183,14 +186,15 @@ def local_snapshots():
 
 
 def timeline():
-    d = load("nav_crossing")
+    d = load("nav_crossing_v2")
     t0 = d["t0"]
     tr, od = d["tr"], d["od"]
     m = (tr[:, 0] >= t0 + 0.1) & (tr[:, 0] <= t0 + 16)
     t = tr[m, 0] - t0
     dist = np.array([np.hypot(*(r[1:3] - worker(d, r[0]))) for r in tr[m]])
     mo = (od[:, 0] >= t0 - 0.5) & (od[:, 0] <= t0 + 16)
-    dev = np.array([[p["t"] - t0, p["xy"][:, 1].min()] for p in d["plans"] if p["t"] - t0 <= 16])
+    dev = np.array([[p["t"] - t0, p["xy"][np.argmax(abs(p["xy"][:, 1])), 1]] for p in d["plans"] if p["t"] - t0 <= 16])
+    dev = np.vstack([dev, [16, dev[-1, 1]]])
     fig, axs = plt.subplots(3, 1, figsize=(14, 7.6), dpi=150, sharex=True)
     for ax in axs:
         for a, b, name, col in PHASES:
@@ -203,16 +207,19 @@ def timeline():
     i = np.argmin(dist); axs[0].annotate(f"최소 {dist[i]:.2f} m", (t[i], dist[i]), xytext=(t[i] + 1.2, dist[i] + 0.9), fontsize=9.5, arrowprops=dict(arrowstyle="-|>"))
     axs[1].plot(od[mo, 0] - t0, od[mo, 4], color=BLUE, lw=1.8, label="v [m/s]"); axs[1].plot(od[mo, 0] - t0, od[mo, 5], color=BROWN, lw=1.4, label="w [rad/s]")
     axs[1].set_ylabel("/odom 속도"); axs[1].legend(loc="lower left", fontsize=9)
-    axs[2].step(dev[:, 0], dev[:, 1], where="post", color=GREEN, lw=2); axs[2].set_ylabel("/plan 의 최소 y [m]")
+    axs[2].step(dev[:, 0], dev[:, 1], where="post", color=GREEN, lw=2); axs[2].set_ylabel("/plan 이 휜 y [m]")
+    axs[2].plot(dev[:-1, 0], dev[:-1, 1], "o", color=GREEN, ms=6); axs[2].set_ylim(-1.2, 0.8)
+    axs[1].text(9.1, 0.42, "v = 0, w = 0.56: 제자리 회전", fontsize=9)
     axs[2].set_xlabel("목표를 보낸 뒤 시뮬레이션 시각 [s]")
-    axs[2].text(6.8, -0.85, "근로자를 남쪽으로 돌아가려다", fontsize=9); axs[2].text(9.0, -0.35, "근로자도 남쪽으로 → 길이 막혀 대기", fontsize=9)
+    axs[2].text(0.3, 0.25, "점 = 새 /plan (0 s 다음은 길이 막힌 6.6 ~ 8.7 s 에만)", fontsize=9)
+    axs[2].text(4.2, -0.95, "근로자를 남쪽으로 돌아가려다", fontsize=9); axs[2].text(9.0, 0.45, "근로자도 남쪽으로 → 북쪽 경로로 바꿈", fontsize=9)
     fig.suptitle("실측 타임라인 (crossing): 거리 · 속도 · 경로가 휘는 정도", fontsize=12, fontweight="bold", x=0.01, ha="left")
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     save(fig, "lesson06_timeline.png")
 
 
 def paths():
-    d = load("nav_crossing")
+    d = load("nav_crossing_v2")
     t0 = d["t0"]
     fig, ax = plt.subplots(figsize=(14, 6.6), dpi=150)
     show_cost(ax, min(d["global_series"], key=lambda g: abs(g["t"] - t0)))     # before the worker reaches the aisle
@@ -220,28 +227,27 @@ def paths():
     for p in d["plans"]:
         s = p["t"] - t0
         if 5.5 <= s <= 12:
-            ax.plot(p["xy"][:, 0], p["xy"][:, 1], color=cm((s - 5.5) / 6.5), lw=1.2, alpha=0.9)
+            ax.plot(p["xy"][:, 0], p["xy"][:, 1], color=cm((s - 5.5) / 6.5), lw=1.8, alpha=0.95, label=f"/plan {s:.1f} s")
     tr = d["tr"]; m = (tr[:, 0] >= t0) & (tr[:, 0] <= t0 + 30)
     ax.plot(tr[m, 1], tr[m, 2], color=RED, lw=2.4, label="로봇이 실제로 간 길")
     ma = (d["at"] >= t0) & (d["at"] <= t0 + 14)
     ax.plot(d["ap"][ma, 0], d["ap"][ma, 1], color=ORANGE, lw=2.4, ls="--", label="근로자 (0 ~ 14 s)")
-    for k, s in enumerate((4.5, 7.5, 9.0, 11.5)):
+    for k, s in enumerate(PICKS):
         r = at(d, "tr", t0 + s); w = worker(d, t0 + s); tag = "①②③④"[k]
         footprint(ax, r[1], r[2], r[3], fc="none", ec=RED, lw=1.0)
         ax.add_patch(Circle(w, 0.13, fc=ORANGE, ec="white", alpha=0.9, zorder=6)); ax.text(w[0] + 0.2, w[1] - 0.08, f"{tag} {s:.1f} s", fontsize=9, color=BROWN, zorder=7)
     ax.set_xlim(-0.8, 6.8); ax.set_ylim(-3.2, 3.2)
-    sm = plt.cm.ScalarMappable(cmap=cm, norm=plt.Normalize(5.5, 12)); cb = fig.colorbar(sm, ax=ax, fraction=0.025, pad=0.01); cb.set_label("/plan 시각 [s]")
     ax.legend(loc="upper left", fontsize=9)
-    ax.set_title("위에서 본 궤적: /plan 은 근로자의 '지금' 자리를 피해 매번 새로 그려진다 (색 = 시각, 빨간 사각형 = ①~④ 시각의 로봇)", fontsize=11)
+    ax.set_title("위에서 본 궤적: /plan 은 길이 막힐 때만 근로자의 '지금' 자리를 피해 새로 그려진다 (6.6 ~ 8.7 s 에 4 번, 빨간 사각형 = ①~④ 시각의 로봇)", fontsize=11)
     fig.tight_layout()
     save(fig, "lesson06_paths.png")
 
 
 def headon():
-    d = load("nav_headon")
+    d = load("nav_headon_v2")
     t0 = d["t0"]
     tr = d["tr"]
-    m = (tr[:, 0] >= t0 - 0.5) & (tr[:, 0] <= t0 + 14)
+    m = (tr[:, 0] >= t0 + 0.3) & (tr[:, 0] <= t0 + 14)        # from 0.3 s: the worker is teleported to its start at 0 s
     t = tr[m, 0] - t0
     dist = np.array([np.hypot(*(r[1:3] - worker(d, r[0]))) for r in tr[m]])
     fig = plt.figure(figsize=(14, 5.2), dpi=150)
@@ -265,8 +271,8 @@ def headon():
 
 def headon_mujoco():
     fig, axs = plt.subplots(1, 3, figsize=(14, 4.6), dpi=150)
-    for ax, f, t in zip(axs, ("headon_s08.png", "headon_s09.png", "headon_s10.png"), ("다가온다", "겹친다 (충돌)", "지나간 뒤 비켜 선 로봇")):
-        ax.imshow(Image.open(FR / f).crop((380, 330, 1000, 866))); ax.axis("off"); ax.set_title(t, fontsize=11)
+    for ax, f, t in zip(axs, ("headon_s07.png", "headon_s08.png", "headon_s11.png"), ("다가온다 (7 s)", "겹친다 (8 s, 충돌)", "지나간 뒤 비켜 선 로봇 (11 s)")):
+        ax.imshow(Image.open(FR / f).crop(MJ)); ax.axis("off"); ax.set_title(t, fontsize=11)
     fig.suptitle("같은 순간의 MuJoCo 창 (headon)", fontsize=12, fontweight="bold", x=0.01, ha="left")
     fig.tight_layout(rect=(0, 0, 1, 0.92))
     save(fig, "lesson06_headon_mujoco.png")
@@ -277,7 +283,7 @@ def why_late():
     note(ax, 0.3, 4.5, "왜 마주 오는 사람은 늦게 피하나: Nav2 기본 구성은 '지금 막힌 칸' 만 본다", bold=True, fs=12)
     tiles(ax, [("속도 예측 없음", ["costmap 에는 위치만 있고 속도가 없다", "Planner 는 사람이 '지금' 있는 자리를 피한다", "사람이 다가오면 그 자리가 계속 다가온다"], C["red"]),
                ("가까워져야 반응", ["DWB 는 1.7 s 앞만 굴려 본다 (0.5 m 남짓)", "inflation 0.55 m 안에 들어와야 비싸진다", "마주 오면 1.5 m 에서 반응 → 이미 늦음"], C["orange"]),
-               ("가로지르면 괜찮았다", ["사람이 옆으로 빠져 나가 자리가 비워진다", "로봇은 멈춰 기다렸다가 뒤로 지나감", "최소 거리 1.16 m"], C["green"])],
+               ("가로지르면 괜찮았다", ["사람이 옆으로 빠져 나가 자리가 비워진다", "로봇은 제자리에서 돌아 근로자 뒤로 지나감", "최소 거리 1.00 m"], C["green"])],
           cols=3, y_top=3.9, gap=0.3, h=2.1, tfs=11, fs=8.8)
     note(ax, 0.3, 1.2, "보완: 속도 낮추기 · inflation 키우기 · Collision Monitor (가까우면 강제 감속/정지) · 사람 추적 + 예측 레이어 · MPPI 컨트롤러.", fs=9.6)
     note(ax, 0.3, 0.6, "실제 현장 로봇은 여기에 안전 인증 센서(안전 스캐너)의 보호 영역을 따로 둔다.", fs=9.6)
@@ -294,7 +300,7 @@ def params():
                ("controller (DWB)", ["controller_frequency: 15.0", "sim_time: 1.7", "ObstacleFootprint critic", "max_vel_x: 0.3"], C["blue"])],
           cols=4, y_top=4.1, gap=0.25, h=2.55, tfs=10.8, fs=8.5)
     note(ax, 0.3, 0.9, "global_costmap 도 같은 obstacle_layer 를 가진다 → Planner 가 근로자를 돌아가는 경로를 그릴 수 있다.", fs=9.6)
-    note(ax, 0.3, 0.4, "파일: src/mobile_openarm_navigation/config/nav2.yaml · 표시: config/navigation.rviz", fs=9.6)
+    note(ax, 0.3, 0.4, "bt_navigator: 경로가 막힐 때만 다시 계획 (navigation.launch.py 가 BT 파일을 고른다) · 표시: config/navigation.rviz", fs=9.6)
     save(fig, "lesson06_params.png")
 
 

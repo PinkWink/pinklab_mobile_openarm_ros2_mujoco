@@ -297,11 +297,13 @@ def local_costmap():
 
 
 def speed():
-    # re-recorded 2026-10-02 with the RotationShim controller (goal 1.2 -3.6 0, then /goal_pose (0.02, 0.02, 0) = RViz 2D Goal Pose)
-    d = pickle.load(open("artifacts/dev/nav_run_shim.pkl", "rb"))
+    # re-recorded 2026-11-12: RotationShim + BT that replans only when the path is blocked (goal 1.2 -3.6 0, then
+    # /goal_pose (0.02, 0.02, 0) = RViz 2D Goal Pose). The 2026-10-02 run (nav_run_shim.pkl, 1 Hz replanning) swung left-right at the 2nd goal.
+    d = pickle.load(open("artifacts/dev/nav_run_bt2.pkl", "rb"))
     od = np.array(d["odom"]); segs = segments(d)
     t0 = segs[0][0]["t"] - 1
-    m = (od[:, 0] >= t0) & (od[:, 0] <= segs[-1][-1]["t"] + 5)
+    moving = od[(abs(od[:, 4]) > 0.01) | (abs(od[:, 5]) > 0.01), 0]
+    m = (od[:, 0] >= t0) & (od[:, 0] <= moving[-1] + 3)          # until the robot stops at the 2nd goal (one /plan per goal now)
     fig, ax = plt.subplots(figsize=(14, 3.8), dpi=150)
     ax.plot(od[m, 0] - t0, od[m, 4], color=BLUE, lw=1.6, label="v  (/odom linear.x) [m/s]")
     ax.plot(od[m, 0] - t0, od[m, 5], color=BROWN, lw=1.2, alpha=0.8, label="w  (/odom angular.z) [rad/s]")
@@ -311,7 +313,7 @@ def speed():
         ax.axvline(s[0]["t"] - t0, color=GREEN, lw=1.2, ls="--")
     ax.set_xlabel("시뮬레이션 시각 [s]"); ax.grid(alpha=0.3); ax.legend(loc="lower center", bbox_to_anchor=(0.45, 0.03), fontsize=9)
     ax.annotate("제자리 회전\n(0.6 rad/s)", (2.5, -0.56), (5.0, -0.45), fontsize=9, color=BROWN, arrowprops=dict(arrowstyle="-|>", color=BROWN))
-    ax.text(28.3, 0.47, "42 ~ 59 s: 목표 방향을 맞추며 좌우로 오간다 →", fontsize=8.8, color="#555")
+    ax.annotate("멈춰서 목표 방향(0°)으로 한 번에 회전", (40.8, -0.56), (27.0, -0.48), fontsize=9, color=BROWN, arrowprops=dict(arrowstyle="-|>", color=BROWN))
     ax.set_title("Controller 가 낸 속도: 제자리에서 방향 맞추기 → 0.3 m/s 순항 → 감속 → 멈춰서 목표 방향으로 회전  (초록 점선 = 새 목표)", fontsize=11)
     fig.tight_layout()
     save(fig, "lesson05_speed.png")

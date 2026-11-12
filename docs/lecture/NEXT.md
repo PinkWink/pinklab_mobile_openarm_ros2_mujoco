@@ -1,6 +1,24 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-11-12 오후 (⑭ Final Mission 코드 · 남은 프로세스 검사). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-11-12 밤 (⑥ 목표에서 좌우로 오가는 현상 해결: BT 교체). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+
+## 0-000000000000000000000000000. 2026-11-12 밤: ⑥ 목표에서 좌우로 오가는 현상 — BT 교체 — 다음 세션은 여기부터
+
+**원인 (재현 실험으로 확인)**
+- 기본 BT 는 1 Hz 로 다시 계획 → 새 경로마다 RotationShim 의 `setPlan()` 이 '목표 허용 안' 래치(`position_goal_checker_->reset()`)를 지움.
+- 로봇이 목표 0.07 ~ 0.16 m 앞에서 제자리 회전하는 동안 AMCL 추정이 최대 7 cm 흔들림 (`update_min_a` 0.05) → 허용 0.08 m 밖으로 나감 → shim 이 다시 목표 '점' 쪽으로 돌림 → 좌우 왕복 (최대 14.8 s).
+
+**조치**
+- `navigation.launch.py`: bt_navigator 에 `default_nav_to_pose_bt_xml` = nav2_bt_navigator 의 `navigate_w_recovery_and_replanning_only_if_path_becomes_invalid.xml` (경로가 막힐 때만 다시 계획, 복구 동작은 유지).
+- 실험 (목표 10 개, scratchpad 의 osc_exp.py · osc_ana.py, 데이터 artifacts/dev/osc/): 옛 BT 2/10 왕복 · 최장 14.8 s → 새 BT 0/10 · 최장 3.9 s. '0.3 m 이동마다' BT 는 38 ~ 40 번 왕복이라 버림.
+- 대가: headon 최소 거리 약 4 cm 줄어듦 (옛 0.22 · 0.25 · 0.23 → 0.18 · 0.20 · 0.20, 페이지 촬영 판 0.15 m). crossing 은 비슷 (1.00 m).
+
+**페이지**
+- '충돌 회피' 3701145683 v3: crossing · headon 다시 기록 (`artifacts/dev/nav_crossing_v2.pkl` · `nav_headon_v2.pkl`, 화면 `artifacts/dev/avoid_frames_v2/` = MuJoCo | RViz 근접 | RViz global costmap, 시뮬 1 초마다 `import -window root`). 단계 이름 ③ '멈춤 · 대기' → '북쪽으로 · 제자리 회전' (새 BT 에선 /plan 이 6.6 ~ 8.7 s 에 4 번만: 남쪽으로 휘다 근로자도 남쪽 → 북쪽 경로). '약 1 초마다' 문구 → '경로가 막힐 때'. 코드 절 'navigation.launch.py 발췌' · 해 볼 것 한 줄 추가. h3 'Global Costmap 을 켠 넓은 화면' → '… 켠 화면'.
+- 'ROS2 Navigation' 3701866498: `lesson05_speed.png` 만 다시 찍어 첨부 갱신 (`nav_run_bt2.pkl`, 두 번째 목표에서 한 번에 회전). 본문 그대로.
+- 촬영 도구는 scratchpad 에만 (avoid_run.sh · frame_cap.py · rviz_close/wide.rviz) — 다시 필요하면 위 설명대로 재작성.
+
+**다음 (사용자 결정 대기)**: 커밋 · push (작업 트리: launch · 그림 스크립트 · md · png 미커밋, 59a5415 · d3f5e8c 미 push), AMCL 회전 중 흔들림 자체(라이다 프레임 오프셋?) 조사 여부, LLM 모델, ① 옛 그림 정리, 남은 `lecture-2026-11` 언급 정리.
 
 ## 0-00000000000000000000000000. 2026-11-12 오후: ⑭ Final Mission 코드 · 남은 프로세스 검사 — 다음 세션은 여기부터
 
