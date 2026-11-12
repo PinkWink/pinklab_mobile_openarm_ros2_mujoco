@@ -35,30 +35,31 @@ ROS 2 Jazzy만 미리 설치되어 있으면 됩니다. 새 터미널에서 `sou
 
 ## 과정 구성
 
-| 모듈 | 내용 | 실행 |
+| 모듈 | 내용 | 실습 |
 |---|---|---|
 | ① Gazebo vs MuJoCo / Architecture | 시뮬레이터 구조 비교, 전체 파이프라인 | (강의) |
-| ② MuJoCo + ROS 2 연결 | 브리지의 Topic / TF / Joint State / Control 인터페이스 | `./scripts/mobile_openarm drive` |
-| ③ Robot Description | URDF/Xacro 통합 구조, TF 트리 | `./scripts/mobile_openarm display` |
+| ② MuJoCo + ROS 2 연결 | 최소 브리지: Topic / TF / Joint State / Control | [lessons/01_mujoco_ros2](lessons/01_mujoco_ros2/README.md) |
+| ③ Robot Description | URDF/Xacro → MJCF, TF 트리 | `./scripts/mobile_openarm display` |
 | ④ Sensor / TF / Odometry / LiDAR | LaserScan, /odom, use_sim_time | `drive` + `teleop`, `examples/m1_ros_vision/02_scan_odom_subscriber.py` |
 | ⑤ SLAM | SLAM Toolbox 지도 작성·저장 | `./scripts/mobile_openarm slam` |
-| ⑥ Nav2 | AMCL, costmap, 자율주행 | `./scripts/mobile_openarm nav`, `goal X Y YAW` |
-| ⑦ MoveIt + MuJoCo | planning group / scene, 이름 자세 | `./scripts/mobile_openarm moveit`, `arm both ready` |
+| ⑥ Nav2 | AMCL, costmap, 자율주행, 충돌 회피 | `./scripts/mobile_openarm nav`, `goal X Y YAW` |
+| 전반부 통합 Demo | 내 지도로 창고 순찰 + 웹 대시보드 | [lessons/04_navigation](lessons/04_navigation/README.md) |
+| ⑦ MoveIt + MuJoCo | planning group / scene, 이름 자세 | [lessons/05_moveit](lessons/05_moveit/README.md) |
 | ⑧ Arm / End-Effector Control | IK, pose goal, Cartesian, 그리퍼 | [lessons/05_moveit](lessons/05_moveit/README.md) |
-| ⑨ Pick & Place | 작업대 앞에서 집고 놓기 | [lessons/06_pick_place](lessons/06_pick_place/README.md) |
-| ⑩ Navigation + Pick & Place 통합 | 주행 → 도킹 → 파지 → 운반 → 놓기 | `./scripts/mobile_openarm pick red` |
-| ⑪ LLM + OpenAI API | Structured Outputs, 명령 스키마, 60문장 정확도 | `examples/m3_llm`, `examples/m4_command_dialog` |
-| ⑫ LLM → ROS 2 Task Pipeline | 작업 단계 목록(RobotPlan) + Task Manager | `examples/m5_task_plan`, `ros2 run warehouse_lecture task_manager` |
-| ⑬ Web Dashboard | 브라우저 상태 모니터링·지령 입력 | (준비 중) |
-| ⑭ Final Mission | 자연어 → 계획 → 실행 → 결과 | `examples/m5_task_plan/04_final_mission.py` |
+| ⑨ Pick & Place | 도킹 · 인식 · 집고 놓기 | [lessons/06_pick_place](lessons/06_pick_place/README.md) |
+| ⑩ Navigation + Pick & Place 통합 | 주행 → 도킹 → 파지 → 운반 → 놓기 | [lessons/07_nav_pick_place](lessons/07_nav_pick_place/README.md) |
+| ⑪ LLM + OpenAI API | Structured Outputs, 명령 스키마, 60문장 정확도, 비용 | [lessons/08_lmm](lessons/08_lmm/README.md) 01~04 |
+| ⑫ LLM → ROS 2 Task Pipeline | 작업 단계 목록(RobotPlan) + Task Manager | [lessons/08_lmm](lessons/08_lmm/README.md) 05~08 |
+| ⑬ MuJoCo Web Dashboard | 브라우저 상태 모니터링 · 자연어 지령 입력 | [lessons/09_web_dashboard](lessons/09_web_dashboard/README.md) |
+| ⑭ Final Mission | 자연어 → 계획(상자 위치표) → 실행 → 결과, 시나리오 3 개 | [lessons/10_final_project](lessons/10_final_project/README.md) |
 
-모듈별 README는 `lessons/`에 차례로 추가됩니다. 설계 기록과 검증 결과는 `docs/lecture/`에 있습니다.
+수업은 `lessons/`의 모듈별 README를 따라갑니다. `examples/`는 강좌를 만들며 쓴 단계별 예제(m1~m5)이고, 설계 기록과 검증 결과는 `docs/lecture/`에 있습니다.
 
 ## 저장소 구성
 
 ```
 src/                ROS 2 패키지 10개 (description 3, mujoco 브리지, bringup, navigation, moveit_config, warehouse_interfaces / skills / lecture)
-lessons/            모듈별 실습 안내와 스크립트
+lessons/            모듈별 실습 안내와 스크립트 (01, 04~10)
 examples/           단계별 예제 (m1 ROS·비전, m3 LLM, m4 명령 대화, m5 작업 계획)
 weights/            배포용 물체 검출 가중치 (YOLO11n, OpenVINO 320, CPU)
 scripts/            wrapper(mobile_openarm), 설치·정리·검증 스크립트
