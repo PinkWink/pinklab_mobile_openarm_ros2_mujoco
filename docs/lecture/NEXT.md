@@ -16,7 +16,10 @@
 - Confluence 새 하위 페이지 3779067905 "Final Mission: 자연어 한 문장으로 창고 운반 End-to-End" (v1, 부모 3692396550) ← `docs/camp/lesson15_final_mission.md` (h3 33: 1 개념 5 → 2 실행 17 (01 · start · task_manager(⑫ lesson13_t2.png 재사용) · 02 시나리오 1~3 · 경로 · 장면 · 시간 · dry-run · stop) → 3 코드 10 → 해 볼 것) + `lesson15_*.png` 15장. 그림: `MUJOCO_GL=egl ./scripts/mobile_openarm exec python docs/camp/draw_lesson15_figures.py`, 터미널: `python3 docs/camp/render_lesson15_terminals.py` (로그를 걸러서 그림, 손으로 친 줄 없음). 데이터 `artifacts/dev/l14/` (final_run2.log · final_mission.pkl · 01_run1~8.log · 01_final.log · dry_s3.log · start_refused.log · stop.log).
 - 정확도 그림의 막대 4개 = 표 없음 (run3 · 4 · 5 · final), '이미 있으면 비워라' 를 LLM 에 (run1 · 2), 판정은 코드 (run3 · 4 · 5), + '말한 도착지 그대로' (run6 · 7 · 8 · final).
 
-**다음**: lessons README (01~10 목차) · INSTALL.md · check_env.sh (doctor 로 대체됐는지 확인), 페이지 순서 확인.
+- 그 뒤: README 과정 표를 lessons/ 링크로, `lessons/04_navigation/README.md` 추가 (7ef5cd1). INSTALL.md · check_env.sh 는 만들지 않음 (00_setup · README · doctor 가 대신).
+- 환경 설정 페이지 3692331054 v36: `setup_start_result.png` 재캡처 (실제 start, MuJoCo 1400x900 + RViz 1280x900 을 `import -window` 로 따서 나란히, 창은 xdotool windowsize/move 만). 본문은 그대로 (게시 전 pull_confluence 로 SAME 확인).
+
+**다음 (사용자 결정 대기)**: LLM 모델 (gpt-4.1-mini 유지?), ⑥ 좌우 오가는 현상, ① 옛 그림 정리.
 
 ## 0-0000000000000000000000000. 2026-11-12: 다른 PC 작업 되받기 (GitHub d0c1a97 · Confluence 11/11 수정) 
 
@@ -38,7 +41,7 @@
 
 **한 일**
 - 설치 경고 문의 (고치지 않음): `install_lecture.sh` 의 rosdep `pkg_resources` DeprecationWarning 은 /usr/bin/rosdep 자체 문제. pip 의 `Skipping .../pybind11-2.11.1.dist-info` 는 apt `python3-pybind11` 의 dist-info 에 METADATA 가 없어서이고, venv 가 `--system-site-packages` 라 보임. 둘 다 무해.
-- RViz 녹색 = MoveIt planning scene (`scene.py` 의 창고 박스 + warehouse_floor). `moveit.rviz` Scene Alpha 1 → 0.3 (커밋 0b9fa00, push 함). 설치 페이지 ⑤ 캡처 `setup_start_result.png` 는 아직 옛 진한 녹색 — 다시 찍을지 사용자 미결정.
+- RViz 녹색 = MoveIt planning scene (`scene.py` 의 창고 박스 + warehouse_floor). `moveit.rviz` Scene Alpha 1 → 0.3 (커밋 0b9fa00, push 함). 설치 페이지 ⑤ 캡처 `setup_start_result.png` 는 2026-11-12 다시 찍음 (반투명 장면, 환경 설정 페이지 v36).
 - ① 페이지 3692920898 "MuJoCo와 ROS2를 연결하기" (v24 → v28): 학생이 브리지만 띄우고 팔이 수직(카메라 하늘)이라 혼란 — "실행 결과" 그림이 [0.6, 1.5] 를 보낸 뒤 화면이었음.
   - "실행 결과" 그림 = 초기 자세 (새 캡처), 새 h3 "터미널 2: 관절 명령 보내기" · "관절 명령을 보낸 뒤의 실행 결과" · "터미널 2: 초기 자세로 되돌리기" ([0.0, 0.0] → 뒤쪽 [0.6, 1.5] 전후 실습이 초기 자세에서 시작).
   - "터미널 2: rqt_image_view" 를 h3 두 개로 분리 (슬라이드용): 명령 + 터미널 그림 / rqt 창 그림.
