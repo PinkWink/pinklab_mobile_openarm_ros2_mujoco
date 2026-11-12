@@ -48,6 +48,10 @@ grep -v '^#' scripts/apt_packages.txt | xargs sudo apt install -y   # 추가 apt
 - 수행 순서: apt 패키지 → rosdep → 가상환경 → pip → 충돌 검사 → `colcon build` → 단위 테스트
 - 마지막에 "설치 완료" 출력 시 성공
 
+### ③ 설치 스크립트: 실행 결과
+
+![install_lecture.sh 끝부분: colcon build 10 개 → 단위 테스트 45 passed → 설치 완료](setup_install_result.png){width=1000}
+
 ### ③ 설치 스크립트: 주의할 점
 
 - 여러 번 실행해도 안전 — 네트워크 끊김 등으로 멈추면 다시 실행
