@@ -1,8 +1,22 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-11-12 (다른 PC 의 GitHub · Confluence 수정 되받기). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-11-12 오후 (⑭ Final Mission 코드 · 남은 프로세스 검사). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
 
-## 0-0000000000000000000000000. 2026-11-12: 다른 PC 작업 되받기 (GitHub d0c1a97 · Confluence 11/11 수정) — 다음 세션은 여기부터
+## 0-00000000000000000000000000. 2026-11-12 오후: ⑭ Final Mission 코드 · 남은 프로세스 검사 — 다음 세션은 여기부터
+
+**한 일**
+- 사용자 결정: 계획기에 상자 위치표를 넣는다, 시나리오 = 빨강 → 파랑(되묻기) → 빨강 되돌리기.
+- `commands/world.py` `WorldState`: `prompt()` (system 프롬프트 끝에 붙는 표 + 규칙), `check(plan)` (출발 작업대 불일치 · "이미 도착지에 있다" 를 코드로 판정), `apply(plan, steps_done, success)` (끝난 단계만 반영, 실패한 pick/place 는 unknown). `PlanParser.parse(..., world=)`, `PlanDialogManager(world=)`. 계획이 있는데 문제가 있으면 LLM 의 "옮기겠습니다" 대신 "그대로는 실행할 수 없습니다 (…)" 로 답함 (⑫ 동작도 이 문장으로 바뀜). SYSTEM 프롬프트는 안 바꿈 (⑫ 페이지가 인용).
+- `lessons/10_final_project/`: 01_world_plan.py (8 문장 × 표 없음/있음), 02_final_mission.py (시나리오 3개, `--keyboard`, `--dry-run`, `--scenario N`), README.
+- 프롬프트 시행착오: "이미 있으면 steps 비우기" 규칙을 LLM 에 주면 4~5/8 (멀쩡한 지령도 비움) → 그 판정을 `check()` 로 옮김. "말한 도착지는 그대로" 규칙 추가 뒤 world 8/8 × 3 회. 표 없음 7/8 (#4 "빨간 상자 옮겨" 틀림, #5 는 check 가 막아서 통과).
+- 시뮬레이터 실측: 02 세 시나리오 5/5 · 5/5 · 5/5 (179 · 178 · 140 s), 7 턴, $0.0043. 로그 `artifacts/dev/l14/final_run2.log` · `.json`, 기록 `artifacts/dev/l14/final_mission.pkl` (pick_record, sim 900 s). 단계 직접 입력 정 · 역 운반도 성공 (`fwd_red.log` 152 s, `rev_red.log` 155 s).
+- 첫 실행 실패 원인 = 내 정리 실수: 첫 스택을 끌 때 `pick_place_server` · `warehouse_scene` 이 남아 PickPlace 서버가 둘 → 한 goal 을 두 번 실행 → "Cannot push a new trajectory while another is being executed" → Cartesian 52 % · MoveIt -4 → move_group segfault. 백그라운드로 띄운 launch 는 SIGINT 를 무시함 (SIGTERM 필요).
+- 재발 방지 (사용자 요청): `scripts/stack_procs.py` (환경변수 ROS_HOME=<ws>/.ros/mobile_openarm 로 이 워크스페이스 프로세스 판별, `--all`, `--kill`), `./scripts/mobile_openarm stop`, start/drive/slam/moveit/display 는 남은 시뮬레이터 프로세스가 있으면 목록을 보여 주고 멈춤 (`MOBILE_SKIP_PROC_CHECK=1` 로 우회), doctor 에 '남은 프로세스' 경고. README · 00_setup FAQ 에 기록. 실제 스택으로 거부 · stop · 재시작 확인. 테스트 45 passed.
+- 커밋 안 함.
+
+**다음**: ⑭ Confluence 페이지 (부모 3692396550, `docs/camp/lesson15_final_mission.md` 예정): 개념(왜 위치표 · 역할 분리: LLM=의도, 코드=사실 검사) → 01 결과 그래프 → 02 실행(대화 · 단계 · 표 변화) → 기록 pkl 로 오프스크린 렌더 · 경로 그림 → 코드(WorldState · parse · dialog) → 해 볼 것. 그 뒤 lessons README · INSTALL.md · check_env.sh.
+
+## 0-0000000000000000000000000. 2026-11-12: 다른 PC 작업 되받기 (GitHub d0c1a97 · Confluence 11/11 수정) 
 
 **한 일**
 - GitHub: 다른 PC 커밋 d0c1a97 (설치 fail-safe: apt/rosdep 자동, `check_pip_deps.py`, `doctor`, env.sh 자동 활성화) + 태그 `lecture-2026-11` 를 fast-forward pull.

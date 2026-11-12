@@ -140,6 +140,19 @@ def check_build():
         "warehouse_interfaces, warehouse_lecture" if r.returncode == 0 else (r.stderr.strip().splitlines() or ["?"])[-1][:110])
 
 
+def check_procs():
+    section("남은 프로세스")
+    sys.path.insert(0, str(WS / "scripts"))
+    import stack_procs
+    procs = [(p, c) for p, c in stack_procs.ours() if stack_procs.is_sim(c)]
+    if not procs:
+        add(OK, "이전 실행", "남은 시뮬레이터 프로세스 없음")
+        return
+    names = sorted({stack_procs.short(c).split()[0] for _, c in procs})
+    add(WARN, "이전 실행", f"{len(procs)}개 실행 중 ({', '.join(names[:4])}{' …' if len(names) > 4 else ''}). "
+        "시뮬레이터를 켜 둔 게 아니면 ./scripts/mobile_openarm stop")
+
+
 RENDER = r"""
 import time, mujoco
 m = mujoco.MjModel.from_xml_string('<mujoco><worldbody><light pos="0 0 3"/><geom type="plane" size="2 2 .1"/>'
@@ -199,7 +212,7 @@ def main():
     args = ap.parse_args()
     git = subprocess.run(["git", "-C", str(WS), "describe", "--tags", "--always", "--dirty"], capture_output=True, text=True)
     print(f"mobile_openarm doctor  ({time.strftime('%Y-%m-%d %H:%M')}, 코드 버전 {git.stdout.strip() or '?'})")
-    for step in (check_system, check_ros, check_python, check_build, check_render):
+    for step in (check_system, check_ros, check_python, check_build, check_procs, check_render):
         try:
             step()
         except Exception as e:  # noqa: BLE001 - 점검 하나가 죽어도 나머지는 계속

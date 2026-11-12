@@ -58,3 +58,49 @@ def test_parser_examples_are_executable_plans():
 def test_pick_place_goal_has_phase_field():
     goal = PickPlace.Goal(object="red", from_station="pick_table", phase="pick")
     assert goal.phase == "pick" and StepAction.place.value == "place"
+
+
+# --- Final Mission ⑭: WorldState --------------------------------------------
+from warehouse_lecture.commands.world import HELD, UNKNOWN, WorldState  # noqa: E402
+
+
+def _transport(colour, src, dst):
+    return RobotPlan(summary="", reply="", steps=[
+        PlanStep(action="navigate", location=src), PlanStep(action="detect", target=colour),
+        PlanStep(action="pick", target=colour, location=src), PlanStep(action="navigate", location=dst),
+        PlanStep(action="place", location=dst)])
+
+
+def test_world_starts_on_pick_table_and_follows_success():
+    w = WorldState()
+    assert set(w.parcels.values()) == {"pick_table"}
+    plan = _transport("parcel_red", "pick_table", "place_table")
+    assert w.check(plan) == []
+    w.apply(plan, steps_done=5, success=True)
+    assert w.where("parcel_red") == "place_table"
+    assert "parcel_red(빨간 상자): place_table(적재 작업대)" in w.prompt()
+
+
+def test_world_check_catches_wrong_source():
+    w = WorldState({"parcel_red": "place_table", "parcel_blue": "pick_table", "parcel_yellow": "pick_table"})
+    problems = w.check(_transport("parcel_red", "pick_table", "place_table"))
+    assert len(problems) == 1 and "적재 작업대" in problems[0]
+    assert w.check(_transport("parcel_red", "place_table", "pick_table")) == []
+
+
+def test_world_apply_partial_and_failed_steps():
+    w = WorldState()
+    plan = _transport("parcel_blue", "pick_table", "place_table")
+    w.apply(plan, steps_done=3, success=False)       # picked, then navigation failed
+    assert w.where("parcel_blue") == HELD
+    w2 = WorldState()
+    w2.apply(plan, steps_done=2, success=False)      # the pick itself failed
+    assert w2.where("parcel_blue") == UNKNOWN
+    assert w2.check(plan) == []                      # unknown does not block a retry
+
+
+def test_world_check_already_at_destination():
+    w = WorldState({"parcel_red": "place_table", "parcel_blue": "pick_table", "parcel_yellow": "pick_table"})
+    for src in ("pick_table", "place_table"):        # the LLM may get the source right or wrong
+        problems = w.check(_transport("parcel_red", src, "place_table"))
+        assert problems == ["빨간 상자는 이미 적재 작업대에 있다"], (src, problems)

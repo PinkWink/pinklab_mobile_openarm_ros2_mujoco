@@ -120,6 +120,7 @@ python scripts/check_actors_live.py --nav                   # 배우·정답 검
 - **설치 중 `pip 의존성 충돌이 있습니다`**: `ERROR:` 줄을 확인한다. `WARN`만 있으면 문제없다(강의와 무관한 apt 패키지 충돌). `ERROR`는 venv 패키지 버전 문제이므로 `requirements-lecture.txt`를 고치지 말고 그 줄을 강사에게 보낸다.
 - **`강좌 venv(.venv-mobile-openarm)가 없습니다`**: 설치가 중간에 멈춘 경우. `./scripts/install_lecture.sh`를 다시 실행한다.
 - **무엇이 문제인지 모를 때**: `./scripts/mobile_openarm doctor`의 ❌ 줄부터 해결한다.
+- **`위 프로세스가 이전 실행에서 남아 있습니다`로 start가 멈춤**: 터미널을 닫았거나 시뮬레이터가 죽어서 노드(pick_place_server, move_group, Nav2 등)가 남은 경우. 그대로 다시 띄우면 같은 이름의 액션 서버가 둘이 되어 한 명령을 두 번 실행한다(팔이 멈추고 `Cannot push a new trajectory`). `./scripts/mobile_openarm stop`으로 정리한 뒤 다시 실행한다.
 - **`ModuleNotFoundError: mujoco`로 bridge가 죽음**: wrapper 없이 `ros2 launch`를 직접 실행한 경우. `./scripts/mobile_openarm start`를 쓰거나 `source scripts/env.sh` 후 `ros2launch ...`로 실행한다.
 - **`numpy.dtype size changed`**: venv에 numpy 2가 들어간 경우. `pip install "numpy<2"` 후 `rm -rf build/warehouse_interfaces install/warehouse_interfaces`하고 다시 빌드한다(CMake가 numpy 헤더 경로를 캐시한다).
 - **zsh에서 `setup.bash` 오류**: ROS 스크립트는 bash 전용이다. bash를 쓰거나 `setup.zsh`를 source한다.

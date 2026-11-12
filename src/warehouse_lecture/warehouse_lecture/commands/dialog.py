@@ -76,7 +76,13 @@ class DialogManager:
 
 class PlanDialogManager(DialogManager):
     """Same dialog states, but the parser returns a RobotPlan (step list) and the confirmation
-    shows the numbered steps. ``executor(plan, text)`` runs it (ExecutePlan action client)."""
+    shows the numbered steps. ``executor(plan, text)`` runs it (ExecutePlan action client).
+    With ``world`` (WorldState) the planner sees where the parcels are, a plan that contradicts it is
+    sent back as a question, and the belief is updated from each result (Final Mission ⑭)."""
+
+    def __init__(self, parser, executor=None, speak=print, confirm=True, max_context=6, world=None):
+        super().__init__(parser, executor=executor, speak=speak, confirm=confirm, max_context=max_context)
+        self.world = world
 
     def handle(self, text):
         text = text.strip()
@@ -85,11 +91,16 @@ class PlanDialogManager(DialogManager):
         if self.pending is not None:
             return self._answer_confirmation(text)
         utterance = f"{self.clarifying} / {text}" if self.clarifying else text
-        plan = self.parser.parse(utterance, context=self.context)
+        plan = self.parser.parse(utterance, context=self.context, world=self.world)
         problems = plan.validate_world()
+        if self.world is not None and not problems:
+            problems = self.world.check(plan)
         self._remember(utterance, plan)
         if not plan.steps or problems:
-            reply = plan.reply or ("; ".join(problems) if problems else "")
+            if plan.steps and problems:   # the plan exists but cannot run: say why, not the LLM's "will do"
+                reply = "그대로는 실행할 수 없습니다 (" + "; ".join(problems) + "). 다시 말씀해 주세요."
+            else:
+                reply = plan.reply or ("; ".join(problems) if problems else "")
             asks = bool(problems) or any(k in reply for k in ("?", "까요", "알려", "말씀", "어떤", "어디", "무엇", "무슨", "구체적"))
             self.clarifying = utterance if asks else None
             return self._say("clarify" if self.clarifying else "answer", reply, plan)
@@ -104,5 +115,7 @@ class PlanDialogManager(DialogManager):
             return self._say("execute(dry)", plan.describe(), plan)
         self._say("execute", plan.reply or plan.summary or plan.describe(), plan)
         result = self.executor(plan, text)
+        if self.world is not None and result is not None:
+            self.world.apply(plan, result.steps_done, result.success)
         spoken = getattr(result, "spoken", None) or str(result)
         return self._say("result", spoken, plan)

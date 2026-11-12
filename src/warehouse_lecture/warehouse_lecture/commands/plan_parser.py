@@ -54,9 +54,11 @@ class PlanParser:
     def __init__(self, llm=None):
         self.llm = llm or LLM()
 
-    def parse(self, text, context=None):
-        """context: optional list of prior (user, assistant_json) turns for slot filling (dialog manager)."""
-        messages = [{"role": "system", "content": SYSTEM}]
+    def parse(self, text, context=None, world=None):
+        """context: optional list of prior (user, assistant_json) turns for slot filling (dialog manager).
+        world: optional WorldState; its parcel table is added to the system prompt (Final Mission ⑭)."""
+        system = SYSTEM if world is None else SYSTEM + "\n" + world.prompt()
+        messages = [{"role": "system", "content": system}]
         for q, plan in EXAMPLES:
             messages.append({"role": "user", "content": q})
             messages.append({"role": "assistant", "content": plan.model_dump_json()})

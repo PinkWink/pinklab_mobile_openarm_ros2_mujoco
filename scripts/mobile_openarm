@@ -48,6 +48,16 @@ if [[ "$command" == doctor ]]; then
   [[ -f install/local_setup.bash ]] && source install/local_setup.bash
   exec "$MOBILE_PYTHON" "$MOBILE_WORKSPACE/scripts/doctor.py" "$@"
 fi
+if [[ "$command" == stop ]]; then
+  exec "$MOBILE_PYTHON" "$MOBILE_WORKSPACE/scripts/stack_procs.py" --kill
+fi
+case "$command" in
+  start|nav|drive|slam|moveit|display)
+    # 이전 실행이 남아 있으면 같은 이름의 액션 서버가 둘이 되어 한 goal 을 두 번 실행한다.
+    if [[ "${MOBILE_SKIP_PROC_CHECK:-0}" != 1 ]] && ! "$MOBILE_PYTHON" "$MOBILE_WORKSPACE/scripts/stack_procs.py" >&2; then
+      echo '위 프로세스가 이전 실행에서 남아 있습니다. 정리: ./scripts/mobile_openarm stop  (그 뒤 다시 실행)' >&2; exit 1
+    fi;;
+esac
 [[ -f install/local_setup.bash ]] || { echo 'Run ./scripts/mobile_openarm build first.' >&2; exit 1; }
 source install/local_setup.bash
 case "$command" in
@@ -62,5 +72,5 @@ case "$command" in
   display) exec "$MOBILE_PYTHON" "$MOBILE_ROS2" launch mobile_openarm_description display.launch.py "$@";;
   exec) exec "$@";;
   shell) exec bash --noprofile --norc;;
-  *) echo 'Usage: mobile_openarm {doctor|build|start|drive|slam|nav|moveit|teleop|goal|arm|pick|display|exec|shell}';exit 2;;
+  *) echo 'Usage: mobile_openarm {doctor|build|stop|start|drive|slam|nav|moveit|teleop|goal|arm|pick|display|exec|shell}';exit 2;;
 esac
