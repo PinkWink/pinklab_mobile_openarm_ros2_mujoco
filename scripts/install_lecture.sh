@@ -14,6 +14,9 @@ SUDO=""; [[ $EUID -eq 0 ]] || SUDO=sudo
 SYS_PY=/usr/bin/python3
 [[ -n "${CONDA_PREFIX:-}" ]] && echo "  ⚠️ conda 환경($CONDA_PREFIX)이 켜져 있습니다. 설치는 시스템 Python($SYS_PY)으로 진행합니다."
 unset PYTHONPATH PYTHONHOME
+# 실행 때(mobile_openarm · env.sh)는 ~/.local 의 pip 패키지를 안 본다. 설치 때도 안 봐야 한다:
+# 안 그러면 pip 가 ~/.local 에 있는 onnxruntime · protobuf 를 '이미 설치됨' 으로 보고 venv 에 안 깐다.
+export PYTHONNOUSERSITE=1
 
 echo "== ROS 2 Jazzy"
 if [[ "${ROS_DISTRO:-}" != jazzy ]]; then
