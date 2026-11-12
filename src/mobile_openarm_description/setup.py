@@ -11,7 +11,7 @@ data = [
         + [str(p) for p in Path(".").glob("LICENSE*")],
     ),
 ]
-for folder in ("urdf", "config", "launch"):
+for folder in ("urdf", "config", "launch", "meshes"):
     files = [
         p
         for p in Path(folder).rglob("*")

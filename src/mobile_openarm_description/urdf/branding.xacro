@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- PinkLAB logo on the chest: visual only (no collision, no mass). Mesh + texture from scripts/make_logo_mesh.py.
+       The chest face is most forward at x = 0.065 m, 0.69 m above openarm_body_link0; the logo sits 2 mm in front. -->
+  <link name="pinklab_logo">
+    <visual>
+      <geometry><mesh filename="package://mobile_openarm_description/meshes/pinklab_logo.obj"/></geometry>
+    </visual>
+  </link>
+  <joint name="pinklab_logo_joint" type="fixed">
+    <parent link="openarm_body_link0"/><child link="pinklab_logo"/>
+    <origin xyz="0.067 0 0.69"/>
+  </joint>
+</robot>

@@ -28,7 +28,8 @@ def test_urdf_is_one_mobile_tree_with_real_assets():
     r = ET.fromstring(expand_urdf())
     links = [x.get("name") for x in r.findall("link")]
     joints = r.findall("joint")
-    assert len(links) == len(set(links)) == 46
+    assert len(links) == len(set(links)) == 47          # 46 robot links + pinklab_logo (chest logo, visual only)
+    assert "pinklab_logo" in links
     children = [j.find("child").get("link") for j in joints]
     assert len(children) == len(set(children))
     assert set(links) - set(children) == {"base_footprint"}

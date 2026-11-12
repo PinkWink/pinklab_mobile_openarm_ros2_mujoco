@@ -102,4 +102,5 @@ limitations under the License.
   />
 
   <xacro:include filename="$(find mobile_openarm_description)/urdf/cameras.xacro"/>
+  <xacro:include filename="$(find mobile_openarm_description)/urdf/branding.xacro"/>
 </robot>

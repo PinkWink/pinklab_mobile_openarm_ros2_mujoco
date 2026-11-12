@@ -94,6 +94,7 @@ def build_model(
     import trimesh
     from .actors import load_actors, add_actors
     from .markers import add_markers
+    from .branding import is_logo, logo_geom
 
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -272,7 +273,9 @@ def build_model(
                 if color is not None
                 else materials.get(mat.get("name"), attrs["rgba"])
             )
-        if geom.tag == "mesh":
+        if geom.tag == "mesh" and is_logo(geom.get("filename")):
+            attrs.update(logo_geom(asset, resolve_mesh(geom.get("filename"))))
+        elif geom.tag == "mesh":
             path = resolve_mesh(geom.get("filename"))
             scale = numbers(geom.get("scale", "1 1 1"))
             key = (str(path), tuple(scale))
