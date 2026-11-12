@@ -24,13 +24,11 @@
 ### ① ROS 2 Jazzy + 추가 패키지 설치 명령
 
 - 공식 안내에 따라 `ros-jazzy-desktop` 설치: https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html
-- 추가 apt 패키지(Nav2 · MoveIt · SLAM 등 24개)와 `rosdep init/update`는 ③ 설치 스크립트가 자동 처리 (목록: `scripts/apt_packages.txt`)
-- 미리 직접 설치하려면 아래 명령 (선택)
+- 이어서 git 설치 (② 저장소 받기에 필요)
+- 추가 apt 패키지(Nav2 · MoveIt · SLAM 등 24개)와 `rosdep init/update`는 ③ 설치 스크립트가 자동 처리
 
 ```bash
 sudo apt install git
-# (선택) 추가 패키지 미리 설치
-grep -v '^#' scripts/apt_packages.txt | xargs sudo apt install -y
 ```
 
 ### ② 저장소 받기 → ③ 설치 스크립트
@@ -56,6 +54,7 @@ cd pinklab_mobile_openarm_ros2_mujoco
 - conda base가 켜진 터미널도 가능 (venv는 항상 시스템 Python으로 생성)
 - 충돌 검사의 `WARN`은 무시 (예: `yt-dlp` ↔ `websockets`), `ERROR`는 강사에게 전달
 - 고정 버전(`numpy<2`, `opencv-python<4.11`, `setuptools<80`, `ml-dtypes<0.6`) 업그레이드 금지 — ROS Jazzy · colcon 호환
+- (선택) 추가 apt 패키지를 스크립트 전에 따로 설치: clone 한 저장소 폴더에서 `grep -v '^#' scripts/apt_packages.txt | xargs sudo apt install -y`
 
 ### install_lecture.sh 가 하는 일
 

@@ -33,11 +33,11 @@ def install_flow():
     fig, ax = plt.subplots(figsize=(14, 4.2), dpi=150)
     ax.set_xlim(0, 14); ax.set_ylim(0, 4.2); ax.axis("off")
     steps = [
-        ("1  ROS 2 Jazzy", ["ros-jazzy-desktop", "Nav2 · SLAM Toolbox", "MoveIt · RViz · xacro", "rosdep init / update"], "#E3EEFF"),
-        ("2  저장소 받기", ["git clone <GitHub 저장소>", "cd pinklab_mobile_…", "source /opt/ros/jazzy/", "        setup.bash"], "#FFF3D6"),
-        ("3  install_lecture.sh", ["rosdep 확인", "venv (.venv-mobile-openarm)", "pip: torch CPU · ultralytics", "colcon build · pytest"], "#E6F7E6"),
+        ("1  ROS 2 Jazzy", ["ros-jazzy-desktop", "(공식 안내 · 직접)", "sudo apt install git"], "#E3EEFF"),
+        ("2  저장소 받기", ["git clone -b lecture-2026-11", "  <GitHub 저장소>", "cd pinklab_mobile_…"], "#FFF3D6"),
+        ("3  install_lecture.sh", ["apt 추가 패키지 · rosdep", "venv · pip · 충돌 검사", "colcon build · pytest", "→ doctor 로 점검"], "#E6F7E6"),
         ("4  .env", ["cp .env.example .env", "OPENAI_API_KEY=…", "LLM 모듈에서만 필요", "키는 강사가 배포"], "#FFE0E0"),
-        ("5  확인", ["pytest 41개 PASS", "start → 준비 완료 3줄", "goal 1.0 0.6 0", "pick red (약 3분)"], "#EDE7F6"),
+        ("5  확인", ["doctor 실패 0건", "start → MuJoCo + RViz", "goal 1.0 0.6 0", "pick red (약 3분)"], "#EDE7F6"),
     ]
     w, gap, x = 2.45, 0.35, 0.3
     for i, (title, lines, fc) in enumerate(steps):
@@ -46,7 +46,7 @@ def install_flow():
             arrow(ax, (x + w, 2.15), (x + w + gap, 2.15))
         x += w + gap
     ax.text(0.3, 4.0, "설치 흐름 (처음 한 번, 10~20분)", fontsize=12, fontweight="bold", color=INK, va="top")
-    ax.text(0.3, 0.45, "매 터미널:  source /opt/ros/jazzy/setup.bash  →  source scripts/env.sh", fontsize=10, color="#444444", va="top")
+    ax.text(0.3, 0.45, "새 터미널에서 source 불필요: ./scripts/mobile_openarm 이 ROS 2 Jazzy 와 venv 를 스스로 켠다", fontsize=10, color="#444444", va="top")
     fig.savefig(OUT / "setup_flow.png", bbox_inches="tight", facecolor="white")
     plt.close(fig)
 

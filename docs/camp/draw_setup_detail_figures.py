@@ -23,13 +23,13 @@ def env_cards():
 # ================================================================ 1-1. ROS 2 Jazzy packages
 def ros2_packages():
     fig, ax = fig_ax(14, 3.6)
-    note(ax, 0.3, 3.3, "① ROS 2 Jazzy + 이 패키지가 쓰는 추가 항목 (처음 한 번)", bold=True, fs=12)
-    tiles(ax, [("ros-jazzy-desktop", ["공식 설치 안내 (Debs)", "RViz · rqt 포함"], C["blue"]),
+    note(ax, 0.3, 3.3, "① 직접 설치: ros-jazzy-desktop + git   /   나머지 추가 항목은 ③ 설치 스크립트가 자동 설치", bold=True, fs=12)
+    tiles(ax, [("직접: ros-jazzy-desktop + git", ["공식 설치 안내 (Debs)", "RViz · rqt 포함, git 은 ② clone 용"], C["blue"]),
                ("주행", ["navigation2 · nav2-bringup", "slam-toolbox"], C["yellow"]),
                ("팔", ["moveit: move-group · kinematics", "planners-ompl · configs-utils", "controller-manager · visualization"], C["green"]),
                ("도구", ["colcon · rosdep · git · venv", "xacro · rsp · tf2-tools · cyclonedds"], C["purple"])],
           cols=4, y_top=2.9, h=1.8, tfs=11.5, fs=8.8)
-    note(ax, 0.3, 0.6, "마지막에  sudo rosdep init && rosdep update", fs=9.5)
+    note(ax, 0.3, 0.6, "주행 · 팔 · 도구 = scripts/apt_packages.txt (저장소를 받은 뒤 생김) → install_lecture.sh 가 빠진 것만 설치 + rosdep init/update", fs=9.5)
     save(fig, "setup_ros2_packages.png")
 
 
