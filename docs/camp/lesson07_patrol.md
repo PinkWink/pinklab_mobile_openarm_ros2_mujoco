@@ -137,7 +137,7 @@ def go(self, stop):   # 발췌
 ### 수락 확인 · 결과 기다리기 · 취소 - Patrol.go 발췌
 
 ```python
-# patrol.py Patrol.go (이어서)
+# lessons/04_navigation/patrol.py Patrol.go (이어서)
     handle = future.result()
     if not handle.accepted:
         return GoalStatus.STATUS_ABORTED
@@ -222,7 +222,7 @@ def publish(self):
 ### RotationShim 으로 제자리 회전 - nav2.yaml FollowPath 발췌
 
 ```yaml
-# mobile_openarm_navigation/config/nav2.yaml  (발췌)
+# src/mobile_openarm_navigation/config/nav2.yaml  (발췌)
 controller_server:
   ros__parameters:
     FollowPath:
@@ -239,7 +239,7 @@ controller_server:
 ### 속도와 critic 비중 - nav2.yaml FollowPath 발췌
 
 ```yaml
-# nav2.yaml controller_server.FollowPath (이어서)
+# src/mobile_openarm_navigation/config/nav2.yaml controller_server.FollowPath (이어서)
       max_vel_x: 0.3
       critics: [RotateToGoal, Oscillation, ObstacleFootprint, GoalAlign, PathAlign, PathDist, GoalDist]
       ObstacleFootprint.scale: 0.05        # 장애물 점수의 비중
@@ -400,7 +400,7 @@ class RobotState(Node):   # 발췌
 ### odom 을 상태에 넣기 - RobotState.on_odom 발췌
 
 ```python
-# dashboard/server.py RobotState (이어서)
+# lessons/04_navigation/dashboard/server.py RobotState (이어서)
     def on_odom(self, m):
         p = m.pose.pose
         self.put(odom=[round(p.position.x, 3), round(p.position.y, 3), round(yaw_of(p.orientation), 3)],
@@ -413,7 +413,7 @@ class RobotState(Node):   # 발췌
 ### 잠금으로 쓰고 복사하기 - RobotState.put · snapshot 발췌
 
 ```python
-# dashboard/server.py RobotState (이어서)
+# lessons/04_navigation/dashboard/server.py RobotState (이어서)
     def put(self, **kw):
         with self.lock:                                      # ROS 스레드가 쓰고
             self.s.update(kw)
@@ -459,7 +459,7 @@ def camera(name):
 ### 바뀐 프레임만 MJPEG 로 흘리기 - camera 발췌
 
 ```python
-# dashboard/server.py camera (이어서)
+# lessons/04_navigation/dashboard/server.py camera (이어서)
     def gen():
         last = None
         while True:
@@ -511,7 +511,7 @@ def main():   # 발췌
 ### Flask 스레드 실행과 정리 - main 발췌
 
 ```python
-# dashboard/server.py main (이어서)
+# lessons/04_navigation/dashboard/server.py main (이어서)
     try:
         make_app(state).run(host=a.host, port=a.port, threaded=True, use_reloader=False)   # Flask 스레드
     finally:

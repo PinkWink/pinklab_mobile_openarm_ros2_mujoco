@@ -145,7 +145,7 @@ def on_fb(m):                                                 # feedback 마다 
 ### 보내고 결과 기다리기 - pick_then_place.py run 함수 발췌
 
 ```python
-# pick_then_place.py run (이어서)
+# lessons/06_pick_place/pick_then_place.py run (이어서)
 future = self.client.send_goal_async(goal, feedback_callback=on_fb)   # 액션 /pick_place
 rclpy.spin_until_future_complete(self, future, timeout_sec=10)
 gh = future.result()
@@ -161,7 +161,7 @@ r = rf.result().result                                        # success · messa
 ### 어느 절반을 할지 고르기 - pick_place_server.py execute 함수 발췌
 
 ```python
-# warehouse_skills/pick_place_server.py
+# src/warehouse_skills/warehouse_skills/pick_place_server.py
 which = (goal.phase or "all").lower()
 if which == "place":
     if self.held is None:
@@ -177,7 +177,7 @@ else:
 ### 절반의 성공 판정 - pick_place_server.py execute 함수 발췌
 
 ```python
-# pick_place_server.py execute (이어서)
+# src/warehouse_skills/warehouse_skills/pick_place_server.py execute (이어서)
 if which == "pick":
     lifted = float(fz - top_z)                                # 상자가 상판보다 얼마나 위에 있나 (정답 위치)
     result.success = bool(lifted > 0.02)
@@ -195,7 +195,7 @@ else:
 ### 물체 · 팔 고르고 도킹 - pick_place_server.py do_pick 함수 발췌
 
 ```python
-# warehouse_skills/pick_place_server.py
+# src/warehouse_skills/warehouse_skills/pick_place_server.py
 def do_pick(self, goal, feedback):
     name = self.resolve_object(goal.object)                   # red → parcel_1
     src = self.resolve_station(goal.from_station or "pick_table")
@@ -213,7 +213,7 @@ def do_pick(self, goal, feedback):
 ### 위치 확인 · 잡기 · 후진 - pick_place_server.py do_pick 함수 발췌
 
 ```python
-    # pick_place_server.py do_pick (이어서)
+    # src/warehouse_skills/warehouse_skills/pick_place_server.py do_pick (이어서)
     rel = self.locate_object(name)                            # 카메라: (dx, dy, z) in base_footprint
     if not goal.arm and self.arm_for_offset(rel[1]) != arm:
         arm = self.arm_for_offset(rel[1])                     # 도킹 잔차 때문에 반대쪽이면 팔 바꾸기
@@ -229,7 +229,7 @@ def do_pick(self, goal, feedback):
 ### 마커 쌍 기다리기 - nav_client.py dock 함수 발췌
 
 ```python
-# warehouse_skills/nav_client.py
+# src/warehouse_skills/warehouse_skills/nav_client.py
 end = time.monotonic() + float(d["timeout_s"])                # 180 s (벽시계)
 while time.monotonic() < end:
     f = self.fixes(ids, max_age=0.8)                          # 0.8 s 안에 찍힌 마커만
@@ -247,7 +247,7 @@ while time.monotonic() < end:
 ### 마커를 보며 다가가기 - nav_client.py dock 함수 발췌
 
 ```python
-    # nav_client.py dock while 루프 (이어서)
+    # src/warehouse_skills/warehouse_skills/nav_client.py dock while 루프 (이어서)
     along, side, turn, _, _ = self.geometry(f, offsets)
     last = (along, side, turn)
     last_odom = self.markers_odom
@@ -267,7 +267,7 @@ while time.monotonic() < end:
 ### 마지막 구간은 오도메트리로 - nav_client.py dock 함수 발췌
 
 ```python
-# nav_client.py dock (이어서)
+# src/warehouse_skills/warehouse_skills/nav_client.py dock (이어서)
 # blind: 마지막 측정 뒤 이미 간 거리를 빼고 오도메트리로 직진
 remaining = along - travelled - float(target_dx)
 self.drive(remaining, speed=float(d["blind_speed"]))
@@ -279,7 +279,7 @@ self.drive(remaining, speed=float(d["blind_speed"]))
 ### 부른 시각 기록 - locate.py VisionLocator.relative 함수 발췌
 
 ```python
-# warehouse_skills/locate.py
+# src/warehouse_skills/warehouse_skills/locate.py
 def relative(self, label, wait=10.0):
     since = self.node.get_clock().now().nanoseconds * 1e-9    # 부른 시각 (sim)
     end = time.monotonic() + wait
@@ -290,7 +290,7 @@ def relative(self, label, wait=10.0):
 ### 그 뒤에 찍힌 검출 기다리기 - locate.py VisionLocator.relative 함수 발췌
 
 ```python
-    # locate.py VisionLocator.relative (이어서)
+    # src/warehouse_skills/warehouse_skills/locate.py VisionLocator.relative (이어서)
     while True:
         m = self.latest                                       # 마지막 /vision/detections
         fresh = m is not None and m.header.stamp.sec + m.header.stamp.nanosec * 1e-9 >= since
@@ -308,7 +308,7 @@ def relative(self, label, wait=10.0):
 ### base_footprint 좌표로 바꾸기 - locate.py VisionLocator.relative 함수 발췌
 
 ```python
-    # locate.py VisionLocator.relative (이어서)
+    # src/warehouse_skills/warehouse_skills/locate.py VisionLocator.relative (이어서)
     best = max(hits, key=lambda d: d.score)
     out = self.buffer.transform(best.position, "base_footprint", timeout=rclpy.duration.Duration(seconds=0.5))
     return float(out.point.x), float(out.point.y), float(out.point.z)   # map → base_footprint (같은 TF)
@@ -320,7 +320,7 @@ def relative(self, label, wait=10.0):
 ### 열고 다가가기 - pick_place_server.py grasp 함수 발췌
 
 ```python
-# warehouse_skills/pick_place_server.py
+# src/warehouse_skills/warehouse_skills/pick_place_server.py
 dx, dy, dz = rel
 z = dz + float(g["z_offset"])                                 # 물체 중심 + 2 cm
 self.moveit.gripper(arm, g["open"], g["effort"])              # 44 mm
@@ -340,7 +340,7 @@ self.moveit.move_cartesian(arm, [make_pose([dx, dy, z])])     # ⑧ 의 Cartesia
 ### 닫고 확인 · 들어 올려 빼기 - pick_place_server.py grasp 함수 발췌
 
 ```python
-# pick_place_server.py grasp (이어서)
+# src/warehouse_skills/warehouse_skills/pick_place_server.py grasp (이어서)
 result = self.moveit.gripper(arm, g["close"], g["effort"])    # 12 mm 명령 → 상자에 막혀 멈춤
 if not (float(g["close_min"]) <= result.position <= float(g["close_max"])):
     raise SkillError(f"grasp missed: finger stopped at {result.position * 1000:.1f} mm")
@@ -357,7 +357,7 @@ self.moveit.move_cartesian(arm, [up, back])
 ### 놓기 - pick_place_server.py place 함수 발췌
 
 ```python
-# warehouse_skills/pick_place_server.py
+# src/warehouse_skills/warehouse_skills/pick_place_server.py
 z = top_z + float(p["drop_z"]) + size[2] / 2 + float(g["z_offset"])   # 상판 + 4 mm + 상자 반 + 2 cm
 self.moveit.move_pose(arm, make_pose([slot_dx + float(p["pre_offset_x"]), slot_dy, z + float(g["lift_z"])]))
 self.moveit.move_cartesian(arm, [make_pose([slot_dx, slot_dy, z + float(g["lift_z"])]),
@@ -398,7 +398,7 @@ dock:
 ### 잡기 값 - skills.yaml 발췌
 
 ```yaml
-# skills.yaml (이어서)
+# src/warehouse_skills/config/skills.yaml (이어서)
 grasp:
   pre_offset_x: -0.10
   lift_z: 0.04
@@ -417,7 +417,7 @@ grasp:
 ### 놓기 값 · 운반 자세 - skills.yaml 발췌
 
 ```yaml
-# skills.yaml (이어서)
+# src/warehouse_skills/config/skills.yaml (이어서)
 place:
   pre_offset_x: -0.12
   drop_z: 0.004

@@ -93,7 +93,7 @@ ros2 launch openarm_description display.launch.py
 ### Xacro 펼치기 (코드) - expand_urdf 함수
 
 ```py
-# mobile_openarm_description/model.py
+# src/mobile_openarm_description/mobile_openarm_description/model.py
 def expand_urdf(mappings=None):
     path = Path(get_package_share_directory("mobile_openarm_description")) / "urdf/mobile_openarm.urdf.xacro"
     options = {str(k): str(v) for k, v in (mappings or {}).items()}
@@ -112,7 +112,7 @@ def expand_urdf(mappings=None):
 ### URDF 펼쳐 저장 · 브리지 명령 (코드) - warehouse.launch.py 의 setup 함수
 
 ```py
-# mobile_openarm_bringup/launch/warehouse.launch.py
+# src/mobile_openarm_bringup/launch/warehouse.launch.py
 urdf = expand_urdf()
 path = root / "robot.urdf"
 path.write_text(urdf)
@@ -126,7 +126,7 @@ command = [python, "-m", "mobile_openarm_mujoco.bridge", "--urdf-file", str(path
 ### 브리지 프로세스와 robot_state_publisher 등록 (코드) - warehouse.launch.py 의 setup 함수
 
 ```py
-# warehouse.launch.py setup (이어서)
+# src/mobile_openarm_bringup/launch/warehouse.launch.py setup (이어서)
 physics = ExecuteProcess(cmd=command, output="screen", name="mobile_openarm_mujoco")
 actions = [
     physics,
@@ -147,7 +147,7 @@ actions = [
 ### URDF 읽고 부모-자식 표 만들기 (코드) - build_model 함수 앞부분
 
 ```py
-# mobile_openarm_mujoco/model.py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 def build_model(output_dir, urdf=None, config_file=None, world_file=None, actors_file=None):
     robot = ET.fromstring(urdf or expand_urdf())
     links = {x.get("name"): x for x in robot.findall("link")}
@@ -163,6 +163,7 @@ def build_model(output_dir, urdf=None, config_file=None, world_file=None, actors
 ### MJCF 뼈대: compiler · option → link → 파일 저장 (코드) - build_model 함수 앞부분
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
     # build_model (이어서)
     root = ET.Element("mujoco", model="mobile_openarm_warehouse")
     ET.SubElement(root, "compiler", angle="radian", eulerseq="XYZ", autolimits="true",
@@ -186,6 +187,7 @@ def build_model(output_dir, urdf=None, config_file=None, world_file=None, actors
 ### 링크 → body (코드) - link 함수
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 def link(parent, name, joint=None):
     attrs = {"name": name}
     attrs.update(origin(joint) if joint is not None else {"pos": vector(settings["spawn"]["position"])})
@@ -208,6 +210,7 @@ link(world, "base_footprint")
 ### 관절 → joint: 종류 · 축 · 감쇠 (코드) - link 함수 (관절 부분)
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 if joint is None:
     ET.SubElement(body, "freejoint", name="floating_base")
 elif joint.get("type") != "fixed":
@@ -226,6 +229,7 @@ elif joint.get("type") != "fixed":
 ### 관절 → joint: 범위와 joint 요소 (코드) - link 함수 (관절 부분)
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
     # link 함수 관절 부분 (이어서)
     if typ in ["revolute", "prismatic"]:
         lim = joint.find("limit")
@@ -243,6 +247,7 @@ elif joint.get("type") != "fixed":
 ### 관성 → inertial (코드) - link 함수 (관성 부분)
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
     # link 함수 (이어서)
     inertial = links[name].find("inertial")
     if inertial is not None:
@@ -266,6 +271,7 @@ elif joint.get("type") != "fixed":
 ### 형상 → geom: 이름 · 그룹 · 충돌 속성 (코드) - geometry 함수
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 def geometry(body, element, is_visual, name, index):
     geom = element.find("geometry")[0]
     attrs = origin(element)
@@ -282,6 +288,7 @@ def geometry(body, element, is_visual, name, index):
 ### 형상 → geom: mesh · box 형상 변환 (코드) - geometry 함수
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
     # geometry 함수 (이어서)
     if geom.tag == "mesh":
         path = resolve_mesh(geom.get("filename"))            # package:// → 실제 경로
@@ -306,6 +313,7 @@ def geometry(body, element, is_visual, name, index):
 ### 센서 자리 (코드) - lidar site 와 camera
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 if name == "laser_link":
     ET.SubElement(body, "site", name="lidar", size=".005", rgba="1 0 0 1")
 if name in camera_frames:                       # {"base_camera_optical_frame": "base_camera", ...}
@@ -326,6 +334,7 @@ if name in camera_frames:                       # {"base_camera_optical_frame": 
 ### 액추에이터: 바퀴 velocity (코드) - actuator 생성 발췌
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 actuators = ET.SubElement(root, "actuator")
 for side in ["left", "right"]:
     ET.SubElement(actuators, "velocity", name=side + "_motor", joint=side + "_wheel_joint",
@@ -340,6 +349,7 @@ for side in ["left", "right"]:
 ### 액추에이터: 팔 · 그리퍼 관절 position (코드) - actuator 생성 발췌
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 # actuator 생성 (이어서)
 for j in joints:
     if j.get("type") not in ["revolute", "prismatic"] or j.find("mimic") is not None:
@@ -362,7 +372,7 @@ for j in joints:
 ### mimic → equality (코드)
 
 ```py
-# mobile_openarm_mujoco/model.py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 class Physics:
     def __init__(self, model_path, config_file=None):
         self.model = mujoco.MjModel.from_xml_path(str(model_path))
@@ -387,6 +397,7 @@ class Physics:
 ### 충돌 제외 → exclude (코드) - build_model 함수 뒷부분
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 contacts = ET.SubElement(root, "contact")
 exclusions = set()
 pairs = json.loads((share("mobile_openarm_description") / "config/collision_exclusions.json").read_text())
@@ -408,7 +419,7 @@ for pair in pairs + settings.get("convex_contact_exclusions", []):
 ### 모델 읽기 (코드) - Physics 클래스의 __init__
 
 ```py
-# mobile_openarm_mujoco/model.py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
 class Physics:
     def __init__(self, model_path, config_file=None):
         self.model = mujoco.MjModel.from_xml_path(str(model_path))
@@ -433,7 +444,7 @@ class Physics:
 ### /odom 발행 (코드) - publish_state 함수
 
 ```py
-# mobile_openarm_mujoco/bridge.py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/bridge.py
 def publish_state(self, now):
     p = self.physics
     odom = Odometry()
@@ -448,6 +459,7 @@ def publish_state(self, now):
 ### odom → base_footprint TF 발행 (코드) - publish_state 함수
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/bridge.py
     # publish_state (이어서)
     tf = TransformStamped()
     tf.header, tf.child_frame_id = odom.header, odom.child_frame_id
@@ -463,6 +475,7 @@ def publish_state(self, now):
 ### /joint_states 발행 (코드) - publish_state 함수
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/bridge.py
     # publish_state (이어서)
     joints = JointState()
     joints.header.stamp = now
@@ -482,7 +495,7 @@ def publish_state(self, now):
 ### display.launch.py: robot_state_publisher · joint_state_publisher 노드 (코드) - setup 함수
 
 ```py
-# mobile_openarm_description/launch/display.launch.py
+# src/mobile_openarm_description/launch/display.launch.py
 def setup(context):
     urdf = expand_urdf()
     gui = LaunchConfiguration("gui").perform(context) == "true"
@@ -501,7 +514,7 @@ def setup(context):
 ### display.launch.py: RViz 노드 추가 (코드) - setup 함수
 
 ```py
-    # display.launch.py setup (이어서)
+    # src/mobile_openarm_description/launch/display.launch.py setup (이어서)
     if LaunchConfiguration("rviz").perform(context) == "true":
         actions.append(Node(package="rviz2", executable="rviz2",
                             arguments=["-d", str(share / "config/display.rviz")], output="screen"))

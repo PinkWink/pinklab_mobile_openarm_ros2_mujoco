@@ -45,6 +45,7 @@
 ### ROS 2 없이 돌려 보기 (코드) - mujoco_basics.py
 
 ```python
+# lessons/01_mujoco_ros2/mujoco_basics.py
 model = mujoco.MjModel.from_xml_path(str(MJCF))    # model: the description, never changes
 data = mujoco.MjData(model)                        # data: the state, changes every step
 print(f"joints {model.njnt}  actuators {model.nu}  timestep {model.opt.timestep} s")
@@ -106,6 +107,7 @@ python lessons/01_mujoco_ros2/mujoco_basics.py
 ### 준비: 모델과 이름 (코드) - __init__ 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
 super().__init__("urdf_bridge", parameter_overrides=[rclpy.Parameter("use_sim_time", value=True)])
 _, self.model = build()                              # URDF -> MjModel
 self.data = mujoco.MjData(self.model)
@@ -122,6 +124,7 @@ self.vadr = [int(self.model.joint(j).dofadr[0]) for j in self.joints]
 ### 준비: 발행자 · 구독자 · 렌더러 (코드) - __init__ 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
 # __init__ 함수 (이어서)
 self.clock_pub = self.create_publisher(Clock, "/clock", 10)
 self.joint_pub = self.create_publisher(JointState, "/joint_states", 10)
@@ -139,6 +142,7 @@ self.state_period, self.camera_period = 1.0 / state_hz, 1.0 / camera_hz
 ### 시간: /clock (코드) - stamp 함수와 spin 발췌
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
 def stamp(t):
     """float seconds -> builtin_interfaces/Time"""
     return Time(sec=int(t), nanosec=int((t - int(t)) * 1e9))
@@ -154,6 +158,7 @@ self.clock_pub.publish(Clock(clock=stamp(t)))     # 2. simulation time
 ### 관절 상태: /joint_states (코드) - publish_joints 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
 def publish_joints(self, t):
     js = JointState()
     js.header.stamp = stamp(t)
@@ -171,6 +176,7 @@ def publish_joints(self, t):
 ### 끝점 자세: 월드 기준 → base_link 기준 (코드) - publish_tip_pose 함수 앞부분
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
 def publish_tip_pose(self, t):
     b, c = self.model.body(BASE).id, self.model.body(TIP).id
     # xpos / xquat are world poses. Pose of the tip seen from the base: q = conj(q_base) * q_tip
@@ -187,6 +193,7 @@ def publish_tip_pose(self, t):
 ### 끝점 자세: 메시지 채우기 (코드) - publish_tip_pose 함수 뒷부분
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
     # publish_tip_pose 함수 (이어서)
     msg = PoseStamped()
     msg.header.stamp, msg.header.frame_id = stamp(t), BASE
@@ -203,6 +210,7 @@ def publish_tip_pose(self, t):
 ### 영상: /tip_camera/image_raw (코드) - publish_camera 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
 def publish_camera(self, t):
     self.renderer.update_scene(self.data, camera=CAMERA)
     rgb = self.renderer.render()                         # (240, 320, 3) uint8
@@ -220,6 +228,7 @@ def publish_camera(self, t):
 ### 명령: /cmd → data.ctrl (코드) - on_cmd 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
 def on_cmd(self, msg):
     q = np.asarray(msg.data, dtype=float)
     if q.size != self.model.nu or not np.all(np.isfinite(q)):
@@ -240,6 +249,7 @@ def on_cmd(self, msg):
 ### 루프: 물리 · 시간 · 상태 · 영상 (코드) - spin 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
 def spin(self):
     wall0 = time.monotonic()
     while rclpy.ok() and (self.viewer is None or self.viewer.is_running()):
@@ -258,6 +268,7 @@ def spin(self):
 ### 루프: 콜백 · 뷰어 · 실시간 (코드) - spin 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_bridge.py
         # spin 함수 while 루프 (이어서)
         rclpy.spin_once(self, timeout_sec=0)              # 5. /cmd callbacks run here, between two steps
         if self.viewer is not None:

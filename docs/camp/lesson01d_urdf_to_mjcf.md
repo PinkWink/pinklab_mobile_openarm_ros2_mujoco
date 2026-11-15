@@ -51,6 +51,7 @@
 ### link1 (코드) - two_link_arm.urdf 발췌
 
 ```xml
+<!-- lessons/01_mujoco_ros2/two_link_arm.urdf -->
 <link name="link1">
   <visual>
     <origin xyz="0 0 0.15"/>
@@ -76,6 +77,7 @@
 ### joint1 (코드) - two_link_arm.urdf 발췌
 
 ```xml
+<!-- lessons/01_mujoco_ros2/two_link_arm.urdf -->
 <joint name="joint1" type="revolute">
   <parent link="base_link"/>
   <child link="link1"/>
@@ -100,6 +102,7 @@
 ### 카메라 프레임 (코드) - two_link_arm.urdf 발췌
 
 ```xml
+<!-- lessons/01_mujoco_ros2/two_link_arm.urdf -->
 <link name="camera_optical_frame"/>
 
 <joint name="camera_joint" type="fixed">
@@ -146,6 +149,7 @@ ros2 launch lessons/01_mujoco_ros2/view_urdf.launch.py
 ### view_urdf.launch.py (코드) - 노드 셋
 
 ```python
+# lessons/01_mujoco_ros2/view_urdf.launch.py
 urdf = (HERE / "two_link_arm.urdf").read_text()
 return LaunchDescription([
     DeclareLaunchArgument("sim", default_value="false"),
@@ -173,6 +177,7 @@ return LaunchDescription([
 ### MuJoCo 는 URDF 를 바로 읽는다 (코드)
 
 ```python
+# 예시 코드 (저장소 파일 아님)
 import mujoco
 
 model = mujoco.MjModel.from_xml_path("two_link_arm.urdf")   # MJCF 와 같은 함수
@@ -239,6 +244,7 @@ python lessons/01_mujoco_ros2/urdf_to_mjcf.py --raw
 ### mimic → equality (코드) - MJCF 와 MjSpec
 
 ```xml
+<!-- 예시 코드 (저장소 파일 아님) -->
 <equality>
   <joint joint1="right_finger_joint" joint2="left_finger_joint" polycoef="0 1 0 0 0"/>
 </equality>
@@ -258,6 +264,7 @@ eq.data[:5] = [0.0, 1.0, 0, 0, 0]        # polycoef: offset, multiplier, 0, 0, 0
 ### URDF 안의 mujoco 태그 (코드) - two_link_arm.urdf 발췌
 
 ```xml
+<!-- lessons/01_mujoco_ros2/two_link_arm.urdf -->
 <robot name="two_link_arm">
   <mujoco>
     <compiler fusestatic="false" discardvisual="false"/>
@@ -276,6 +283,7 @@ eq.data[:5] = [0.0, 1.0, 0, 0, 0]        # polycoef: offset, multiplier, 0, 0, 0
 ### 1 · 2 단계: 읽기 · 물리와 충돌 (코드) - build 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_to_mjcf.py
 def build(urdf=URDF):
     spec = mujoco.MjSpec.from_file(str(urdf))               # 1. MuJoCo parses the URDF itself
 
@@ -293,6 +301,7 @@ def build(urdf=URDF):
 ### 3 단계: 세계 (코드) - build 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_to_mjcf.py
     # build 함수 (이어서)
     world = spec.worldbody                                   # 3. the world around the robot
     world.add_light(pos=[0.5, -0.5, 2.0], dir=[-0.3, 0.3, -1.0])
@@ -309,6 +318,7 @@ def build(urdf=URDF):
 ### 4 · 5 · 6 단계: 카메라 · 액추에이터 · 컴파일 (코드) - build 함수
 
 ```python
+# lessons/01_mujoco_ros2/urdf_to_mjcf.py
     # build 함수 (이어서)
     spec.body("camera_optical_frame").add_camera(name="tip_camera", quat=[0, 1, 0, 0], fovy=60)
 
@@ -340,6 +350,7 @@ python lessons/01_mujoco_ros2/urdf_to_mjcf.py
 ### 저장된 MJCF (코드) - two_link_arm_from_urdf.xml 발췌
 
 ```xml
+<!-- lessons/01_mujoco_ros2/two_link_arm_from_urdf.xml -->
 <body name="link1" pos="0 0 0.06">
   <inertial pos="0 0 0.15" mass="0.4" diaginertia="0.00304 0.00304 8e-05"/>
   <joint name="joint1" pos="0 0 0" axis="0 1 0" range="-1.57 1.57" actuatorfrcrange="-20 20" damping="0.5"/>
@@ -372,6 +383,7 @@ python -m mujoco.viewer --mjcf=lessons/01_mujoco_ros2/two_link_arm_from_urdf.xml
 ### mesh 가 있는 URDF (코드)
 
 ```xml
+<!-- 예시 코드 (저장소 파일 아님) -->
 <robot name="my_robot">
   <mujoco>
     <compiler fusestatic="false" discardvisual="false" meshdir="/path/to/my_robot/meshes"/>

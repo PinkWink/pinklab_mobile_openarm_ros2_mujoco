@@ -170,7 +170,7 @@ ros2 topic pub -1 /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
 ### Nav2 액션 서버 기다리기 - goal.py main 함수 발췌
 
 ```python
-# mobile_openarm_navigation/goal.py
+# src/mobile_openarm_navigation/mobile_openarm_navigation/goal.py
 def main(args=None):   # 발췌
     rclpy.init()
     node = Node("mobile_openarm_goal", parameter_overrides=[rclpy.parameter.Parameter("use_sim_time", value=True)])
@@ -186,7 +186,7 @@ def main(args=None):   # 발췌
 ### map 좌표 목표 만들기 - goal.py main 함수 발췌
 
 ```python
-# goal.py main (이어서)
+# src/mobile_openarm_navigation/mobile_openarm_navigation/goal.py main (이어서)
     goal = NavigateToPose.Goal()
     goal.pose.header.frame_id = "map"                                   # 목표는 map 좌표
     goal.pose.header.stamp = node.get_clock().now().to_msg()
@@ -201,7 +201,7 @@ def main(args=None):   # 발췌
 ### 목표 보내고 결과 받기 - goal.py main 함수 발췌
 
 ```python
-# goal.py main (이어서)
+# src/mobile_openarm_navigation/mobile_openarm_navigation/goal.py main (이어서)
     future = client.send_goal_async(goal)
     rclpy.spin_until_future_complete(node, future, timeout_sec=10)
     handle = future.result()                                            # accepted 확인
@@ -222,7 +222,7 @@ def main(args=None):   # 발췌
 ### AMCL 초기 위치 정하기 - navigation.launch.py setup 함수 발췌
 
 ```python
-# mobile_openarm_navigation/launch/navigation.launch.py
+# src/mobile_openarm_navigation/launch/navigation.launch.py
 def setup(context):   # 발췌
     params = str(share / "config/nav2.yaml")
     amcl_params = [params]
@@ -237,7 +237,7 @@ def setup(context):   # 발췌
 ### 지도가 있으면 map_server · amcl 띄우기 - navigation.launch.py setup 함수 발췌
 
 ```python
-# navigation.launch.py setup (이어서)
+# src/mobile_openarm_navigation/launch/navigation.launch.py setup (이어서)
     if mode == "nav":
         if mapfile:
             actions.extend([
@@ -254,7 +254,7 @@ def setup(context):   # 발췌
 ### Nav2 서버 5개와 lifecycle manager - navigation.launch.py setup 함수 발췌
 
 ```python
-# navigation.launch.py setup (이어서)
+# src/mobile_openarm_navigation/launch/navigation.launch.py setup (이어서)
         for pkg, exe in [("nav2_controller", "controller_server"), ("nav2_planner", "planner_server"),
                          ("nav2_smoother", "smoother_server"), ("nav2_behaviors", "behavior_server"),
                          ("nav2_bt_navigator", "bt_navigator")]:
@@ -276,7 +276,7 @@ def setup(context):   # 발췌
 ### AMCL 위치 추정 - nav2.yaml 발췌
 
 ```yaml
-# mobile_openarm_navigation/config/nav2.yaml  (발췌)
+# src/mobile_openarm_navigation/config/nav2.yaml  (발췌)
 amcl:
   ros__parameters:
     min_particles: 500
@@ -292,7 +292,7 @@ amcl:
 ### 컨트롤러 플러그인 (RotationShim + DWB) - nav2.yaml 발췌
 
 ```yaml
-# nav2.yaml (이어서)
+# src/mobile_openarm_navigation/config/nav2.yaml (이어서)
 controller_server:
   ros__parameters:
     controller_frequency: 15.0
@@ -308,7 +308,7 @@ controller_server:
 ### 속도 · 가속 한계와 critic - nav2.yaml 발췌
 
 ```yaml
-# nav2.yaml controller_server.FollowPath (이어서)
+# src/mobile_openarm_navigation/config/nav2.yaml controller_server.FollowPath (이어서)
       max_vel_x: 0.3
       max_vel_theta: 0.65
       acc_lim_x: 0.4
@@ -324,7 +324,7 @@ controller_server:
 ### local costmap 과 footprint - nav2.yaml 발췌
 
 ```yaml
-# nav2.yaml (이어서)
+# src/mobile_openarm_navigation/config/nav2.yaml (이어서)
 local_costmap:
   local_costmap:
     ros__parameters:
@@ -344,7 +344,7 @@ local_costmap:
 ### 전역 경로 planner - nav2.yaml 발췌
 
 ```yaml
-# nav2.yaml (이어서)
+# src/mobile_openarm_navigation/config/nav2.yaml (이어서)
 planner_server:
   ros__parameters:
     GridBased: {plugin: nav2_navfn_planner::NavfnPlanner, tolerance: 0.15, use_astar: true, allow_unknown: true}
@@ -357,7 +357,7 @@ planner_server:
 ### RViz 목표 버튼 - navigation.rviz 발췌
 
 ```yaml
-# mobile_openarm_navigation/config/navigation.rviz  (발췌)
+# src/mobile_openarm_navigation/config/navigation.rviz  (발췌)
   Tools:
     - Class: rviz_default_plugins/SetInitialPose     # 2D Pose Estimate → /initialpose → amcl
       Topic: /initialpose

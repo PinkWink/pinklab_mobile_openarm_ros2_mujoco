@@ -106,7 +106,7 @@ last = json.loads(llm.log_path.read_text().splitlines()[-1])        # 이 호출
 ### 의도 목록 - schema.py Intent 발췌
 
 ```python
-# warehouse_lecture/commands/schema.py
+# src/warehouse_lecture/warehouse_lecture/commands/schema.py
 class Intent(str, Enum):
     move_object = "move_object"
     go_to = "go_to"
@@ -124,7 +124,7 @@ class Intent(str, Enum):
 ### 명령 슬롯 - schema.py RobotCommand 발췌
 
 ```python
-# warehouse_lecture/commands/schema.py (이어서)
+# src/warehouse_lecture/warehouse_lecture/commands/schema.py (이어서)
 class RobotCommand(BaseModel):
     intent: Intent
     target: str = Field("", description="물체(parcel_red 등)·person·자세(ready, hands_up, transport, home)·그리퍼(open, close)")
@@ -141,7 +141,7 @@ class RobotCommand(BaseModel):
 ### 기본값 채우기 - schema.py validate_world 함수 발췌
 
 ```python
-# warehouse_lecture/commands/schema.py
+# src/warehouse_lecture/warehouse_lecture/commands/schema.py
 def validate_world(self):
     """Fill defaults and return a list of problems (empty = executable)."""
     problems = []
@@ -161,7 +161,7 @@ def validate_world(self):
 ### 작업대 · 목적지 검사 - schema.py validate_world 함수 발췌
 
 ```python
-# warehouse_lecture/commands/schema.py validate_world (이어서)
+# src/warehouse_lecture/warehouse_lecture/commands/schema.py validate_world (이어서)
         if self.source.value not in STATIONS or self.destination.value not in STATIONS:
             problems.append("상자는 작업대(pick_table, place_table) 사이에서만 옮길 수 있다")
         if self.source == self.destination:
@@ -179,7 +179,7 @@ def validate_world(self):
 ### 시스템 프롬프트 - parser.py SYSTEM 발췌
 
 ```python
-# warehouse_lecture/commands/parser.py
+# src/warehouse_lecture/warehouse_lecture/commands/parser.py
 SYSTEM = """너는 창고 이동 로봇의 명령 해석기다. 사용자의 한국어 문장을 RobotCommand 로 바꾼다.
 의도(intent): move_object(상자를 옮김) | go_to(장소로 이동) | find(사람·물체 찾기) | report(주변 상황 보고) | answer(질문 답변, 되묻기, 거부) | ...
 장소: pick_table(픽업 작업대, 픽업대, 집기 작업대, pick station), place_table(적재 작업대, 적재대, ...), rack_a~rack_f(...), ...
@@ -193,7 +193,7 @@ SYSTEM = """너는 창고 이동 로봇의 명령 해석기다. 사용자의 한
 ### few-shot 예시 - parser.py EXAMPLES 발췌
 
 ```python
-# warehouse_lecture/commands/parser.py (이어서)
+# src/warehouse_lecture/warehouse_lecture/commands/parser.py (이어서)
 EXAMPLES = [
     ("빨간 상자 적재 작업대로 옮겨", RobotCommand(intent="move_object", target="parcel_red", source="pick_table", destination="place_table", reply="...")),
     ("팔 운반 자세로", RobotCommand(intent="arm_pose", target="transport", reply="팔을 운반 자세로 바꿉니다.")),
@@ -208,7 +208,7 @@ EXAMPLES = [
 ### 메시지 조립 - parser.py parse 함수 발췌
 
 ```python
-# warehouse_lecture/commands/parser.py (이어서)
+# src/warehouse_lecture/warehouse_lecture/commands/parser.py (이어서)
 def parse(self, text, context=None):
     messages = [{"role": "system", "content": SYSTEM}]
     for q, cmd in EXAMPLES:                                         # few-shot: 질문 → 정답 JSON
@@ -225,7 +225,7 @@ def parse(self, text, context=None):
 ### 응답 형식을 스키마로 강제 - client.py LLM.parse 함수
 
 ```python
-# warehouse_lecture/llm/client.py
+# src/warehouse_lecture/warehouse_lecture/llm/client.py
 def parse(self, messages, schema, *, model=None, temperature=None, purpose="parse"):
     """Structured output: returns an instance of the pydantic ``schema``."""
     model = model or self.models["chat"]                            # llm.yaml: gpt-4.1-mini
@@ -245,7 +245,7 @@ def parse(self, messages, schema, *, model=None, temperature=None, purpose="pars
 ### 비용 기록과 결과 꺼내기 - client.py LLM.parse 함수
 
 ```python
-# warehouse_lecture/llm/client.py LLM.parse (이어서)
+# src/warehouse_lecture/warehouse_lecture/llm/client.py LLM.parse (이어서)
     self._record(model, response.usage, purpose)                   # 비용 로그
     message = response.choices[0].message
     if message.refusal:
@@ -259,7 +259,7 @@ def parse(self, messages, schema, *, model=None, temperature=None, purpose="pars
 ### 비용 로그 - client.py LLM._record 함수
 
 ```python
-# warehouse_lecture/llm/client.py
+# src/warehouse_lecture/warehouse_lecture/llm/client.py
 def _record(self, model, usage, purpose):
     inp = getattr(usage, "prompt_tokens", None) or getattr(usage, "input_tokens", 0) or 0
     out = getattr(usage, "completion_tokens", None) or getattr(usage, "output_tokens", 0) or 0

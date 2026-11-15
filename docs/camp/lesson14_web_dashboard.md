@@ -125,7 +125,7 @@ spec.loader.exec_module(nav_dashboard)          # RobotState (구독 9 개) · m
 ### 작업 지령 상태 - DeskState.__init__ 발췌
 
 ```python
-# server.py
+# lessons/09_web_dashboard/server.py
 class DeskState(nav_dashboard.RobotState):
     def __init__(self):
         super().__init__()
@@ -145,7 +145,7 @@ class DeskState(nav_dashboard.RobotState):
 ### 로봇의 대답 - DeskState.speak
 
 ```python
-# server.py
+# lessons/09_web_dashboard/server.py
 def speak(self, text):
     """PlanDialogManager 의 대답 (되묻기 · 확인 · 결과) 을 로봇 대화 한 줄로."""
     self.chat("robot", text)
@@ -159,7 +159,7 @@ def speak(self, text):
 ### 대화 스레드 - DeskState.work
 
 ```python
-# server.py
+# lessons/09_web_dashboard/server.py
 def work(self):
     while True:
         text = self.inbox.get()
@@ -177,7 +177,7 @@ def work(self):
 ### 계획 보내기 - DeskState.execute 발췌
 
 ```python
-# server.py
+# lessons/09_web_dashboard/server.py
 def execute(self, plan, text):
     self.set_task(phase="running", steps=self.step_rows(plan), feedback=None, result=None)
     done = threading.Event()
@@ -194,7 +194,7 @@ def execute(self, plan, text):
 ### 피드백 · 결과 콜백 - DeskState.execute 발췌
 
 ```python
-# server.py execute (이어서)
+# lessons/09_web_dashboard/server.py execute (이어서)
 def on_feedback(m):
     f = m.feedback
     with self.lock:
@@ -214,7 +214,7 @@ def on_result(future):
 ### 단계 상태 정리 - DeskState.execute 발췌
 
 ```python
-# server.py execute (이어서)
+# lessons/09_web_dashboard/server.py execute (이어서)
 r = box["result"]
 with self.lock:
     for i, row in enumerate(self.task["steps"]):
@@ -233,7 +233,7 @@ with self.lock:
 ### SSE 에 task 싣기 - DeskState.snapshot
 
 ```python
-# server.py
+# lessons/09_web_dashboard/server.py
 def snapshot(self):
     s = super().snapshot()                               # 04 의 로봇 상태 (위치 · 스캔 · 검출 …)
     with self.lock:
@@ -247,7 +247,7 @@ def snapshot(self):
 ### 지령 받기 - make_app /api/say
 
 ```python
-# server.py make_app
+# lessons/09_web_dashboard/server.py make_app
 @app.post("/api/say")
 def api_say():
     text = ((request.get_json(silent=True) or {}).get("text") or "").strip()
@@ -267,7 +267,7 @@ def api_say():
 ### 실행 취소 - make_app /api/task_cancel
 
 ```python
-# server.py make_app
+# lessons/09_web_dashboard/server.py make_app
 @app.post("/api/task_cancel")
 def api_task_cancel():
     goal = state.goal
@@ -305,7 +305,7 @@ $("task-cancel").onclick = () => fetch("/api/task_cancel", { method: "POST" });
 ### 브라우저: 같은 SSE 에 올라타기 - desk.js 발췌
 
 ```javascript
-// desk.js: 04 의 app.js 가 만든 es (EventSource) 와 S (최신 상태) 를 그대로 쓴다
+// lessons/09_web_dashboard/static/desk.js: 04 의 app.js 가 만든 es (EventSource) 와 S (최신 상태) 를 그대로 쓴다
 es.addEventListener("message", renderTask);
 function renderTask() {
   const t = S && S.task;
@@ -324,7 +324,7 @@ function renderTask() {
 ### 브라우저: 지도에 계획의 장소 - desk.js 발췌
 
 ```javascript
-// desk.js: 04 의 drawMap 을 감싸서 마름모를 덧그린다
+// lessons/09_web_dashboard/static/desk.js: 04 의 drawMap 을 감싸서 마름모를 덧그린다
 const baseDrawMap = drawMap;
 drawMap = function () {
   baseDrawMap();
@@ -343,7 +343,7 @@ drawMap = function () {
 ### 취소를 하위 액션으로 - executor.py on_cancel · call 발췌
 
 ```python
-# warehouse_lecture/commands/executor.py
+# src/warehouse_lecture/warehouse_lecture/commands/executor.py
 def on_cancel(self, _request):
     self.cancel_flag = True                    # call() 이 이 값을 보고 하위 액션(PickPlace · Nav2)을 취소
     return CancelResponse.ACCEPT
@@ -361,12 +361,12 @@ def relay(msg):                                # call() 안: 피드백 콜백은
 ### 스킬 쪽 취소 - pick_place_server.py · nav_client.py 발췌
 
 ```python
-# warehouse_skills/pick_place_server.py
+# src/warehouse_skills/warehouse_skills/pick_place_server.py
 def on_cancel(self, _request):
     self.nav.cancel_requested = True           # dock · turn · drive · Nav2 대기 루프가 바로 멈춘다
     return CancelResponse.ACCEPT
 
-# warehouse_skills/nav_client.py turn (drive 도 같은 모양)
+# src/warehouse_skills/warehouse_skills/nav_client.py turn (drive 도 같은 모양)
 while self.now() < deadline and time.monotonic() < guard:
     if self.cancel_requested:
         self.stop()

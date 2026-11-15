@@ -114,6 +114,7 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 ### 표를 프롬프트로 - world.py WorldState.prompt 함수
 
 ```python
+# src/warehouse_lecture/warehouse_lecture/commands/world.py
     def prompt(self):
         lines = [f"- {p}({TARGET_KO[p]}): {loc}({self._ko(loc)})" for p, loc in self.parcels.items()]
         return ("현재 상자 위치 (로봇이 마지막으로 확인한 것):\n" + "\n".join(lines) + "\n"
@@ -131,6 +132,7 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 ### system 프롬프트 끝에 붙이기 - plan_parser.py PlanParser.parse 함수 발췌
 
 ```python
+# src/warehouse_lecture/warehouse_lecture/commands/plan_parser.py
     def parse(self, text, context=None, world=None):
         system = SYSTEM if world is None else SYSTEM + "\n" + world.prompt()
         messages = [{"role": "system", "content": system}]
@@ -151,6 +153,7 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 ### 출발 작업대 검사 - world.py WorldState.check 함수 발췌
 
 ```python
+# src/warehouse_lecture/warehouse_lecture/commands/world.py
     def check(self, plan):
         problems, belief = [], dict(self.parcels)
         held = next((p for p, loc in belief.items() if loc == HELD), None)
@@ -172,6 +175,7 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 ### 이미 도착지에 있나 - world.py WorldState.check 함수 발췌
 
 ```python
+# src/warehouse_lecture/warehouse_lecture/commands/world.py
                 # (이어서)
                 belief[step.target], held = HELD, step.target
             elif step.action == StepAction.place and held:
@@ -190,6 +194,7 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 ### 끝난 단계만 반영 - world.py WorldState.apply 함수 발췌
 
 ```python
+# src/warehouse_lecture/warehouse_lecture/commands/world.py
     def apply(self, plan, steps_done, success):
         before = dict(self.parcels)
         held = next((p for p, loc in self.parcels.items() if loc == HELD), None)
@@ -207,6 +212,7 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 ### 실패한 단계는 unknown - world.py WorldState.apply 함수 발췌
 
 ```python
+# src/warehouse_lecture/warehouse_lecture/commands/world.py
             # (이어서)
             elif i == steps_done and not success:
                 if step.action == StepAction.pick and step.target in self.parcels:
@@ -225,6 +231,7 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 ### 계획 → 검사 - dialog.py PlanDialogManager.handle 함수 발췌
 
 ```python
+# src/warehouse_lecture/warehouse_lecture/commands/dialog.py
         plan = self.parser.parse(utterance, context=self.context, world=self.world)
         problems = plan.validate_world()
         if self.world is not None and not problems:
@@ -243,6 +250,7 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 ### 실행 → 표 갱신 - dialog.py PlanDialogManager._execute 함수
 
 ```python
+# src/warehouse_lecture/warehouse_lecture/commands/dialog.py
     def _execute(self, plan, text):
         if self.executor is None:
             return self._say("execute(dry)", plan.describe(), plan)
@@ -260,6 +268,7 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 ### 시나리오와 표 하나 - 02_final_mission.py 발췌
 
 ```python
+# lessons/10_final_project/02_final_mission.py
 SCENARIOS = {
     1: ["픽업 작업대로 가서 빨간 상자를 집고 적재 작업대로 옮겨", "응"],
     2: ["상자 하나 적재대로 옮겨 줘", "파란 거", "응"],
@@ -277,6 +286,7 @@ SCENARIOS = {
 ### 시나리오 이어서 실행 - 02_final_mission.py main 함수 발췌
 
 ```python
+# lessons/10_final_project/02_final_mission.py
         for n in a.scenario or sorted(SCENARIOS):
             print(f"\n===== 시나리오 {n}")
             dm.context.clear()          # each scenario is a new conversation; the world table carries over

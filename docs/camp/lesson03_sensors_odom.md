@@ -60,7 +60,7 @@ ros2 topic list
 ### 라이다 광선 준비 - __init__ 발췌
 
 ```py
-# mobile_openarm_mujoco/model.py  (Physics)
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py  (Physics)
 def __init__(self, model_path, config_file=None):   # 발췌
     self.angles = np.linspace(-math.pi, math.pi, self.settings["lidar"]["samples"], endpoint=False)   # 360개
     self.rays = np.column_stack([np.cos(self.angles), np.sin(self.angles), np.zeros(len(self.angles))])
@@ -75,7 +75,7 @@ def __init__(self, model_path, config_file=None):   # 발췌
 ### 라이다 거리 측정 - scan 함수
 
 ```py
-# mobile_openarm_mujoco/model.py  (Physics)
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py  (Physics)
 def scan(self):
     self.mj.mj_forward(self.model, self.data)
     rays = np.ascontiguousarray(self.rays @ self.data.site_xmat[self.lidar_id].reshape(3, 3).T)
@@ -98,7 +98,7 @@ def scan(self):
 ### /scan 발행자 만들기 - Bridge.__init__ 발췌
 
 ```py
-# mobile_openarm_mujoco/bridge.py  (Bridge)
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/bridge.py  (Bridge)
 def __init__(self, physics, world_file=None, actors=None):   # 발췌
     self.scan_pub = self.create_publisher(LaserScan, "/scan", qos_profile_sensor_data)
 ```
@@ -109,7 +109,7 @@ def __init__(self, physics, world_file=None, actors=None):   # 발췌
 ### /scan 10 Hz 주기와 헤더 - advance 함수 발췌
 
 ```py
-# mobile_openarm_mujoco/bridge.py  (Bridge)
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/bridge.py  (Bridge)
 def advance(self):   # 발췌: 100 Hz 루프 한 바퀴
     p = self.physics
     ...                                    # 명령 적용 · p.step() (mj_step 5회) · /clock 발행
@@ -128,6 +128,7 @@ def advance(self):   # 발췌: 100 Hz 루프 한 바퀴
 ### /scan 각도 · 거리 범위 · ranges 채워 발행 - advance 함수 발췌
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/bridge.py
         # advance 함수 scan 부분 (이어서)
         scan.angle_min = float(p.angles[0])                        # -π
         scan.angle_max = float(p.angles[-1])                       # +π - 1°
@@ -212,7 +213,7 @@ ros2 topic hz /clock
 ### 명령 → 바퀴 목표 속도 - step 함수 앞부분
 
 ```py
-# mobile_openarm_mujoco/model.py  (Physics)
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py  (Physics)
 def step(self, linear=0.0, angular=0.0, steps=None):
     steps = steps or round(self.bridge_period / self.model.opt.timestep)      # 5
     dt = steps * self.model.opt.timestep                                        # 0.01 s
@@ -239,6 +240,7 @@ def step(self, linear=0.0, angular=0.0, steps=None):
 ### 바퀴 회전 → 자세 적분 - step 함수 뒷부분
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/model.py
     before = self.data.qpos[self.wheel_q].copy()
     self.mj.mj_step(self.model, self.data, nstep=steps)
     dl, dr = (self.data.qpos[self.wheel_q] - before) * self.radius   # 바퀴가 굴러간 호 길이
@@ -259,7 +261,7 @@ def step(self, linear=0.0, angular=0.0, steps=None):
 ### /odom 메시지: 자세 · 속도 · 공분산 - publish_state 함수
 
 ```py
-# mobile_openarm_mujoco/bridge.py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/bridge.py
 def publish_state(self, now):
     p = self.physics
     odom = Odometry()
@@ -290,6 +292,7 @@ def publish_state(self, now):
 ### odom → base_footprint TF - publish_state 함수
 
 ```py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/bridge.py
     # publish_state (이어서)
     tf = TransformStamped()
     tf.header, tf.child_frame_id = odom.header, odom.child_frame_id

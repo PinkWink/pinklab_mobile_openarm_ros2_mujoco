@@ -114,7 +114,7 @@ def where(self):
 ### 단계가 바뀔 때 위치 출력 - transport.py on_fb 함수 발췌
 
 ```python
-# transport.py (이어서)
+# lessons/07_nav_pick_place/transport.py (이어서)
 goal = PickPlace.Goal(object=colour, from_station=src, to_station=dst, phase="all")   # goal 하나
 
 
@@ -132,7 +132,7 @@ def on_fb(m):
 ### 두 절반 - pick_place_server.py execute 함수 발췌
 
 ```python
-# warehouse_skills/pick_place_server.py
+# src/warehouse_skills/warehouse_skills/pick_place_server.py
 which = (goal.phase or "all").lower()                         # transport.py 는 "all"
 name, arm, src = self.do_pick(goal, feedback)                 # navigate_pick → dock → locate → grasp → carry
 st, offset = self.do_place(goal, name, arm, feedback)         # navigate_place → dock → place → retreat
@@ -144,7 +144,7 @@ st, offset = self.do_place(goal, name, arm, feedback)         # navigate_place �
 ### place 절반 - pick_place_server.py do_place 함수
 
 ```python
-# warehouse_skills/pick_place_server.py
+# src/warehouse_skills/warehouse_skills/pick_place_server.py
 def do_place(self, goal, name, arm, feedback):
     dst = self.resolve_station(goal.to_station or "place_table")
     offset = self.free_slot_offset(dst, name, arm)            # 든 팔이 닿는 빈 슬롯 (축 기준)
@@ -164,7 +164,7 @@ def do_place(self, goal, name, arm, feedback):
 ### Nav2 로 사전 도킹 지점까지 - pick_place_server.py navigate_and_dock 함수 발췌
 
 ```python
-# warehouse_skills/pick_place_server.py
+# src/warehouse_skills/warehouse_skills/pick_place_server.py
 goal = list(self.locations.goal(key))                         # locations.yaml base_goal
 self.nav.go_to(*goal)                                         # Nav2 navigate_to_pose
 self.nav.settle()                                             # 멈추고 1 s
@@ -176,7 +176,7 @@ self.nav.settle()                                             # 멈추고 1 s
 ### 마커로 옆 오차 맞추고 도킹 - pick_place_server.py navigate_and_dock 함수 발췌
 
 ```python
-# pick_place_server.py navigate_and_dock (이어서)
+# src/warehouse_skills/warehouse_skills/pick_place_server.py navigate_and_dock (이어서)
 for attempt in range(3):
     fixes = self.nav.wait_markers(st["markers"])              # 멈춘 뒤 찍힌 마커 쌍
     along, side, turn, origin, u = self.nav.geometry(fixes, st["offsets"])
@@ -197,7 +197,7 @@ dx, residual = self.nav.dock(st["offsets"], self.cfg["dock"]["target_dx"], targe
 ### map 목표 보내기 - nav_client.py _go_to_once 함수 발췌
 
 ```python
-# warehouse_skills/nav_client.py
+# src/warehouse_skills/warehouse_skills/nav_client.py
 goal = NavigateToPose.Goal()
 goal.pose.header.frame_id = "map"
 goal.pose.pose.position.x, goal.pose.pose.position.y = float(x), float(y)
@@ -213,7 +213,7 @@ if not handle.accepted:
 ### 결과 기다리기 · 제한 시간 - nav_client.py _go_to_once 함수 발췌
 
 ```python
-# nav_client.py _go_to_once (이어서)
+# src/warehouse_skills/warehouse_skills/nav_client.py _go_to_once (이어서)
 future = handle.get_result_async()
 while not future.done():
     if self.cancel_requested or time.monotonic() > end:       # 180 s
@@ -228,7 +228,7 @@ while not future.done():
 ### 받은 시각 · 찍힌 시각 거르기 - nav_client.py marker 함수 발췌
 
 ```python
-# warehouse_skills/nav_client.py
+# src/warehouse_skills/warehouse_skills/nav_client.py
 def marker(self, marker_id, max_age=1.5, since=None):
     if self.markers is None or time.monotonic() - self.markers_wall > max_age:   # 받은 지 max_age 안
         return None
@@ -245,7 +245,7 @@ def marker(self, marker_id, max_age=1.5, since=None):
 ### 멈춘 뒤 찍힌 마커 쌍 기다리기 - nav_client.py wait_markers 함수 발췌
 
 ```python
-# nav_client.py (이어서)
+# src/warehouse_skills/warehouse_skills/nav_client.py (이어서)
 def wait_markers(self, ids, timeout=10.0, search=True, need=2, max_age=0.7):
     since = self.now()                                        # 지금 (sim) = 로봇이 멈춘 뒤
     end = time.monotonic() + timeout
@@ -263,7 +263,7 @@ def wait_markers(self, ids, timeout=10.0, search=True, need=2, max_age=0.7):
 ### sim 시간으로 제한 시간 정하기 - nav_client.py turn 함수 발췌
 
 ```python
-# warehouse_skills/nav_client.py
+# src/warehouse_skills/warehouse_skills/nav_client.py
 deadline = self.now() + abs(angle) / speed + 3.0                # sim 시간 (전: 벽시계 → 느린 PC 에서 90° 가 80° 로 끊김)
 guard = time.monotonic() + 4 * (abs(angle) / speed + 3.0)       # 시뮬레이터가 멈췄을 때만
 ```
@@ -274,7 +274,7 @@ guard = time.monotonic() + 4 * (abs(angle) / speed + 3.0)       # 시뮬레이�
 ### 목표 각도까지 돌기 - nav_client.py turn 함수 발췌
 
 ```python
-# nav_client.py turn (이어서)
+# src/warehouse_skills/warehouse_skills/nav_client.py turn (이어서)
 while self.now() < deadline and time.monotonic() < guard:
     q = self.odom.pose.pose.orientation
     yaw = 2 * math.atan2(q.z, q.w)

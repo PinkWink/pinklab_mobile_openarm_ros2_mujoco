@@ -107,7 +107,7 @@ python docs/camp/avoid_scenario.py --mode headon     # 새로 띄운 직후에 �
 ### 로봇을 따라다니는 5 m 창 - nav2.yaml local_costmap 발췌
 
 ```yaml
-# mobile_openarm_navigation/config/nav2.yaml  (발췌)
+# src/mobile_openarm_navigation/config/nav2.yaml  (발췌)
 local_costmap:
   local_costmap:
     ros__parameters:
@@ -128,7 +128,7 @@ local_costmap:
 ### 라이다로 장애물 칠하고 지우기 - nav2.yaml local_costmap 발췌
 
 ```yaml
-# nav2.yaml local_costmap (이어서)
+# src/mobile_openarm_navigation/config/nav2.yaml local_costmap (이어서)
       obstacle_layer:
         plugin: nav2_costmap_2d::ObstacleLayer
         observation_sources: scan
@@ -147,7 +147,7 @@ local_costmap:
 ### 장애물 부풀리기와 footprint - nav2.yaml local_costmap 발췌
 
 ```yaml
-# nav2.yaml local_costmap (이어서)
+# src/mobile_openarm_navigation/config/nav2.yaml local_costmap (이어서)
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         cost_scaling_factor: 3.0
@@ -161,7 +161,7 @@ local_costmap:
 ### 길이 막힐 때만 다시 계획 - navigation.launch.py 발췌
 
 ```python
-# mobile_openarm_navigation/launch/navigation.launch.py  (발췌)
+# src/mobile_openarm_navigation/launch/navigation.launch.py  (발췌)
 bt_xml = str(Path(get_package_share_directory("nav2_bt_navigator"))
              / "behavior_trees/navigate_w_recovery_and_replanning_only_if_path_becomes_invalid.xml")
 for pkg, exe in [..., ("nav2_bt_navigator", "bt_navigator")]:
@@ -177,7 +177,7 @@ for pkg, exe in [..., ("nav2_bt_navigator", "bt_navigator")]:
 ### Global · Local Costmap 표시 추가 - navigation.rviz 발췌
 
 ```yaml
-# mobile_openarm_navigation/config/navigation.rviz  (발췌: 이번에 추가한 표시)
+# src/mobile_openarm_navigation/config/navigation.rviz  (발췌: 이번에 추가한 표시)
     - Class: rviz_default_plugins/Map
       Name: Global Costmap
       Topic: {Value: /global_costmap/costmap, Durability Policy: Transient Local}
@@ -196,7 +196,7 @@ for pkg, exe in [..., ("nav2_bt_navigator", "bt_navigator")]:
 ### Footprint · DWB 궤적 · Local Plan 표시 추가 - navigation.rviz 발췌
 
 ```yaml
-# navigation.rviz (이어서)
+# src/mobile_openarm_navigation/config/navigation.rviz (이어서)
     - Class: rviz_default_plugins/Polygon
       Name: Footprint
       Topic: {Value: /local_costmap/published_footprint}

@@ -166,7 +166,7 @@ time ./scripts/mobile_openarm exec python lessons/05_moveit/ee_control.py demo  
 ### 목표 자세 만들기 - moveit_client.py make_pose 함수
 
 ```python
-# warehouse_skills/moveit_client.py
+# src/warehouse_skills/warehouse_skills/moveit_client.py
 # Forward horizontal grasp: hand z (approach) -> +x, hand y (finger closing) -> +y, hand x -> -z.
 GRASP_FORWARD = quat_from_axes(np.array([0, 0, -1.0]), np.array([0, 1.0, 0]), np.array([1.0, 0, 0]))
 
@@ -185,7 +185,7 @@ def make_pose(xyz, quat=GRASP_FORWARD):
 ### 시드와 IK 요청 설정 - moveit_client.py solve_ik 함수
 
 ```python
-# warehouse_skills/moveit_client.py
+# src/warehouse_skills/warehouse_skills/moveit_client.py
 def solve_ik(self, side, pose, avoid_collisions=True):
     arm = self.arms[side]
     names = self.arm_joints(side)
@@ -206,7 +206,7 @@ def solve_ik(self, side, pose, avoid_collisions=True):
 ### 목표 자세 · 시작 관절로 /compute_ik 호출 - moveit_client.py solve_ik 함수
 
 ```python
-# moveit_client.py solve_ik (이어서)
+# src/warehouse_skills/warehouse_skills/moveit_client.py solve_ik (이어서)
         r.pose_stamped = PoseStamped()
         r.pose_stamped.header.frame_id = "base_footprint"
         r.pose_stamped.pose = pose
@@ -223,7 +223,7 @@ def solve_ik(self, side, pose, avoid_collisions=True):
 ### 지금 자세와 가장 가까운 해 고르기 - moveit_client.py solve_ik 함수
 
 ```python
-# moveit_client.py solve_ik (이어서)
+# src/warehouse_skills/warehouse_skills/moveit_client.py solve_ik (이어서)
         if res.error_code.val != MoveItErrorCodes.SUCCESS:
             continue
         q = dict(zip(res.solution.joint_state.name, res.solution.joint_state.position))
@@ -243,7 +243,7 @@ def solve_ik(self, side, pose, avoid_collisions=True):
 ### pose goal → 관절 목표 MoveGroup 요청 - moveit_client.py move_pose · move_joints 함수 발췌
 
 ```python
-# warehouse_skills/moveit_client.py
+# src/warehouse_skills/warehouse_skills/moveit_client.py
 def move_pose(self, side, pose):
     self.move_joints(side, self.solve_ik(side, pose))                 # IK → 관절 목표
 
@@ -264,7 +264,7 @@ def move_joints(self, side, positions, timeout=60.0):   # 발췌
 ### 관절 제약 ± 0.001 rad 로 보내기 - moveit_client.py move_joints 함수 발췌
 
 ```python
-# moveit_client.py move_joints (이어서)
+# src/warehouse_skills/warehouse_skills/moveit_client.py move_joints (이어서)
     c = Constraints(name="skill")
     for name, value in zip(self.arm_joints(side), positions):
         c.joint_constraints.append(JointConstraint(joint_name=name, position=float(value),
@@ -280,7 +280,7 @@ def move_joints(self, side, positions, timeout=60.0):   # 발췌
 ### Cartesian path 요청 - moveit_client.py move_cartesian 함수 발췌
 
 ```python
-# warehouse_skills/moveit_client.py
+# src/warehouse_skills/warehouse_skills/moveit_client.py
 def move_cartesian(self, side, waypoints, timeout=60.0):   # 발췌
     req = GetCartesianPath.Request()
     req.header.frame_id = "base_footprint"
@@ -299,7 +299,7 @@ def move_cartesian(self, side, waypoints, timeout=60.0):   # 발췌
 ### 경로 비율 확인 후 실행 - moveit_client.py move_cartesian 함수 발췌
 
 ```python
-# moveit_client.py move_cartesian (이어서)
+# src/warehouse_skills/warehouse_skills/moveit_client.py move_cartesian (이어서)
     res = wait(self.cartesian.call_async(req), 10.0, "compute_cartesian_path")
     if res.error_code.val != MoveItErrorCodes.SUCCESS or res.fraction < float(m["cartesian_min_fraction"]):
         raise SkillError(f"Cartesian path covers only {res.fraction * 100:.0f}% (error_code={res.error_code.val})")
@@ -315,7 +315,7 @@ def move_cartesian(self, side, waypoints, timeout=60.0):   # 발췌
 ### 그리퍼 - moveit_client.py gripper 함수
 
 ```python
-# warehouse_skills/moveit_client.py
+# src/warehouse_skills/warehouse_skills/moveit_client.py
 def gripper(self, side, position, effort, timeout=15.0):
     goal = GripperCommand.Goal()
     goal.command.position, goal.command.max_effort = float(position), float(effort)   # 0.012 m · 25 N
@@ -333,7 +333,7 @@ def gripper(self, side, position, effort, timeout=15.0):
 ### 그리퍼 도달 · 멈춤 판정 - actions.py Controllers.update 함수 발췌
 
 ```python
-# mobile_openarm_mujoco/actions.py
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/actions.py
 else:   # 그리퍼 (발췌)
     position = float(p.positions(state["names"])[0])
     reached = abs(position - h.request.command.position) < p.settings["gripper"]["goal_tolerance"]   # 2 mm
@@ -349,7 +349,7 @@ else:   # 그리퍼 (발췌)
 ### 그리퍼 결과 채우고 끝내기 - actions.py Controllers.update 함수 발췌
 
 ```python
-# actions.py Controllers.update (이어서)
+# src/mobile_openarm_mujoco/mobile_openarm_mujoco/actions.py Controllers.update (이어서)
     result.position = position
     result.reached_goal = reached
     result.stalled = stalled
