@@ -369,6 +369,34 @@ def pitfalls_bridge():
 
 
 # ------------------------------------------------------------------ captures and terminals
+def model_data():
+    fig, ax = fig_ax(14, 5.6)
+    note(ax, 0.3, 5.3, "MuJoCo Python 의 세 가지: model · data · mj_step", bold=True, fs=12)
+    rbox(ax, 0.3, 1.0, 4.6, 3.8, "MjModel  (model)", ["설계도: 실행 중 변하지 않음", "", "njnt · nu     관절 · 액추에이터 수",
+         "opt.timestep     한 스텝의 시간", "joint(i).name     이름", "actuator_ctrlrange     명령 범위"], fc=C["blue"], tfs=12, fs=9.4, align="left", dy=0.42)
+    rbox(ax, 9.1, 1.0, 4.6, 3.8, "MjData  (data)", ["상태: 스텝마다 변함", "", "time     시뮬레이션 시각", "ctrl     액추에이터 명령  ← 쓰는 값",
+         "qpos · qvel     관절 각 · 속도  → 읽는 값", "xpos · xquat     body 의 월드 자세  → 읽는 값"], fc=C["green"], tfs=12, fs=9.4, align="left", dy=0.42)
+    rbox(ax, 5.6, 2.3, 2.8, 1.2, "mj_step(model, data)", ["시간을 timestep 만큼 진행"], fc=C["yellow"], tfs=10.5, fs=8.8)
+    arrow(ax, (4.9, 2.9), (5.6, 2.9)); arrow(ax, (8.4, 3.15), (9.1, 3.15)); arrow(ax, (9.1, 2.65), (8.4, 2.65))
+    label(ax, 5.25, 3.25, "읽기만"); label(ax, 8.75, 3.5, "갱신"); label(ax, 8.75, 2.3, "읽기")
+    note(ax, 0.3, 0.5, "model 은 XML(URDF · MJCF)에서 한 번 만들고, data 는 model 에서 만든다.  mj_step 을 부를 때마다 data 만 바뀐다.", fs=9.5)
+    save(fig, "lesson01e_model_data.png")
+
+
+def basics_bridge():
+    fig, ax = fig_ax(14, 5.4)
+    note(ax, 0.3, 5.1, "기초 루프에 ROS 2 를 끼우면 브리지", bold=True, fs=12)
+    note(ax, 0.3, 4.55, "mujoco_basics.py: MuJoCo 만", bold=True, fs=10, color=GREEN)
+    chain(ax, [("data.ctrl 에 쓰기", ["코드에 적은 값 [0.6, 1.5]"]), ("mj_step", ["시간 진행"]), ("data.qpos 읽기", ["print 로 출력"])],
+          y=3.25, h=1.0, colors=[C["orange"], C["yellow"], C["green"]], tfs=10.5, fs=8.8)
+    note(ax, 0.3, 2.7, "urdf_bridge.py: 같은 루프 + ROS 2", bold=True, fs=10, color=PURPLE)
+    chain(ax, [("data.ctrl 에 쓰기", ["/cmd 구독으로 받은 값"]), ("mj_step", ["시간 진행 · /clock 발행"]), ("data.qpos 읽기", ["/joint_states 로 발행"])],
+          y=1.4, h=1.0, colors=[C["orange"], C["yellow"], C["green"]], tfs=10.5, fs=8.8)
+    note(ax, 0.3, 0.75, "바뀌는 것은 값이 오고 가는 곳뿐: 코드에 적은 값 → 토픽으로 받은 값,  print → 토픽 발행.", fs=9.5)
+    note(ax, 0.3, 0.35, "xpos · xquat → /tip_pose,  Renderer → 카메라 영상도 같은 방식 (다음 절).", fs=9.5)
+    save(fig, "lesson01e_basics_bridge.png")
+
+
 def captures(cap):
     from PIL import Image, ImageDraw, ImageFont
     font = ImageFont.truetype("/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf", 30)
@@ -416,6 +444,7 @@ def terminals(cap):
         [l for l in log("view_launch.log") if "process started" in l[1] or "Robot initialized" in l[1] or "Got description" in l[1]], highlight=("Robot initialized",))
     out("lesson01c_t_raw.png", ["python lessons/01_mujoco_ros2/urdf_to_mjcf.py --raw"], log("raw.log"), highlight=("body", "actuator", "camera"))
     out("lesson01c_t_conv.png", ["python lessons/01_mujoco_ros2/urdf_to_mjcf.py"], log("conv.log"), highlight=("body", "actuator", "camera"))
+    out("lesson01e_t_basics.png", ["python lessons/01_mujoco_ros2/mujoco_basics.py"], log("basics.log"), highlight=("qpos",))
     out("lesson01c_t_bridge.png", ["python lessons/01_mujoco_ros2/urdf_bridge.py --viewer"], log("bridge.log", keep=1), highlight=("bridge up",))
     out("lesson01c_t_sim.png", ["ros2 launch lessons/01_mujoco_ros2/view_urdf.launch.py sim:=true"],
         [l for l in log("sim_launch.log") if "process started" in l[1] or "Robot initialized" in l[1]], highlight=("Robot initialized",))
@@ -440,7 +469,7 @@ def terminals(cap):
 
 if __name__ == "__main__":
     for f in (steps, files, swap, urdf_tree, link_parts, joint_parts, optical, missing, problems, mapping, convert_flow, one_source,
-              exchange, tf_paths, codemap, loop, checklist, pitfalls, pitfalls_model, pitfalls_bridge, mimic):
+              exchange, tf_paths, codemap, loop, checklist, pitfalls, pitfalls_model, pitfalls_bridge, mimic, model_data, basics_bridge):
         f()
     if len(sys.argv) > 1:
         captures(Path(sys.argv[1])); terminals(Path(sys.argv[1]))

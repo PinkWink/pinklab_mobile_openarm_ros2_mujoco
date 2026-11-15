@@ -32,7 +32,57 @@
 
 - 브리지는 저장된 XML 이 아니라 `build()` 를 직접 호출 → URDF 를 고치면 바로 반영
 
-## 2. 브리지: 무엇을 어떤 방법으로 주고받나
+## 2. MuJoCo Python 기초: model · data · step
+
+### model 과 data
+
+![model 과 data](lesson01e_model_data.png){width=1000}
+
+- `MjModel` = 설계도 (변하지 않음) · `MjData` = 상태 (스텝마다 변함)
+- `mj_step` 한 번 = 시간이 `timestep` 만큼 흐름
+- 쓰는 값은 `data.ctrl` 하나 · 나머지는 읽는 값
+
+### ROS 2 없이 돌려 보기 (코드) - mujoco_basics.py
+
+```python
+model = mujoco.MjModel.from_xml_path(str(MJCF))    # model: the description, never changes
+data = mujoco.MjData(model)                        # data: the state, changes every step
+print(f"joints {model.njnt}  actuators {model.nu}  timestep {model.opt.timestep} s")
+
+data.ctrl[:] = [0.6, 1.5]                          # write: target angle of each actuator [rad]
+for i in range(1000):
+    mujoco.mj_step(model, data)                    # advance time by one timestep
+    if i % 250 == 249:                             # read: joint angles and a body position
+        print(f"t {data.time:.1f} s  qpos {data.qpos.round(3)}  camera_link xpos {data.body('camera_link').xpos.round(3)}")
+```
+
+- 파일: `lessons/01_mujoco_ros2/mujoco_basics.py` · 읽는 모델: 앞 글에서 저장한 `two_link_arm_from_urdf.xml`
+- 순서: 모델 읽기 → `ctrl` 에 쓰기 → `mj_step` 반복 → `qpos` · `xpos` 읽기
+- 1000 스텝 × 0.002 s = 시뮬레이션 2 초 · 창 없이 계산만 함
+
+### 터미널 1: 기초 루프 실행
+
+```bash
+python lessons/01_mujoco_ros2/mujoco_basics.py
+```
+
+### 실행 결과: 목표 각으로 움직인 관절
+
+![기초 루프 실행 결과](lesson01e_t_basics.png){width=1000}
+
+- `qpos` 가 0 에서 목표 `[0.6, 1.5]` 근처로 이동해 멈춤
+- 0.6 이 아니라 0.64 인 이유: 위치 제어가 중력에 조금 밀림
+- `xpos` = 같은 순간 `camera_link` 의 월드 위치 [m]
+
+### 이 루프에 ROS 2 를 끼우면 브리지
+
+![기초 루프와 브리지](lesson01e_basics_bridge.png){width=1000}
+
+- 루프는 그대로 · 값이 오고 가는 곳만 토픽으로 바뀜
+- `ctrl` ← `/cmd` · `qpos` → `/joint_states`
+- 아래 3 장이 이 바뀐 부분의 설명
+
+## 3. 브리지: 무엇을 어떤 방법으로 주고받나
 
 ### 주고받는 정보
 
@@ -220,7 +270,7 @@ def spin(self):
 - `spin_once(timeout_sec=0)`: 기다리지 않고 도착한 콜백만 처리 → 콜백은 항상 스텝 사이
 - `lag`: 시뮬레이션이 벽시계보다 앞선 만큼 쉼 · 지우면 낼 수 있는 최대 속도로 돎
 
-## 3. 실행하고 확인하기
+## 4. 실행하고 확인하기
 
 ### 터미널 1: 브리지
 
@@ -346,7 +396,7 @@ ros2 topic pub -1 /cmd std_msgs/msg/Float64MultiArray "{data: [0.6, 1.5, 0.1]}"
 
 ![bad cmd](lesson01c_t_bad.png){width=1000}
 
-## 4. 내 로봇에 적용할 때
+## 5. 내 로봇에 적용할 때
 
 ### 순서
 

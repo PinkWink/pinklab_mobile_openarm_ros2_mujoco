@@ -71,6 +71,7 @@ URDF 를 가진 ROS 2 사용자가 MuJoCo 를 붙이는 순서를 같은 팔로 
 |---|---|
 | `two_link_arm.urdf` | 같은 팔의 URDF. `<mujoco>` 태그(fusestatic · discardvisual)만 MuJoCo 용 |
 | `urdf_to_mjcf.py` | `build()`: URDF 를 `MjSpec` 으로 읽고 바닥 · 빛 · 카메라 · 액추에이터 · 충돌 제외를 추가. 실행하면 `two_link_arm_from_urdf.xml` 저장 |
+| `mujoco_basics.py` | ROS 2 없는 MuJoCo Python 기초: 모델 읽기 → `ctrl` 쓰기 → `mj_step` → `qpos` 읽기 |
 | `urdf_bridge.py` | `/clock` `/joint_states` `/tip_camera/image_raw` `/tip_pose` 발행, `/cmd` 구독 |
 | `view_urdf.launch.py` | robot_state_publisher + RViz (`sim:=true` 가 아니면 관절 슬라이더 포함) |
 

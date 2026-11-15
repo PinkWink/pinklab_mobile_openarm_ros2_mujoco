@@ -179,6 +179,7 @@ model = mujoco.MjModel.from_xml_path("two_link_arm.urdf")   # MJCF 와 같은 �
 mujoco.mj_saveLastXML("as_mjcf.xml", model)                 # 읽은 결과를 MJCF 로 저장
 ```
 
+- 읽는 파일: `lessons/01_mujoco_ros2/two_link_arm.urdf` · 위 코드는 설명용 최소 예, 실제 실행 코드는 `lessons/01_mujoco_ros2/urdf_to_mjcf.py` 의 `main()` 안 `--raw` 부분
 - 별도 변환 도구 불필요 · `from_xml_path` 가 URDF · MJCF 를 모두 읽음
 - 읽히는 것과 쓸 수 있는 것은 다름 → 아래에서 확인
 
