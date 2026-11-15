@@ -38,6 +38,7 @@ sudo apt install git
 ### ③ 설치 스크립트
 
 ```bash
+cd ~
 git clone https://github.com/PinkWink/pinklab_mobile_openarm_ros2_mujoco.git
 cd pinklab_mobile_openarm_ros2_mujoco
 grep -v '^#' scripts/apt_packages.txt | xargs sudo apt install -y   # 추가 apt 패키지 24개
@@ -84,19 +85,52 @@ grep -v '^#' scripts/apt_packages.txt | xargs sudo apt install -y   # 추가 apt
 
 ![OpenAI 키](setup_openai_key.png){width=1000}
 
-### ④ OpenAI 키 설정 명령
+### ④ OpenAI 키 설정 명령 (수업 수강생)
 
 ```bash
-cp .env.example .env      # OPENAI_API_KEY=sk-...
+cd ~/pinklab_mobile_openarm_ros2_mujoco
+cp ~/Downloads/temp.env .env      # 수업에서 받은 키 파일을 .env 로 복사
 ```
 
-- LLM 모듈부터 필요
-- 주행 · MoveIt · Pick & Place 모듈은 키 없이 동작
+- `temp.env`: 수업 시간에 별도 링크로 배포하는 키 파일 · 받으면 다운로드 폴더에 저장됨
+- 이 키는 수업 한정 배포 · 수업 밖 사용과 외부 공유 금지
+- 한글 Ubuntu는 다운로드 폴더가 `~/다운로드` → `cp ~/다운로드/temp.env .env`
+
+### ④ OpenAI 키 설정 명령 (수업 밖에서 따라 하는 경우)
+
+```bash
+cd ~/pinklab_mobile_openarm_ros2_mujoco
+cp .env.example .env
+gnome-text-editor .env    # OPENAI_API_KEY=sk-... 자리에 본인 키 붙여넣기
+```
+
+- 수업 밖에서 이 자료를 따라 하는 경우 키는 제공되지 않음 → 위 "OpenAI API 키 받는 법"대로 본인 키를 직접 발급
+- LLM 모듈부터 필요 · 주행 · MoveIt · Pick & Place 모듈은 키 없이 동작
 - 모델 · 가격표: `src/warehouse_lecture/config/llm.yaml` · 호출 기록: `logs/openai_usage.jsonl`
 
 ### ros2 명령을 직접 칠 때 (env.sh)
 
 ![env.sh](setup_env_sh.png){width=1000}
+
+### ROS 2를 실행할 때 터미널에서 환경을 활성화하는 이유
+
+```bash
+source /opt/ros/jazzy/setup.bash             # ① ROS 2 본체: ros2 명령 · 기본 패키지
+source .venv-mobile-openarm/bin/activate     # ② Python 가상환경: mujoco 등
+source install/local_setup.bash              # ③ 내 워크스페이스: 직접 빌드한 패키지
+```
+
+- 새 터미널은 ROS 2를 모르는 상태로 열림 → source 없이는 `ros2: command not found` 또는 패키지를 찾지 못함
+- source 는 그 터미널 하나에만 적용 → 터미널(탭)을 새로 열 때마다 다시 실행
+- 이 과정은 위 세 줄과 통신 설정을 `source scripts/env.sh` 한 줄로 묶음
+
+### 참조 영상: 또. 다시. 강조하는 bashrc
+
+![참조 영상 썸네일](setup_ros2_env_video.png){width=480}
+
+- 영상: [ROS2 1. 또. 다시. 강조하는 bashrc (핑크랩 PinkLAB, 약 19분)](https://www.youtube.com/watch?v=NLZwZaMEhxA&list=PL0xYz_4oqpvjyrCQKB1eiAbZG-bCDe98_&index=3)
+- "무작정 따라하는 ROS2 - 실전과정"의 Intro · ROS 2 Humble / Jazzy 기준
+- 요약: 터미널을 열 때마다 필요한 ROS 2 환경 설정을 `~/.bashrc`에 정리해 두는 방법
 
 ### ros2 CLI를 직접 쓰는 터미널에서
 
@@ -120,6 +154,7 @@ source scripts/env.sh      # ROS 2 Jazzy · venv 가 꺼져 있으면 자동으�
 ### ⑤ 설치 확인
 
 ```bash
+cd ~/pinklab_mobile_openarm_ros2_mujoco
 ./scripts/mobile_openarm doctor          # 약 10초
 ./scripts/mobile_openarm doctor --api    # .env 에 키를 넣은 뒤: OpenAI API 실제 호출까지 확인
 ```
@@ -130,6 +165,7 @@ source scripts/env.sh      # ROS 2 Jazzy · venv 가 꺼져 있으면 자동으�
 ### ⑤ 설치 확인: 시뮬레이터 실행
 
 ```bash
+cd ~/pinklab_mobile_openarm_ros2_mujoco
 ./scripts/mobile_openarm start
 ```
 
@@ -168,6 +204,7 @@ source scripts/env.sh      # ROS 2 Jazzy · venv 가 꺼져 있으면 자동으�
 - 시뮬레이터 실행 중에는 사용 금지 (둘 다 `/joint_states` · `/tf` 발행)
 
 ```bash
+cd ~/pinklab_mobile_openarm_ros2_mujoco
 source /opt/ros/jazzy/setup.bash
 source scripts/env.sh
 ros2 launch mobile_openarm_description display.launch.py              # RViz2 + 관절 슬라이더
@@ -248,6 +285,7 @@ ros2 launch mobile_openarm_description display.launch.py gui:=false   # 슬라�
 ### 내 PC 렌더링 성능 확인
 
 ```bash
+cd ~/pinklab_mobile_openarm_ros2_mujoco
 source /opt/ros/jazzy/setup.bash
 source scripts/env.sh
 ./scripts/mobile_openarm start      # 처음 한 번 (모델 생성), 창이 뜨면 Ctrl+C
@@ -267,6 +305,7 @@ source scripts/env.sh
 ### sim_config.yaml 바꿔 실행하기
 
 ```bash
+cd ~/pinklab_mobile_openarm_ros2_mujoco
 sed -i 's/^profile: lite/profile: minimal/' sim_config.yaml     # 편집기로 고쳐도 같음
 ./scripts/mobile_openarm drive
 ros2 launch mobile_openarm_bringup warehouse.launch.py mode:=drive moveit:=false rviz:=false
@@ -277,6 +316,7 @@ ros2 launch mobile_openarm_bringup warehouse.launch.py mode:=drive moveit:=false
 ### 더 가볍게 실행하기
 
 ```bash
+cd ~/pinklab_mobile_openarm_ros2_mujoco
 ./scripts/mobile_openarm start profile:=minimal     # 이번 실행만 minimal
 ./scripts/mobile_openarm start viewer:=false        # MuJoCo 창 없이 RViz만
 ./scripts/mobile_openarm start rviz:=false          # RViz 없이 MuJoCo 창만

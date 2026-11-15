@@ -1,6 +1,14 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-11-15 (① 하위 새 글: URDF 에서 브리지까지). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-11-15 저녁 (환경 설정 페이지 v49 · Mentimeter). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+
+## 0-00000000000000000000000000000. 2026-11-15 저녁: 환경 설정 페이지 · Mentimeter — 다음 세션은 여기부터
+
+- 환경 설정 페이지 3692331054 (`docs/camp/setup_usage.md`) v49: 명령 블록 첫 줄에 `cd ~/pinklab_mobile_openarm_ros2_mujoco` (사용자: 터미널 처음 쓰는 사람 배려), ④ 절을 "수업 수강생" (`cp ~/Downloads/temp.env .env`, 수업 한정 배포 키) 과 "수업 밖에서 따라 하는 경우" (직접 발급) 로 나눔, env.sh 절 뒤에 "ROS 2를 실행할 때 터미널에서 환경을 활성화하는 이유" + "참조 영상: 또. 다시. 강조하는 bashrc" (`setup_ros2_env_video.png`, 요약은 영상 제목 · 설명란만 보고 씀 → 사용자 확인 필요).
+- 수업용 OpenAI 키 파일은 강사 PC `~/Downloads/temp.env` (저장소 밖, 커밋 금지). 수업 때 별도 링크로 배포.
+- `publish_confluence.py` 링크 문법은 제목 안의 대괄호를 못 다룸 → 링크 글에서 `[ ]` 빼기.
+- Mentimeter (사용자 계정, 무료 플랜) 발표 "MuJoCo + ROS2 단기 특강" 10 슬라이드: 제목 · 설문 5 (dots) · 수업자료 Google Drive QR · 워드클라우드 · 인트로 안내 · 완료 확인. 로고는 유료 기능이라 전체 배치 이미지로 대신함 (흐리게 보임). 미정: "몇 일" → "며칠", 9번 슬라이드 로고, QR 휴대폰 스캔 · Preview 미확인.
+- 미정: 어느 md 도 참조하지 않는 `docs/camp/lesson01c_pitfalls.png` · `lesson01c_plain.png` · `lesson01c_run_after.png` 삭제 여부 (사용자 답 대기).
 
 ## 0-0000000000000000000000000000. 2026-11-15: ① 하위 새 글 "URDF 에서 브리지까지" — 다음 세션은 여기부터
 
@@ -16,7 +24,7 @@
 **2026-11-15 오후: 두 편으로 나눔 (사용자: "너무 길다" → 이 두 글을 기반으로 대화 이어감)**
 - 1편 3782967324 "URDF에서 MuJoCo 모델로: URDF 읽기와 MJCF 변환" (제목에 1편 · 2편 표기 금지: 사용자 지시) ← `docs/camp/lesson01d_urdf_to_mjcf.md` (h3 35): 큰 그림 · URDF · 변환 · 모델 쪽 막히는 곳 · mesh.
 - 2편 3782967367 "MuJoCo 브리지: ROS 2와 무엇을 어떻게 주고받나" ← `docs/camp/lesson01e_bridge.md` (h3 39): /joint_states 교체 그림 · 브리지 코드 · 실행 확인 · 적용 순서.
-- 그림은 `lesson01c_*` 를 함께 씀 (+ `lesson01c_pitfalls_model.png` · `_bridge.png`). 합본 3782279387 (`lesson01c_urdf_to_bridge.md`) 은 남겨 둠 — 지울지 사용자에게 물어봄.
+- 그림은 `lesson01c_*` 를 함께 씀 (+ `lesson01c_pitfalls_model.png` · `_bridge.png`). 합본 md `lesson01c_urdf_to_bridge.md` 는 사용자 승인으로 삭제 (2026-11-16, 커밋된 적 없음). 합본 페이지 3782279387 은 사용자가 직접 삭제 예정.
 - "그대로 읽은 모델을 1 초 돌리면" 절은 자막 GIF `lesson01c_plain.gif` (`MUJOCO_GL=egl python docs/camp/make_lesson01c_gif.py`). `publish_confluence.py` 가 gif 도 첨부.
 - 앞으로의 수정은 1편 · 2편 md 에 (합본 md 는 원본 아님).
 - 그 뒤 (같은 날): 두 글 머리의 "이 글의 위치" 상자 삭제 (사용자 지시), 첫 글에 mimic 절 3개 + `lesson01c_mimic.png` (손가락 둘 URDF 로 실측: equality 없으면 right 0.000, 있으면 0.030), 둘째 글 "같은 자세의 MuJoCo 와 RViz" 절을 GIF `lesson01c_run_motion.gif` 로 (`docs/camp/record_lesson01c_motion.py <MuJoCo 창> <RViz 창> artifacts/dev/l01c/motion` 로 /cmd 를 단계별로 올리며 두 창 캡처 → `make_lesson01c_motion_gif.py`).
