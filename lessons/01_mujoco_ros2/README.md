@@ -62,3 +62,28 @@ Gazebo 라면 이 일을 `gz_ros2_control` 과 센서 플러그인이 한다. Mu
 - `ModuleNotFoundError: mujoco` → `source scripts/env.sh` 를 안 했다. 가상환경 python 이어야 한다.
 - 창이 안 뜨고 `GLFW` 오류 → 화면 없는 환경. `--viewer` 를 빼면 카메라 렌더는 오프스크린으로 계속 된다.
 - 창고 시뮬레이터와 동시에 띄우지 않는다. 둘 다 `/clock` `/joint_states` `/tf` 를 낸다.
+
+## URDF 에서 출발하기
+
+URDF 를 가진 ROS 2 사용자가 MuJoCo 를 붙이는 순서를 같은 팔로 따라간다. 관절 TF 는 브리지가 아니라 `robot_state_publisher` 가 URDF 로 계산한다.
+
+| 파일 | 내용 |
+|---|---|
+| `two_link_arm.urdf` | 같은 팔의 URDF. `<mujoco>` 태그(fusestatic · discardvisual)만 MuJoCo 용 |
+| `urdf_to_mjcf.py` | `build()`: URDF 를 `MjSpec` 으로 읽고 바닥 · 빛 · 카메라 · 액추에이터 · 충돌 제외를 추가. 실행하면 `two_link_arm_from_urdf.xml` 저장 |
+| `urdf_bridge.py` | `/clock` `/joint_states` `/tip_camera/image_raw` `/tip_pose` 발행, `/cmd` 구독 |
+| `view_urdf.launch.py` | robot_state_publisher + RViz (`sim:=true` 가 아니면 관절 슬라이더 포함) |
+
+```bash
+check_urdf lessons/01_mujoco_ros2/two_link_arm.urdf
+ros2 launch lessons/01_mujoco_ros2/view_urdf.launch.py           # URDF 만 RViz 로
+python lessons/01_mujoco_ros2/urdf_to_mjcf.py --raw              # URDF 를 그대로 읽으면
+python lessons/01_mujoco_ros2/urdf_to_mjcf.py                    # 변환 + MJCF 저장
+
+# 터미널 1 / 2 / 3
+python lessons/01_mujoco_ros2/urdf_bridge.py --viewer
+ros2 launch lessons/01_mujoco_ros2/view_urdf.launch.py sim:=true
+ros2 topic pub -1 /cmd std_msgs/msg/Float64MultiArray "{data: [0.6, 1.5]}"
+ros2 topic echo --once /tip_pose                                 # MuJoCo 가 계산한 끝점
+ros2 run tf2_ros tf2_echo base_link camera_optical_frame         # URDF 로 계산한 끝점 (같아야 한다)
+```

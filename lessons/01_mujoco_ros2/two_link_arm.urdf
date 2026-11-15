@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<!-- 2-link planar arm, the same robot as two_link_arm.xml but written the ROS way (URDF).
+     URDF describes the robot only: links, joints, shapes, inertia. No floor, no light, no actuator, no camera.
+     urdf_to_mjcf.py turns this file into a MuJoCo model and adds what is missing. -->
+<robot name="two_link_arm">
+  <!-- Read only by MuJoCo (ROS tools skip this tag): keep fixed-joint links as bodies, keep <visual> shapes -->
+  <mujoco>
+    <compiler fusestatic="false" discardvisual="false"/>
+  </mujoco>
+
+  <material name="grey"><color rgba="0.3 0.3 0.3 1"/></material>
+  <material name="blue"><color rgba="0.2 0.5 0.9 1"/></material>
+  <material name="orange"><color rgba="0.9 0.6 0.2 1"/></material>
+  <material name="black"><color rgba="0.1 0.1 0.1 1"/></material>
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.03"/>
+      <geometry><cylinder radius="0.05" length="0.06"/></geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.03"/>
+      <geometry><cylinder radius="0.05" length="0.06"/></geometry>
+    </collision>
+    <!-- fixed to the world: no <inertial> needed (KDL also warns about inertia on the root link) -->
+  </link>
+
+  <link name="link1">
+    <visual>
+      <origin xyz="0 0 0.15"/>
+      <geometry><cylinder radius="0.02" length="0.30"/></geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.15"/>
+      <geometry><cylinder radius="0.02" length="0.30"/></geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0.15"/>
+      <mass value="0.40"/>
+      <inertia ixx="0.00304" iyy="0.00304" izz="0.00008" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <link name="link2">
+    <visual>
+      <origin xyz="0 0 0.125"/>
+      <geometry><cylinder radius="0.018" length="0.25"/></geometry>
+      <material name="orange"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.125"/>
+      <geometry><cylinder radius="0.018" length="0.25"/></geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0.125"/>
+      <mass value="0.28"/>
+      <inertia ixx="0.00148" iyy="0.00148" izz="0.000045" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <link name="camera_link">
+    <visual>
+      <geometry><box size="0.03 0.04 0.02"/></geometry>
+      <material name="black"/>
+    </visual>
+    <inertial>
+      <mass value="0.02"/>
+      <inertia ixx="0.000004" iyy="0.000003" izz="0.000005" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <!-- ROS camera convention (REP 103): z = viewing direction, x = image right, y = image down -->
+  <link name="camera_optical_frame"/>
+
+  <joint name="joint1" type="revolute">
+    <parent link="base_link"/>
+    <child link="link1"/>
+    <origin xyz="0 0 0.06" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.57" upper="1.57" effort="20" velocity="3.0"/>
+    <dynamics damping="0.5"/>
+  </joint>
+
+  <joint name="joint2" type="revolute">
+    <parent link="link1"/>
+    <child link="link2"/>
+    <origin xyz="0 0 0.30" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.0" upper="2.0" effort="20" velocity="3.0"/>
+    <dynamics damping="0.5"/>
+  </joint>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="link2"/>
+    <child link="camera_link"/>
+    <origin xyz="0 0 0.26" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
+    <origin xyz="0 0 0.01" rpy="0 0 -1.5708"/>
+  </joint>
+</robot>

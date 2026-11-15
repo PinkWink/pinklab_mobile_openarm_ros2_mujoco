@@ -1,6 +1,36 @@
 # 다음 세션 재개 안내
 
-마지막 갱신: 2026-11-12 밤 (⑥ 목표에서 좌우로 오가는 현상 해결: BT 교체). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+마지막 갱신: 2026-11-15 (① 하위 새 글: URDF 에서 브리지까지). PC를 다시 켠 뒤 이 문서만 보고 이어갈 수 있도록 쓴다.
+
+## 0-0000000000000000000000000000. 2026-11-15: ① 하위 새 글 "URDF 에서 브리지까지" — 다음 세션은 여기부터
+
+**배경 (사용자 고민)**: ① 3692920898 과 비교용 사본 3782279338 ("…연결하기_") 둘 다 실제 URDF 가 없다. URDF 를 쓰는 ROS 2 사용자에게 URDF 개념 → MuJoCo 용 변환 → 무엇을 어떻게 주고받나를, 코드 설명을 많이 넣되 간결하게.
+
+**한 일**
+- 새 페이지 3782279387 "MuJoCo와 ROS2를 연결하기: URDF에서 브리지까지" (v1, 부모 3692920898) ← `docs/camp/lesson01c_urdf_to_bridge.md` (h3 70, 그림 37 = 도식 18 · 화면 5 · 터미널 14). 코드 블록 아래에 설명 bullet ≤ 3 (이 글만: 사용자가 코드 설명을 원함).
+- 새 코드 `lessons/01_mujoco_ros2/`: `two_link_arm.urdf`, `urdf_to_mjcf.py` (MjSpec, `--raw`), `urdf_bridge.py` (TF 없음, `/tip_pose` 추가), `view_urdf.launch.py` + `two_link_arm.rviz`, README 절 추가. `two_link_arm_from_urdf.xml` 은 생성물.
+- 실측으로 확인한 것: URDF 그대로 읽으면 body 3 (fusestatic) · visual 버려짐 · nu 0; 세계에 고정된 base_link 와 link1 은 부모-자식 충돌 제외가 안 돼 0.24 rad 에서 멈춤 (`add_exclude`); `discardvisual` 은 URDF 의 `<mujoco>` 태그에서만 먹힘 (spec 에서 나중에 바꾸면 무효); mimic · velocity 는 안 옮겨짐; mesh 경로는 파일 이름만 남고 meshdir. `/tip_pose` = `tf2_echo` (0.404, 0, 0.151).
+- 그림: `python3 docs/camp/draw_lesson01c_figures.py artifacts/dev/l01c` (캡처 · 로그는 artifacts/dev/l01c, git 제외).
+- 캡처 요령: `pkill -f` · `pgrep -f` 패턴이 자기 셸 명령줄에 걸려 셸이 죽음 → 정리는 별도 스크립트 파일로. joint_state_publisher_gui 는 SIGTERM 무시 (kill -9). xdotool getwindowgeometry 좌표는 장식만큼 어긋남 → 루트 스크린샷으로 실제 위치 확인.
+
+**2026-11-15 오후: 두 편으로 나눔 (사용자: "너무 길다" → 이 두 글을 기반으로 대화 이어감)**
+- 1편 3782967324 "URDF에서 MuJoCo 모델로: URDF 읽기와 MJCF 변환" (제목에 1편 · 2편 표기 금지: 사용자 지시) ← `docs/camp/lesson01d_urdf_to_mjcf.md` (h3 35): 큰 그림 · URDF · 변환 · 모델 쪽 막히는 곳 · mesh.
+- 2편 3782967367 "MuJoCo 브리지: ROS 2와 무엇을 어떻게 주고받나" ← `docs/camp/lesson01e_bridge.md` (h3 39): /joint_states 교체 그림 · 브리지 코드 · 실행 확인 · 적용 순서.
+- 그림은 `lesson01c_*` 를 함께 씀 (+ `lesson01c_pitfalls_model.png` · `_bridge.png`). 합본 3782279387 (`lesson01c_urdf_to_bridge.md`) 은 남겨 둠 — 지울지 사용자에게 물어봄.
+- "그대로 읽은 모델을 1 초 돌리면" 절은 자막 GIF `lesson01c_plain.gif` (`MUJOCO_GL=egl python docs/camp/make_lesson01c_gif.py`). `publish_confluence.py` 가 gif 도 첨부.
+- 앞으로의 수정은 1편 · 2편 md 에 (합본 md 는 원본 아님).
+- 그 뒤 (같은 날): 두 글 머리의 "이 글의 위치" 상자 삭제 (사용자 지시), 첫 글에 mimic 절 3개 + `lesson01c_mimic.png` (손가락 둘 URDF 로 실측: equality 없으면 right 0.000, 있으면 0.030), 둘째 글 "같은 자세의 MuJoCo 와 RViz" 절을 GIF `lesson01c_run_motion.gif` 로 (`docs/camp/record_lesson01c_motion.py <MuJoCo 창> <RViz 창> artifacts/dev/l01c/motion` 로 /cmd 를 단계별로 올리며 두 창 캡처 → `make_lesson01c_motion_gif.py`).
+- ① 의 "Gazebo vs MuJoCo" 그림 6장을 두 글에 나눠 넣음 (① 본문은 그대로): 첫 글 새 1장 "Gazebo 와 MuJoCo: 무엇이 다른가" = 두 시뮬레이터 · 물리 연산 방식 · 장단점 · MuJoCo 를 쓰는 이유 (v7, 장 번호 한 칸씩 밀림), 둘째 글 1장 앞 = 구조 비교 · ROS 2 연동 방식 (v6, 장 제목 "큰 그림: Gazebo 의 플러그인이 하던 일을 브리지가 한다").
+- 사용자가 두 글을 수업자료 최상위 3692396550 바로 아래로 옮김 (① 과 같은 층). ① 3692920898 · 합본 3782279387 · 사본 3782279338 은 사용자가 나중에 직접 삭제 → 건드리지 않음.
+
+**2026-11-15 저녁: MuJoCo 소개 글 (환경 설정 ↔ URDF 글 사이)**
+- 새 페이지 3783000674 "MuJoCo 소개: Gazebo · Isaac Sim 비교와 뷰어로 로봇 움직여 보기" (v1, 부모 3692396550, REST `move/after/3692331054` 로 환경 설정 바로 뒤) ← `docs/camp/lesson00_mujoco_intro.md` (h3 24, 그림 19 = 도식 8 · 캡처 4 · 터미널 2 · GIF 5).
+- 로봇: MuJoCo Menagerie 를 `~/mujoco_menagerie` 에 받음 (shallow, 2.5 GB, 작업 폴더 밖). Panda (위치 액추에이터 8, key home) · Go2 (토크 액추에이터 12).
+- GIF: `docs/camp/record_viewer_ui.py <창 id> <시나리오> artifacts/dev/intro` — 뷰어(1400x900, 맨 위)를 xdotool 로 조작하며 ffmpeg x11grab (마우스 포함) 녹화 → 자막 · 강조 상자 · 단계 번호를 얹어 GIF. 시나리오 panda_key · panda_control · panda_push · go2_run · go2_render (각 함수 docstring 에 시작 상태). `--gif <시나리오> <폴더>` 로 녹화본에서 다시 만들기. 뷰어 좌표는 창 기준 (xwininfo 의 Absolute 좌표를 더함 — xdotool getwindowgeometry 는 어긋남).
+- 도식 · 주석 그림: `python3 docs/camp/draw_intro_mj_figures.py artifacts/dev/intro`.
+- 겹치는 내용: URDF 글 1장 (Gazebo vs MuJoCo 그림 4장) 과 소개 글 2장 비교 — 정리 여부는 사용자 결정.
+
+**다음 (사용자 결정 대기)**: 새 글 검토 · 수정, 비교용 사본 3782279338 정리 여부, ① 본문과의 중복 정리 (Gazebo 비교 · XML 요소 설명은 ① 에 남김), 커밋 · push (전부 미커밋), `two_link_arm_from_urdf.xml` 을 저장소에 둘지.
 
 ## 0-000000000000000000000000000. 2026-11-12 밤: ⑥ 목표에서 좌우로 오가는 현상 — BT 교체 — 다음 세션은 여기부터
 
