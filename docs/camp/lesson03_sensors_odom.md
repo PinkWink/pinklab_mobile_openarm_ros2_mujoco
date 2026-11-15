@@ -68,6 +68,10 @@ def __init__(self, model_path, config_file=None):   # 발췌
     self.lidar_id = self.model.site("lidar").id
 ```
 
+- 광선 360 개의 방향을 시작할 때 한 번만 만들어 둠 (개수는 `mujoco.yaml` 의 `lidar.samples`)
+- `ray_group`: geom group 0 만 맞춤 → 로봇 자신의 geom (group 1 · 2) 은 통과
+- `site("lidar")` = 앞 글에서 `laser_link` 에 붙인 site
+
 ### 라이다 거리 측정 - scan 함수
 
 ```py
@@ -83,6 +87,10 @@ def scan(self):
     return distances
 ```
 
+- 광선 방향을 site 의 자세(`site_xmat`)만큼 돌림 → 로봇이 돌면 광선도 함께 돎
+- `mj_multiRay`: 광선 360 개를 한 번에 쏘고 맞은 곳까지의 거리를 배열로 받음
+- 측정 범위 밖은 `inf` → LaserScan 에서 "맞은 것이 없음"
+
 ### LaserScan 메시지
 
 ![sensor_msgs/LaserScan](lesson03_lidar_msg.png){width=1000}
@@ -94,6 +102,9 @@ def scan(self):
 def __init__(self, physics, world_file=None, actors=None):   # 발췌
     self.scan_pub = self.create_publisher(LaserScan, "/scan", qos_profile_sensor_data)
 ```
+
+- `qos_profile_sensor_data` = 놓쳐도 다시 보내지 않고 최신 값만 (best effort)
+- 받는 쪽 QoS 가 reliable 이면 연결되지 않음 → RViz 의 LaserScan 표시도 best effort 로
 
 ### /scan 10 Hz 주기와 헤더 - advance 함수 발췌
 
@@ -111,6 +122,9 @@ def advance(self):   # 발췌: 100 Hz 루프 한 바퀴
         scan.header.frame_id = "laser_link"
 ```
 
+- 브리지 루프는 100 Hz · 10 바퀴에 한 번만 스캔 → 10 Hz
+- `stamp` = 시뮬레이션 시각 · `frame_id` = 광선이 출발한 프레임 `laser_link`
+
 ### /scan 각도 · 거리 범위 · ranges 채워 발행 - advance 함수 발췌
 
 ```py
@@ -125,6 +139,10 @@ def advance(self):   # 발췌: 100 Hz 루프 한 바퀴
         scan.ranges = p.scan().astype("float32").tolist()          # Physics.scan() 결과 360개
         self.scan_pub.publish(scan)
 ```
+
+- i 번째 광선의 각도 = `angle_min` + i × `angle_increment`
+- `ranges[i]` = 그 방향으로 맞은 곳까지의 거리 [m]
+- 받는 쪽(SLAM · costmap)은 `range_min` ~ `range_max` 밖의 값을 버림
 
 ### 터미널 2: ros2 topic echo /scan
 
@@ -206,6 +224,10 @@ def step(self, linear=0.0, angular=0.0, steps=None):
     self.data.ctrl[self.wheel_ctrl] = np.clip(wheel, -max_speed, max_speed)
 ```
 
+- 한 틱에 바꿀 수 있는 속도를 제한 (`clip`) → `/cmd_vel` 이 갑자기 바뀌어도 부드럽게 가감속
+- (v, w) → 좌 · 우 바퀴 각속도 = (v ∓ w × 바퀴 간격 / 2) / 바퀴 반지름
+- `data.ctrl` = 앞 글에서 만든 바퀴 속도 액추에이터의 목표
+
 ### 바퀴가 굴러간 호의 길이: dl · dr → ds · da
 
 ![](lesson03_wheel_arc.png){width=1000}
@@ -225,6 +247,10 @@ def step(self, linear=0.0, angular=0.0, steps=None):
     self.odom += [ds * math.cos(theta), ds * math.sin(theta), da]
     self.twist[:] = [ds / dt, da / dt]
 ```
+
+- 스텝 전후의 바퀴 각 차이 × 반지름 = 그동안 바퀴가 굴러간 거리
+- 두 바퀴의 평균 = 전진량 `ds` · 차이 / 바퀴 간격 = 회전량 `da`
+- 방향은 회전의 중간 값(`theta + da / 2`)으로 → 한 틱 동안의 호를 직선으로 근사
 
 ### /odom 메시지와 TF
 
@@ -246,6 +272,9 @@ def publish_state(self, now):
         odom.twist.covariance[7 * i] = v
     self.odom_pub.publish(odom)
 ```
+
+- `pose` = odom 프레임에서 본 로봇 위치 · `twist` = 로봇 기준 속도 (전진 v · 회전 w)
+- `planar`: (x, y, yaw) 를 Pose 의 위치 · 쿼터니언으로 바꿈
 
 ### 공분산 대각선 [0.0025, 0.0025, 1e6, 1e6, 1e6, 0.01] 의 의미
 
@@ -269,6 +298,9 @@ def publish_state(self, now):
     tf.transform.rotation = odom.pose.pose.orientation
     self.tf.sendTransform(tf)
 ```
+
+- 같은 값을 TF 로도 냄 · `/odom` 은 값을 읽는 노드용, TF 는 좌표 변환용
+- TF 트리에서 `odom` 과 로봇을 잇는 유일한 고리
 
 ### 터미널 2: ros2 topic echo /odom
 
@@ -323,6 +355,10 @@ python docs/camp/odom_experiment.py --side 2.0 --laps 3 --out artifacts/dev/odom
 ### 사각형 1바퀴 전후의 MuJoCo 창
 
 ![사각형 1바퀴 전(왼쪽)과 후(오른쪽)](lesson03_square1_motion.png){width=1000}
+
+### 움직이는 그림: 1바퀴 동안의 경로와 오차
+
+![사각형 1바퀴 (움직이는 그림)](lesson03_square.gif){width=1000}
 
 ### 결과: 1바퀴
 

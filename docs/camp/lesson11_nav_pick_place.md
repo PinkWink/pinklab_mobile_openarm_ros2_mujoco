@@ -72,6 +72,10 @@ time ./scripts/mobile_openarm exec python lessons/07_nav_pick_place/transport.py
 
 ![출발 → 잡기 → 든 채 주행 → 도킹 → 놓기 → 끝 (오프스크린 렌더)](lesson11_scenes.png){width=1000}
 
+### 움직이는 그림: 창고를 가로지르는 운반
+
+![운반 (움직이는 그림)](lesson11_transport.gif){width=720}
+
 ### 주행 속도
 
 ![base 속도와 단계 (실측)](lesson11_speed.png){width=1000}
@@ -104,6 +108,9 @@ def where(self):
     return tf.translation.x, tf.translation.y, yaw
 ```
 
+- 앞 글의 TF: `map → odom` (AMCL) + `odom → base_footprint` (브리지)
+- `Time()` = 가장 최근 값 · 쿼터니언에서 yaw [rad] 만 꺼냄
+
 ### 단계가 바뀔 때 위치 출력 - transport.py on_fb 함수 발췌
 
 ```python
@@ -119,6 +126,9 @@ def on_fb(m):
         print(f"   [{time.monotonic() - t0:5.1f}s] {f.phase:14s} at map ({p[0]:+.2f}, {p[1]:+.2f}, ...)  driven {self.path:5.2f} m")
 ```
 
+- `phase="all"`: ⑨ 의 goal 두 번을 한 번으로 · 출발 · 도착 작업대를 함께 지정
+- feedback 의 `phase` 가 바뀐 순간에만 시각 · map 위치 · 누적 주행 거리 기록
+
 ### 두 절반 - pick_place_server.py execute 함수 발췌
 
 ```python
@@ -127,6 +137,9 @@ which = (goal.phase or "all").lower()                         # transport.py 는
 name, arm, src = self.do_pick(goal, feedback)                 # navigate_pick → dock → locate → grasp → carry
 st, offset = self.do_place(goal, name, arm, feedback)         # navigate_place → dock → place → retreat
 ```
+
+- ⑨ 와 같은 서버 · 같은 함수 → 달라진 것은 작업대 사이를 Nav2 로 가는 것뿐
+- `do_pick` 이 돌려준 `name` · `arm` 을 `do_place` 가 그대로 받음
 
 ### place 절반 - pick_place_server.py do_place 함수
 
@@ -144,6 +157,10 @@ def do_place(self, goal, name, arm, feedback):
     return st, offset
 ```
 
+- `free_slot_offset`: 상자를 든 팔 쪽 → 가운데 순서로 빈 슬롯 선택
+- 슬롯 위치는 map 이 아니라 도킹 결과(`mdx` · `mdy`) 기준 → Nav2 오차와 무관
+- 놓은 뒤 팔을 `transport` 로 접고 후진
+
 ### Nav2 로 사전 도킹 지점까지 - pick_place_server.py navigate_and_dock 함수 발췌
 
 ```python
@@ -152,6 +169,9 @@ goal = list(self.locations.goal(key))                         # locations.yaml b
 self.nav.go_to(*goal)                                         # Nav2 navigate_to_pose
 self.nav.settle()                                             # 멈추고 1 s
 ```
+
+- Nav2 는 작업대 앞 `base_goal` 까지만 · 마지막 구간은 마커 도킹이 맡음
+- `settle`: 멈춘 로봇에서 다음 카메라 영상을 얻기 위한 정지 · 대기
 
 ### 마커로 옆 오차 맞추고 도킹 - pick_place_server.py navigate_and_dock 함수 발췌
 
@@ -170,6 +190,10 @@ for attempt in range(3):
 dx, residual = self.nav.dock(st["offsets"], self.cfg["dock"]["target_dx"], target_side, ...)
 ```
 
+- 옆 오차가 5 cm 넘으면 90° 돌아 옆걸음(`sidestep`) 으로 보정
+- 최대 2 번 보정 · 그래도 10 cm 넘게 남으면 `SkillError`
+- `geometry`: 마커 쌍 → 작업대 축까지의 거리(`along`) · 옆(`side`) · 방향(`turn`)
+
 ### map 목표 보내기 - nav_client.py _go_to_once 함수 발췌
 
 ```python
@@ -183,6 +207,9 @@ if not handle.accepted:
     raise SkillError("Nav2 rejected the goal")
 ```
 
+- 앞 글의 Nav2 goal 과 같은 `NavigateToPose` 액션 · 좌표계는 `map`
+- 평면 회전이라 yaw 는 쿼터니언의 `z` · `w` 두 값으로 충분
+
 ### 결과 기다리기 · 제한 시간 - nav_client.py _go_to_once 함수 발췌
 
 ```python
@@ -194,6 +221,9 @@ while not future.done():
         raise SkillError("navigation timed out")
     time.sleep(0.1)
 ```
+
+- 취소 요청이나 제한 시간 초과 → Nav2 goal 도 함께 취소 (`cancel_goal_async`)
+- `status` 가 SUCCEEDED 가 아니면 `SkillError` → `go_to` 가 한 번 더 보냄
 
 ### 받은 시각 · 찍힌 시각 거르기 - nav_client.py marker 함수 발췌
 
@@ -208,6 +238,9 @@ def marker(self, marker_id, max_age=1.5, since=None):
             return None
     ...
 ```
+
+- `max_age`: 받은 지 얼마나 됐나 (벽시계) · `since`: 언제 찍혔나 (sim 시간)
+- 느린 PC 는 찍은 지 한참 뒤에 발행 → 방금 받았어도 회전 중 영상일 수 있음
 
 ### 멈춘 뒤 찍힌 마커 쌍 기다리기 - nav_client.py wait_markers 함수 발췌
 
@@ -224,6 +257,9 @@ def wait_markers(self, ids, timeout=10.0, search=True, need=2, max_age=0.7):
     # 안 보이면 제자리에서 좌우로 돌며 찾는다. 찾으면 멈추고 다시 wait_markers (search=False)
 ```
 
+- `since` = 부른 순간 → 로봇이 멈춘 뒤에 찍힌 영상만 통과
+- `need=2`: 두 마커가 모두 보여야 작업대 축을 믿을 수 있음
+
 ### sim 시간으로 제한 시간 정하기 - nav_client.py turn 함수 발췌
 
 ```python
@@ -231,6 +267,9 @@ def wait_markers(self, ids, timeout=10.0, search=True, need=2, max_age=0.7):
 deadline = self.now() + abs(angle) / speed + 3.0                # sim 시간 (전: 벽시계 → 느린 PC 에서 90° 가 80° 로 끊김)
 guard = time.monotonic() + 4 * (abs(angle) / speed + 3.0)       # 시뮬레이터가 멈췄을 때만
 ```
+
+- `deadline` = 예상 회전 시간 + 3 s · 오도메트리와 같은 sim 시계로 잼
+- `guard`: 시뮬레이터가 멈추면 sim 시간도 멈춤 → 벽시계로 한 번 더 막음
 
 ### 목표 각도까지 돌기 - nav_client.py turn 함수 발췌
 
@@ -247,6 +286,9 @@ while self.now() < deadline and time.monotonic() < guard:
 else:
     self.node.get_logger().warning(f"turn stopped by the deadline at ...")
 ```
+
+- `/odom` 의 yaw 변화량으로 회전량 측정 · `atan2(sin, cos)` 로 ±π 넘김 처리
+- `while … else`: `break` 없이 시간으로 끝났을 때만 경고 출력
 
 ### 설정 값
 
@@ -268,6 +310,9 @@ locations:
     base_goal: [1.2, 3.6, 0.0]
     station: place
 ```
+
+- `base_goal`: 작업대 중심(`center`) 에서 1.4 m 앞 · yaw 0 = 작업대를 바라봄
+- `aliases`: 한국어 별칭 → `resolve_station` 이 `pick_table` 같은 키로 바꿈
 
 ### 해 볼 것
 

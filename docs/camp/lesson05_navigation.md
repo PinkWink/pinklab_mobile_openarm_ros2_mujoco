@@ -106,6 +106,10 @@ time ./scripts/mobile_openarm goal 1.2 -3.6 0        # 픽업 작업대 앞 (x, 
 
 ![픽업 작업대 앞에 도착](lesson05_goal_after.png){width=1000}
 
+### 움직이는 그림: 목표 두 곳으로 가는 모습
+
+![목표 주행 (움직이는 그림)](lesson05_goal_run.gif){width=740}
+
 ### 실제 경로와 global costmap
 
 ![global costmap 위의 /plan 과 실제 주행 경로](lesson05_global_plan.png){width=1000}
@@ -153,6 +157,10 @@ ros2 topic pub -1 /initialpose geometry_msgs/msg/PoseWithCovarianceStamped \
 
 ![AMCL 파티클의 수렴](lesson05_amcl_particles.png){width=1000}
 
+### 움직이는 그림: 파티클이 모이는 모습
+
+![AMCL 파티클 (움직이는 그림)](lesson05_amcl.gif){width=860}
+
 ## 4. 코드와 설정
 
 ### goal 명령의 흐름
@@ -171,6 +179,10 @@ def main(args=None):   # 발췌
         raise RuntimeError("Nav2 action server did not become available in 30 seconds")
 ```
 
+- 목표는 토픽이 아니라 액션 `/navigate_to_pose` 로 보냄 → 도착 · 실패 결과를 받을 수 있음
+- `wait_for_server`: Nav2 lifecycle 노드가 active 가 될 때까지 최대 30 초 기다림
+- `use_sim_time`: 목표의 시각을 시뮬레이션 시각으로 찍기 위해
+
 ### map 좌표 목표 만들기 - goal.py main 함수 발췌
 
 ```python
@@ -182,6 +194,9 @@ def main(args=None):   # 발췌
     goal.pose.pose.orientation.z = math.sin(options.yaw / 2)            # yaw → 쿼터니언
     goal.pose.pose.orientation.w = math.cos(options.yaw / 2)
 ```
+
+- `frame_id = "map"` → 지도 위의 좌표 (odom 좌표가 아님)
+- 평면 회전이라 쿼터니언은 z · w 둘만: z = sin(yaw / 2) · w = cos(yaw / 2)
 
 ### 목표 보내고 결과 받기 - goal.py main 함수 발췌
 
@@ -195,6 +210,10 @@ def main(args=None):   # 발췌
     status = result.result().status                                     # 4 = SUCCEEDED
     print(f"NavigateToPose result: status={status} (SUCCEEDED={GoalStatus.STATUS_SUCCEEDED})")
 ```
+
+- 두 단계: 받아들였는지 (`send_goal_async`) → 끝났는지 (`get_result_async`)
+- `status` 4 = SUCCEEDED · 6 = ABORTED (가지 못함)
+- 가는 동안의 피드백(남은 거리 등)은 이 명령에서는 쓰지 않음
 
 ### nav 모드의 분기
 
@@ -212,6 +231,9 @@ def setup(context):   # 발췌
         amcl_params.append({"initial_pose": {"x": x, "y": y, "z": 0.0, "yaw": yaw}})
 ```
 
+- 로봇을 놓은 자리(`spawn`)를 AMCL 초기 위치로 넘김 → 시작부터 지도와 맞음
+- 넘기지 않으면 `nav2.yaml` 의 (0, 0, 0)
+
 ### 지도가 있으면 map_server · amcl 띄우기 - navigation.launch.py setup 함수 발췌
 
 ```python
@@ -226,6 +248,9 @@ def setup(context):   # 발췌
             lifecycle += ["map_server", "amcl"]
 ```
 
+- `map_server` = 저장된 지도를 `/map` 으로 · `amcl` = 그 지도 위에서 위치 추정
+- 지도 파일이 없으면 이 둘 대신 SLAM 이 `/map` 과 map → odom 을 냄
+
 ### Nav2 서버 5개와 lifecycle manager - navigation.launch.py setup 함수 발췌
 
 ```python
@@ -239,6 +264,10 @@ def setup(context):   # 발췌
                             parameters=[{"use_sim_time": True, "autostart": True, "bond_timeout": 10.0, "node_names": lifecycle}]))
     return actions
 ```
+
+- controller · planner · smoother · behavior · bt_navigator = 일반 `Node` 다섯
+- lifecycle manager 가 목록 순서대로 configure → activate
+- 한 노드라도 죽으면 (`bond_timeout`) 전체를 내림
 
 ### nav2.yaml 주요 파라미터
 
@@ -257,6 +286,9 @@ amcl:
     initial_pose: {x: 0.0, y: 0.0, z: 0.0, yaw: 0.0}
 ```
 
+- 파티클 500 ~ 2000 개 · 불확실할수록 많이 씀
+- `likelihood_field`: 라이다 점이 지도의 벽에 얼마나 가까운지로 점수
+
 ### 컨트롤러 플러그인 (RotationShim + DWB) - nav2.yaml 발췌
 
 ```yaml
@@ -270,6 +302,9 @@ controller_server:
       rotate_to_heading_angular_vel: 0.6
 ```
 
+- RotationShim: 경로 방향과 많이 어긋나 있으면 먼저 제자리에서 돎
+- 방향이 맞으면 DWB 에 넘김 · 초당 15 번 속도 명령
+
 ### 속도 · 가속 한계와 critic - nav2.yaml 발췌
 
 ```yaml
@@ -281,6 +316,10 @@ controller_server:
       xy_goal_tolerance: 0.08
       critics: [RotateToGoal, Oscillation, ObstacleFootprint, GoalAlign, PathAlign, PathDist, GoalDist]
 ```
+
+- `max_vel_x: 0.3` → 최고 0.3 m/s · `xy_goal_tolerance: 0.08` → 목표 8 cm 안이면 도착
+- `sim_time: 1.7`: 후보 속도마다 1.7 초 앞까지 궤적을 그려 봄
+- `critics`: 그 궤적에 점수를 매기는 항목 (장애물 · 경로와의 거리 · 목표 방향)
 
 ### local costmap 과 footprint - nav2.yaml 발췌
 
@@ -298,6 +337,10 @@ local_costmap:
       footprint: '[[0.38,0.32],[0.38,-0.32],[-0.38,-0.32],[-0.38,0.32]]'
 ```
 
+- odom 기준 5 m × 5 m 창이 로봇을 따라다님 (`rolling_window`)
+- `inflation_radius: 0.55`: 장애물 둘레 55 cm 까지 비용을 매김
+- `footprint`: 로봇을 위에서 본 사각형 0.76 m × 0.64 m
+
 ### 전역 경로 planner - nav2.yaml 발췌
 
 ```yaml
@@ -306,6 +349,10 @@ planner_server:
   ros__parameters:
     GridBased: {plugin: nav2_navfn_planner::NavfnPlanner, tolerance: 0.15, use_astar: true, allow_unknown: true}
 ```
+
+- NavFn 을 A* 로 사용 · 격자 지도 위의 최단 경로
+- `tolerance: 0.15`: 목표 칸이 막혀 있으면 15 cm 안의 다른 칸으로
+- `allow_unknown`: 지도에 없는 칸도 지나갈 수 있음
 
 ### RViz 목표 버튼 - navigation.rviz 발췌
 
@@ -317,6 +364,9 @@ planner_server:
     - Class: rviz_default_plugins/SetGoal            # 2D Goal Pose → /goal_pose → bt_navigator
       Topic: /goal_pose
 ```
+
+- RViz 의 버튼 = 정해진 토픽으로 메시지 한 장을 보내는 도구
+- 2D Pose Estimate → `/initialpose` (amcl) · 2D Goal Pose → `/goal_pose` (bt_navigator)
 
 ### 해 볼 것
 

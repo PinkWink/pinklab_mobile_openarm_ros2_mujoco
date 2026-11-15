@@ -64,6 +64,10 @@ time ./scripts/mobile_openarm exec python lessons/06_pick_place/pick_then_place.
 
 ![place 절반: 단계별 feedback 과 결과](lesson10_cli_place.png){width=1000}
 
+### 움직이는 그림: 집고 놓기 전체
+
+![집고 놓기 (움직이는 그림)](lesson10_pick_place.gif){width=720}
+
 ### 실행 결과: 도킹
 
 ![사전 도킹 지점 → blind 시작 → 도킹 끝 (오프스크린 렌더)](lesson10_run_dock.png){width=1000}
@@ -135,6 +139,9 @@ def on_fb(m):                                                 # feedback 마다 
     print(f"   [{time.monotonic() - t0:5.1f}s {f.phase:14s}] {f.detail}", flush=True)
 ```
 
+- `phase` 로 절반만 실행 · pick 은 `from_station`, place 는 `to_station`
+- feedback 의 `phase` · `detail` = 서버가 지금 하는 단계 → 경과 시간과 함께 출력
+
 ### 보내고 결과 기다리기 - pick_then_place.py run 함수 발췌
 
 ```python
@@ -148,6 +155,9 @@ while not rf.done() and time.monotonic() < end:
 r = rf.result().result                                        # success · message · phase_reached · duration_s
 ```
 
+- 앞 글의 Nav2 goal 과 같은 액션 순서: goal 수락 → feedback → result
+- `spin_once` 를 돌려야 feedback 콜백이 불림 · `end` 는 전체 제한 시간 (기본 600 s)
+
 ### 어느 절반을 할지 고르기 - pick_place_server.py execute 함수 발췌
 
 ```python
@@ -160,6 +170,9 @@ if which == "place":
 else:
     name, arm, src = self.do_pick(goal, feedback)
 ```
+
+- `phase` 가 비어 있으면 `all` = pick 과 place 를 goal 하나로
+- `self.held`: pick goal 이 끝나며 남긴 물체 · 팔 → 다음 place goal 이 이어받음
 
 ### 절반의 성공 판정 - pick_place_server.py execute 함수 발췌
 
@@ -176,6 +189,9 @@ else:
     result.success = bool(placed < 0.08 and fz > st["top_z"])
 ```
 
+- 성공은 명령이 아니라 결과로 판정: 시뮬레이터 정답 위치 `fx` · `fy` · `fz` 사용
+- pick: 상판보다 2 cm 넘게 들림 · place: 슬롯 중심 8 cm 안 + 상판 위
+
 ### 물체 · 팔 고르고 도킹 - pick_place_server.py do_pick 함수 발췌
 
 ```python
@@ -190,6 +206,10 @@ def do_pick(self, goal, feedback):
     self.navigate_and_dock(src, arm, lambda origin, u: -dock_side, "navigate_pick", feedback)
 ```
 
+- `offset` 부호로 가까운 어깨 쪽 팔 선택 · `goal.arm` 을 주면 그 팔 사용
+- 주행 전 팔을 `transport` 자세로 접음 (앞 글의 named target)
+- `dock_side`: 상자가 축에서 0.25 m 넘게 떨어지면 그만큼 옆으로 도킹 (최대 0.2 m)
+
 ### 위치 확인 · 잡기 · 후진 - pick_place_server.py do_pick 함수 발췌
 
 ```python
@@ -202,6 +222,9 @@ def do_pick(self, goal, feedback):
     self.nav.drive(-float(self.cfg["dock"]["undock_distance"]))       # 0.75 m 후진
     return name, arm, src
 ```
+
+- 팔은 도킹 뒤 실제로 본 `rel[1]` (좌우 [m]) 로 다시 결정
+- `hands_up` 으로 든 뒤 후진 → 상자가 작업대 · 베이스 상판에 닿지 않음
 
 ### 마커 쌍 기다리기 - nav_client.py dock 함수 발췌
 
@@ -217,6 +240,9 @@ while time.monotonic() < end:
         time.sleep(0.1)
         continue
 ```
+
+- 마커 하나로는 방향 추정이 흔들림 → 두 개가 함께 보일 때만 사용
+- 쌍이 사라져도 마지막 측정이 0.95 m 안이면 `break` → 오도메트리 구간으로
 
 ### 마커를 보며 다가가기 - nav_client.py dock 함수 발췌
 
@@ -234,6 +260,10 @@ while time.monotonic() < end:
     time.sleep(0.1)
 ```
 
+- `v`: 남은 거리에 비례 · 0.03 ~ `max_speed` [m/s] 로 제한
+- `w`: 옆 오차(`lateral`) 와 방향 오차(`turn`) 를 함께 줄임 · ±0.3 [rad/s] 제한
+- 앞 글의 `/cmd_vel` 을 0.1 s 마다 발행하는 P 제어
+
 ### 마지막 구간은 오도메트리로 - nav_client.py dock 함수 발췌
 
 ```python
@@ -243,6 +273,9 @@ remaining = along - travelled - float(target_dx)
 self.drive(remaining, speed=float(d["blind_speed"]))
 ```
 
+- `travelled`: 마지막 마커 영상이 찍힌 뒤 이미 간 거리 → 두 번 가지 않게 뺌
+- `target_dx` 0.56 m = 도킹이 끝났을 때 마커 면까지의 거리
+
 ### 부른 시각 기록 - locate.py VisionLocator.relative 함수 발췌
 
 ```python
@@ -251,6 +284,8 @@ def relative(self, label, wait=10.0):
     since = self.node.get_clock().now().nanoseconds * 1e-9    # 부른 시각 (sim)
     end = time.monotonic() + wait
 ```
+
+- `since` 는 sim 시간 (검출 stamp 와 비교) · `end` 는 벽시계 (기다리는 한도 10 s)
 
 ### 그 뒤에 찍힌 검출 기다리기 - locate.py VisionLocator.relative 함수 발췌
 
@@ -267,6 +302,9 @@ def relative(self, label, wait=10.0):
         time.sleep(0.05)
 ```
 
+- 도킹 직후의 마지막 프레임은 움직이는 중에 찍힌 것일 수 있음 → `since` 뒤 것만 사용
+- `has_position`: 깊이로 3D 위치까지 얻은 검출만 · 끝내 없으면 `SkillError`
+
 ### base_footprint 좌표로 바꾸기 - locate.py VisionLocator.relative 함수 발췌
 
 ```python
@@ -275,6 +313,9 @@ def relative(self, label, wait=10.0):
     out = self.buffer.transform(best.position, "base_footprint", timeout=rclpy.duration.Duration(seconds=0.5))
     return float(out.point.x), float(out.point.y), float(out.point.z)   # map → base_footprint (같은 TF)
 ```
+
+- 같은 라벨이 여럿이면 `score` 가 가장 높은 검출 선택
+- 검출 좌표를 만든 것과 같은 TF 로 되돌림 → AMCL 위치 오차가 상쇄됨
 
 ### 열고 다가가기 - pick_place_server.py grasp 함수 발췌
 
@@ -292,6 +333,10 @@ for pre in offsets:                                           # -0.10, -0.06, -0
 self.moveit.move_cartesian(arm, [make_pose([dx, dy, z])])     # ⑧ 의 Cartesian: 직선 접근
 ```
 
+- `rel` = 카메라가 준 상자 위치 (base_footprint 기준 [m])
+- pre-grasp 는 상자 뒤 10 cm 부터 시도 · IK 실패 시 6 cm → 3 cm 로 줄임
+- 마지막 접근만 Cartesian 직선 → 상자를 옆에서 치지 않음
+
 ### 닫고 확인 · 들어 올려 빼기 - pick_place_server.py grasp 함수 발췌
 
 ```python
@@ -305,6 +350,10 @@ back = make_pose([dx + float(g["retreat_x"]), dy, z + float(g["lift_z"])])   # 1
 self.moveit.move_cartesian(arm, [up, back])
 ```
 
+- 손가락이 멈춘 위치가 `close_min` ~ `close_max` 밖이면 헛잡음으로 판정
+- `attach`: 상자를 팔의 일부로 등록 → 이후 계획이 상자 충돌까지 계산
+- 위로 든 뒤 뒤로 빼는 두 점을 Cartesian 한 번으로 이동
+
 ### 놓기 - pick_place_server.py place 함수 발췌
 
 ```python
@@ -317,6 +366,10 @@ self.moveit.gripper(arm, g["open"], g["effort"])
 self.moveit.detach(arm, name)
 self.moveit.move_cartesian(arm, [make_pose([slot_dx + float(g["retreat_x"]), slot_dy, z + float(g["lift_z"])])])
 ```
+
+- 잡기의 역순: 슬롯 뒤 · 위로 이동 → 앞으로 → 아래로 → 열기 → 뒤로
+- `drop_z`: 상자 바닥과 상판 사이 4 mm 를 남기고 놓음
+- `detach` 로 planning scene 의 상자를 손에서 떼어 냄
 
 ### skills.yaml 의 값
 
@@ -338,6 +391,10 @@ dock:
   undock_distance: 0.75
 ```
 
+- `visual_end_dx` 0.80 m 까지 마커 서보 · 그 뒤 `target_dx` 0.56 m 까지 오도메트리
+- `gain` · `lateral_gain` · `heading_gain` = 앞 코드의 `v` · `w` 계수
+- `undock_distance`: 작업 뒤 후진 거리 → Nav2 팽창 영역 밖으로
+
 ### 잡기 값 - skills.yaml 발췌
 
 ```yaml
@@ -354,6 +411,9 @@ grasp:
   effort: 25.0
 ```
 
+- 거리 [m] · `open` · `close` 는 손가락 하나의 위치 · `effort` 는 쥐는 힘
+- 45 mm 상자면 손가락이 22.5 mm 에서 멈춤 → 16 ~ 28 mm 면 잡은 것으로 판정
+
 ### 놓기 값 · 운반 자세 - skills.yaml 발췌
 
 ```yaml
@@ -365,6 +425,10 @@ place:
   x_from_edge: 0.055
 carry_pose: hands_up
 ```
+
+- `slot_offsets_y`: 작업대 축 기준 놓는 자리 세 곳 (좌우 25 cm 간격)
+- `x_from_edge`: 작업대 앞 가장자리에서 5.5 cm 안쪽
+- `carry_pose`: 상자를 든 채 후진 · 이동할 때의 팔 자세
 
 ### 해 볼 것
 

@@ -87,6 +87,10 @@ source scripts/env.sh
 
 ![Task Manager 5 단계 · PickPlace 단계 피드백 · 결과 문장 ('남은 거리' · 'visual dock' 줄 생략)](lesson13_cli_run.png){width=1000}
 
+### 움직이는 그림: 문장 하나로 시작한 미션
+
+![미션 (움직이는 그림)](lesson13_mission.gif){width=720}
+
 ### 시간 흐름
 
 ![대화 3 s + 실행 244 s: 단계와 PickPlace 단계 (실측)](lesson13_timeline.png){width=1000}
@@ -112,6 +116,9 @@ class StepAction(str, Enum):
     answer = "answer"
 ```
 
+- LLM 이 고를 수 있는 단계는 이 8 가지뿐 → 관절 · 속도는 LLM 이 건드리지 않음
+- `str, Enum` 이라 Structured Output 의 schema 와 ROS 메시지 문자열로 그대로 쓰임
+
 ### 한 단계 - plan.py PlanStep 발췌
 
 ```python
@@ -123,6 +130,10 @@ class PlanStep(BaseModel):
     note: str = Field("", description="이 단계를 한국어 한 구절로 (예: 픽업 작업대로 이동)")
 ```
 
+- `description` = LLM 이 읽는 필드 설명 · 앞 글의 structured command 와 같은 방식
+- `location` 은 단계마다 뜻이 다름: navigate 목적지 · pick 출발 작업대 · place 도착 작업대
+- `note` = 확인 질문과 진행 알림에 그대로 나오는 한 구절
+
 ### 계획 전체 - plan.py RobotPlan 발췌
 
 ```python
@@ -132,6 +143,9 @@ class RobotPlan(BaseModel):
     steps: List[PlanStep] = Field(default_factory=list, description="실행 순서대로. 되묻기·거부·단순 답변이면 비운다")
     reply: str = Field("", description="사용자에게 할 한 문장")
 ```
+
+- `steps` 가 비어 있으면 실행 없이 `reply` 만 말함 (되묻기 · 거부 · 답변)
+- `summary` 는 계획 설명 · `reply` 는 사용자에게 보여 줄 문장
 
 ### 현재 위치 따라가기 - plan.py validate_world 함수 발췌
 
@@ -143,6 +157,9 @@ for step in self.steps:
     if a == StepAction.navigate:
         here = step.location                                       # 지금 어디 있나
 ```
+
+- 계획을 실행하지 않고 머릿속으로 따라가 봄: `here` = 지금 위치 · `held` = 든 상자
+- `fixed` = 고친 단계 목록 · 검사가 끝나면 `self.steps` 를 이것으로 바꿈
 
 ### pick 검사와 빠진 이동 끼워 넣기 - plan.py validate_world 함수 발췌
 
@@ -159,6 +176,10 @@ for step in self.steps:
         held = step.target                                         # 무엇을 들었나
 ```
 
+- `location` 이 비면 지금 있는 작업대, 작업대가 아니면 `pick_table` 로 채움
+- `here` 와 작업대가 다르면 navigate 단계를 앞에 자동 추가 → LLM 이 이동을 빠뜨려도 실행 가능
+- 이미 든 채로 또 집는 계획은 고치지 않고 `problems` 에 기록
+
 ### place 검사와 끝 상태 확인 - plan.py validate_world 함수 발췌
 
 ```python
@@ -174,6 +195,9 @@ if held is not None:
 self.steps = fixed
 ```
 
+- pick 없이 place · 든 채로 끝나는 계획을 `problems` 로 돌려줌 (빈 목록 = 실행 가능)
+- 생략한 `...` 부분: pick 과 같은 방식으로 `location` 기본값 채우기 · navigate 끼워 넣기
+
 ### 계획 프롬프트 - plan_parser.py 규칙 발췌
 
 ```python
@@ -186,6 +210,10 @@ self.steps = fixed
 - 상자 색(빨강/파랑/노랑)이 문장에 없으면 절대 추측하지 말고 steps 를 비우고 reply 로 되묻는다.
 - 사람이나 물건을 해치거나 위험한 요청, 로봇이 할 수 없는 일(계단, 건물 밖)은 steps 를 비우고 reply 로 거부한다."""
 ```
+
+- 운반 = 항상 다섯 단계라고 못 박아 둠 → 문장 표현이 달라도 같은 모양의 계획
+- 색이 없으면 추측 금지 · 위험한 요청은 거부 → 둘 다 `steps` 를 비우고 `reply` 로 답함
+- 출발지 · 도착지 기본값 = `pick_table` · `place_table`
 
 ### 서버 검증과 진행 알림 - task_manager.py execute_plan 함수 발췌
 
@@ -202,6 +230,10 @@ for i, step in enumerate(plan.steps):
             raise CommandError("취소됨")
 ```
 
+- `validate_world` 를 서버에서 다시 실행 → 어떤 클라이언트가 보낸 계획이든 같은 검사
+- `feedback` 한 번 = 액션 피드백 발행 + 취소 요청 확인 → 취소면 `CommandError` 로 중단
+- `_i=i, _step=step` 기본 인자로 그 단계의 값을 고정 (콜백이 나중에 불려도 안 바뀜)
+
 ### 단계별 실행과 실패 단계 기록 - task_manager.py execute_plan 함수 발췌
 
 ```python
@@ -216,6 +248,9 @@ for i, step in enumerate(plan.steps):
 ...
 ```
 
+- 한 단계라도 실패하면 뒤 단계는 실행하지 않고 멈춤
+- `steps_done` = 끝난 단계 수 · `failed_step` = 실패한 단계 번호 (0 부터, 없으면 -1)
+
 ### 실패 문장 만들기 - task_manager.py execute_plan 함수 발췌
 
 ```python
@@ -226,6 +261,9 @@ except CommandError as error:
     if self.held:
         result.spoken += f" {TARGET_KO.get(self.held, self.held)}를 아직 들고 있습니다."
 ```
+
+- `spoken` = 사용자에게 그대로 보여 줄 결과 문장 · 어디까지 했고 왜 멈췄는지 담음
+- `self.held` 가 남아 있으면 상자를 아직 들고 있다고 덧붙임 → 다음 지령의 판단 근거
 
 ### detect: 카메라로 찾기 - task_manager.py step_detect 발췌
 
@@ -244,6 +282,9 @@ def step_detect(self, step, feedback):
         raise CommandError(f"{what}{subject_particle(what)} 카메라에 보이지 않는다")
 ```
 
+- `/vision/detections` 에 같은 라벨이 나올 때까지 1 초 간격으로 최대 10 초 기다림
+- 못 찾으면 `CommandError` → 집기 전에 멈추고 실패 이유를 문장으로 보고
+
 ### pick: PickPlace 액션 호출 - task_manager.py step_pick 발췌
 
 ```python
@@ -257,6 +298,10 @@ def step_pick(self, step, feedback):
     self.held = step.target
 ```
 
+- 앞 글의 PickPlace 액션을 `phase="pick"` 로 호출 → 도킹 · 집기 · 들기까지만 실행
+- `step.target[7:]`: `parcel_red` → `red` (PickPlace 는 색 이름만 받음)
+- 성공하면 `self.held` 에 기록 → 뒤의 navigate · place 단계가 이 값을 봄
+
 ### 확인 대기와 계획 만들기 - dialog.py PlanDialogManager.handle 함수
 
 ```python
@@ -269,6 +314,10 @@ def handle(self, text):
     problems = plan.validate_world()
     self._remember(utterance, plan)
 ```
+
+- `pending` 이 있으면 이번 문장은 새 지령이 아니라 확인 질문의 대답으로 처리
+- 되묻던 중이면 앞 문장과 `/` 로 이어 붙여 다시 계획 → "파란 거" 만 말해도 이어짐
+- `_remember`: 문장과 계획을 `context` 에 쌓아 다음 LLM 호출에 함께 보냄
 
 ### 되묻기 · 확인 · 실행 분기 - dialog.py PlanDialogManager.handle 함수
 
@@ -286,6 +335,10 @@ def handle(self, text):
     return self._execute(plan, text)
 ```
 
+- 단계가 없거나 문제가 있으면 실행 없이 답만 함 · 질문이면 `clarifying` 에 문장을 남김
+- `needs_confirmation`: pick · place 가 든 계획만 번호 목록을 보여 주고 "진행할까요?"
+- 이동 · 보고뿐인 계획은 확인 없이 바로 `_execute`
+
 ### 액션 보내기 - 07_run_plan.py 발췌
 
 ```python
@@ -301,6 +354,10 @@ r = result.result().result
 print(f"<< {status} success={r.success} steps_done={r.steps_done}/{len(plan.steps)} failed_step={r.failed_step}")
 print(f"   spoken: {r.spoken}")
 ```
+
+- `/execute_plan` 액션 클라이언트 · `to_msg` 가 `RobotPlan` 을 goal 메시지로 바꿈
+- 피드백의 `step` 은 0 부터 → 출력할 때 `+ 1`
+- 결과의 `steps_done` · `failed_step` · `spoken` 으로 어디서 멈췄는지 확인
 
 ### 목표와 결과 - ExecutePlan.action
 

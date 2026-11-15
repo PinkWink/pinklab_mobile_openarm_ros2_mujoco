@@ -42,6 +42,10 @@ python docs/camp/avoid_scenario.py              # 근로자가 x = 3.4 에서 �
 
 ![avoid_scenario.py 출력](lesson06_cli_crossing.png){width=1000}
 
+### 움직이는 그림: 가로지르는 근로자 피하기
+
+![crossing (움직이는 그림)](lesson06_crossing.gif){width=970}
+
 ### RViz2 로 본 회피 과정
 
 ![① 접근 → ② 감지 · 우회 → ③ 북쪽으로 · 제자리 회전 → ④ 재개](lesson06_rviz_sequence.png){width=1000}
@@ -78,6 +82,10 @@ python docs/camp/avoid_scenario.py --mode headon     # 새로 띄운 직후에 �
 
 ![headon 출력: 최소 거리 0.15 m](lesson06_cli_headon.png){width=1000}
 
+### 움직이는 그림: 마주 오는 근로자
+
+![headon (움직이는 그림)](lesson06_headon.gif){width=970}
+
 ### headon 의 궤적과 거리
 
 ![마주 오는 근로자를 제때 피하지 못했다](lesson06_headon.png){width=1000}
@@ -113,6 +121,10 @@ local_costmap:
       plugins: [obstacle_layer, inflation_layer]
 ```
 
+- 초당 10 번 갱신 · 5 번 발행 → 움직이는 사람이 0.1 초 안에 반영됨
+- `global_frame: odom` + `rolling_window` → 지도가 아니라 지금 보이는 것만 담음
+- 레이어 둘: 라이다로 칠하는 `obstacle_layer` · 둘레를 부풀리는 `inflation_layer`
+
 ### 라이다로 장애물 칠하고 지우기 - nav2.yaml local_costmap 발췌
 
 ```yaml
@@ -129,6 +141,9 @@ local_costmap:
           obstacle_max_range: 19.5
 ```
 
+- `marking`: 광선이 멈춘 칸을 막힘으로 · `clearing`: 광선이 지나간 칸을 비움
+- clearing 이 있어야 사람이 지나간 자리가 다시 빈 칸이 됨
+
 ### 장애물 부풀리기와 footprint - nav2.yaml local_costmap 발췌
 
 ```yaml
@@ -139,6 +154,9 @@ local_costmap:
         inflation_radius: 0.55
       footprint: '[[0.38,0.32],[0.38,-0.32],[-0.38,-0.32],[-0.38,0.32]]'
 ```
+
+- 막힌 칸 둘레 55 cm 까지 비용 · 멀어질수록 낮아짐 (`cost_scaling_factor` 가 클수록 빨리)
+- controller 는 `footprint` 사각형이 막힌 칸에 닿는 궤적을 버림
 
 ### 길이 막힐 때만 다시 계획 - navigation.launch.py 발췌
 
@@ -152,6 +170,9 @@ for pkg, exe in [..., ("nav2_bt_navigator", "bt_navigator")]:
         parameters=[params, {"default_nav_to_pose_bt_xml": bt_xml}] if exe == "bt_navigator" else [params],
     ))
 ```
+
+- 기본 BT 는 1 초마다 전역 경로를 다시 계산 · 이 BT 는 경로가 막혔을 때만
+- `bt_navigator` 에만 파라미터 하나를 더함 · 나머지 서버는 `nav2.yaml` 그대로
 
 ### Global · Local Costmap 표시 추가 - navigation.rviz 발췌
 
@@ -169,6 +190,9 @@ for pkg, exe in [..., ("nav2_bt_navigator", "bt_navigator")]:
       Alpha: 0.7
 ```
 
+- costmap 도 지도와 같은 메시지 (OccupancyGrid) → RViz 의 Map 표시로 봄
+- `Color Scheme: costmap` → 비용이 색으로 · `Alpha` 로 두 장을 겹쳐 봄
+
 ### Footprint · DWB 궤적 · Local Plan 표시 추가 - navigation.rviz 발췌
 
 ```yaml
@@ -184,6 +208,9 @@ for pkg, exe in [..., ("nav2_bt_navigator", "bt_navigator")]:
       Topic: {Value: /local_plan}
 ```
 
+- Footprint = 로봇 외곽 · DWB Trajectories = controller 가 평가한 후보 궤적
+- Local Plan = 그중 고른 궤적 (`/local_plan`)
+
 ### 근로자 움직이기 - avoid_scenario.py 발췌
 
 ```python
@@ -198,6 +225,9 @@ goal.pose.pose.position.x, goal.pose.pose.position.y = 6.2, 0.0
 goal.pose.pose.orientation.w = 1.0                                        # yaw = 0 (동쪽)
 handle = n.nav.send_goal_async(goal)                                      # /navigate_to_pose
 ```
+
+- `/warehouse/set_actor` 서비스: 근로자를 출발점에 놓고 (`teleport`) 걸을 길을 줌 (`set_path`)
+- 그와 동시에 로봇에 `/navigate_to_pose` 목표 → 통로에서 만나게 됨
 
 ### 해 볼 것
 

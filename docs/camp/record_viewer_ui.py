@@ -225,7 +225,17 @@ def go2_render(r):
     r.click(67, 405); r.wait(3.0)
 
 
-SCENARIOS = {f.__name__: f for f in (panda_key, panda_control, panda_push, go2_run, go2_render)}
+def display_slider(r):
+    """display.launch.py: RViz client area at the record origin (1090 x 900), joint_state_publisher_gui (290 x 900) right of it."""
+    r.cap("오른쪽 창 = joint_state_publisher_gui · 관절마다 슬라이더 하나", (1100, 4, 1392, 896)); r.wait(2.5)
+    r.cap("openarm_left_joint4 슬라이더 → 왼팔 팔꿈치가 굽는다", (1118, 428, 1340, 484))
+    r.sweep(464, [1135, 1290, 1150, 1250], dur=1.5); r.wait(1.0)
+    r.cap("openarm_left_joint1 슬라이더 → 왼쪽 어깨가 돈다", (1118, 227, 1340, 283))
+    r.sweep(263, [1267, 1190, 1320, 1267], dur=1.5); r.wait(1.0)
+    r.cap("슬라이더 값 → /joint_states → robot_state_publisher → /tf → RViz", None); r.wait(3.0)
+
+
+SCENARIOS = {f.__name__: f for f in (panda_key, panda_control, panda_push, go2_run, go2_render, display_slider)}
 
 if __name__ == "__main__":
     if sys.argv[1] == "--gif":                             # rebuild a GIF from an existing recording

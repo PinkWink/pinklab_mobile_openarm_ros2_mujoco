@@ -81,6 +81,10 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 
 ![시나리오마다 집기 · 놓기 (기록한 상태를 오프스크린 렌더)](lesson15_scenes.png){width=1000}
 
+### 움직이는 그림: 세 시나리오 이어서
+
+![Final Mission (움직이는 그림)](lesson15_final.gif){width=720}
+
 ### 시간 흐름
 
 ![단계별 시간과 표 변화 (실측)](lesson15_timeline.png){width=1000}
@@ -120,6 +124,10 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
                 "- 위치가 unknown 인 상자는 pick_table 에서 찾는다.\n")
 ```
 
+- LLM 은 창고를 볼 수 없음 → 상자마다 한 줄씩 지금 위치를 글로 알려 줌
+- 앞 글 프롬프트의 기본값(`pick_table` → `place_table`)보다 이 표가 우선이라고 명시
+- "이미 거기 있다" 판단은 LLM 에게 맡기지 않고 코드(`check`)가 함
+
 ### system 프롬프트 끝에 붙이기 - plan_parser.py PlanParser.parse 함수 발췌
 
 ```python
@@ -135,6 +143,10 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
         messages.append({"role": "user", "content": text})
         return self.llm.parse(messages, RobotPlan, temperature=0.0, purpose="plan_parse")
 ```
+
+- `world` 가 없으면 앞 글과 같은 프롬프트 → 이전 예제는 그대로 동작
+- 메시지 순서: system(규칙 + 표) → 예시 → 이전 대화 → 이번 문장
+- 표는 호출할 때마다 새로 만들어짐 → 상자를 옮긴 뒤에는 바뀐 위치가 들어감
 
 ### 출발 작업대 검사 - world.py WorldState.check 함수 발췌
 
@@ -153,6 +165,10 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
                                     f"(계획: {self._ko(step.location.value)}에서 집기)")
 ```
 
+- `belief` = 표의 복사본 · 계획을 단계대로 따라가며 바꿔 봄 (실제 표는 그대로)
+- 표의 위치와 계획의 pick 작업대가 다르면 문제로 기록
+- `unknown` · `held` 인 상자는 틀렸다고 할 근거가 없어 통과
+
 ### 이미 도착지에 있나 - world.py WorldState.check 함수 발췌
 
 ```python
@@ -166,6 +182,10 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
                 belief[held], held = step.location.value, None
         return problems
 ```
+
+- 실행 전 표(`self.parcels`)의 위치 = 놓을 작업대 → "이미 거기 있다" 로 돌려보냄
+- 출발지 오류와 겹치면 앞의 것을 지우고(`pop`) 더 쉬운 문장 하나만 남김
+- 빈 목록 = 표와 계획이 어긋나지 않음
 
 ### 끝난 단계만 반영 - world.py WorldState.apply 함수 발췌
 
@@ -181,6 +201,9 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
                     self.parcels[held], held = step.location.value, None
 ```
 
+- 계획이 아니라 Task Manager 결과의 `steps_done` 까지만 표에 반영
+- pick 이 끝나면 `held` · place 가 끝나면 그 작업대 → 중간에 멈추면 든 채로 남음
+
 ### 실패한 단계는 unknown - world.py WorldState.apply 함수 발췌
 
 ```python
@@ -194,6 +217,10 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
         self.history.append((before, dict(self.parcels)))
         return self.parcels
 ```
+
+- pick · place 도중 실패하면 상자가 어디 있는지 알 수 없음 → `unknown`
+- `i == steps_done` = 실패한 바로 그 단계 · 그 뒤 단계는 보지 않음 (`break`)
+- `history` 에 실행 전후의 표를 남김
 
 ### 계획 → 검사 - dialog.py PlanDialogManager.handle 함수 발췌
 
@@ -210,6 +237,9 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
                 reply = plan.reply or ("; ".join(problems) if problems else "")
 ```
 
+- 검사 두 번: `validate_world` (계획 자체의 모순) → `world.check` (위치표와의 모순)
+- 단계는 있는데 문제가 있으면 LLM 의 `reply` 대신 이유를 넣은 문장으로 되물음
+
 ### 실행 → 표 갱신 - dialog.py PlanDialogManager._execute 함수
 
 ```python
@@ -224,6 +254,9 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
         return self._say("result", spoken, plan)
 ```
 
+- 실행이 끝나면 결과의 `steps_done` · `success` 로 표를 고침 → 다음 문장의 프롬프트에 반영
+- `executor` 가 없으면 실행 없이 단계 목록만 말함 (dry)
+
 ### 시나리오와 표 하나 - 02_final_mission.py 발췌
 
 ```python
@@ -237,6 +270,10 @@ SCENARIOS = {
     dm = PlanDialogManager(PlanParser(llm), executor=execute, speak=speak, world=world)
 ```
 
+- 문장 목록 = 한 시나리오의 대화 · 마지막 "응" 은 확인 질문의 대답
+- `WorldState()` 초기값 = 세 상자 모두 `pick_table`
+- 앞 글의 `PlanDialogManager` 에 `world=` 하나만 더 넘김
+
 ### 시나리오 이어서 실행 - 02_final_mission.py main 함수 발췌
 
 ```python
@@ -248,6 +285,9 @@ SCENARIOS = {
                 turn(text)
             print(f"[world] {world.describe()}")
 ```
+
+- `context` 는 시나리오마다 비움 (새 대화) · `world` 표는 지우지 않아 계속 이어짐
+- 시나리오 3 의 "다시 픽업대로" 는 시나리오 1 이 바꾼 표가 있어야 풀림
 
 ### 해 볼 것
 

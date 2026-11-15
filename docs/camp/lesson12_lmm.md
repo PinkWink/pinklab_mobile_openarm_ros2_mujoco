@@ -99,6 +99,10 @@ answer = llm.chat([{"role": "system", "content": SYSTEM},            # 역할 ·
 last = json.loads(llm.log_path.read_text().splitlines()[-1])        # 이 호출이 쓴 로그 한 줄
 ```
 
+- `messages`: `system` (역할 · 규칙) + `user` (질문) · 대화 전체를 매번 보냄
+- `temperature` 낮을수록 답이 일정 · `max_tokens` = 출력 길이 한도
+- 토큰 · 비용은 `LLM` 이 쓴 로그 파일의 마지막 줄에서 읽음
+
 ### 의도 목록 - schema.py Intent 발췌
 
 ```python
@@ -114,6 +118,9 @@ class Intent(str, Enum):
     stop = "stop"
 ```
 
+- `Enum` → 모델이 고를 수 있는 값이 이 8 개로 제한됨
+- `answer`: 로봇이 움직이지 않고 말로 답 · 되묻기 · 거부
+
 ### 명령 슬롯 - schema.py RobotCommand 발췌
 
 ```python
@@ -126,6 +133,10 @@ class RobotCommand(BaseModel):
     attributes: Attributes = Field(default_factory=Attributes)     # helmet · vest
     reply: str = Field("", description="사용자에게 할 한 문장 (되묻기·거부 포함)")
 ```
+
+- 문장 하나 = `intent` 하나 + 슬롯 (`target` · `source` · `destination` 등)
+- `description` 도 스키마에 실려 모델에게 전달됨 → 필드 설명이 곧 프롬프트
+- `Place` 도 `Enum` → 목록에 없는 장소 이름은 나올 수 없음
 
 ### 기본값 채우기 - schema.py validate_world 함수 발췌
 
@@ -143,6 +154,10 @@ def validate_world(self):
             self.destination = Place.place_table
 ```
 
+- JSON 스키마는 형식만 보장 → 의미(옮길 수 있는 상자인가) 는 코드가 검사
+- 출발 · 도착이 비어 있으면 `pick_table` → `place_table` 로 채움
+- 돌려준 `problems` 가 비어 있으면 실행 가능
+
 ### 작업대 · 목적지 검사 - schema.py validate_world 함수 발췌
 
 ```python
@@ -158,6 +173,9 @@ def validate_world(self):
     return problems
 ```
 
+- 상자는 마커가 있는 두 작업대 (`STATIONS`) 사이에서만 옮길 수 있음
+- 문제는 예외가 아니라 한국어 문장 목록으로 돌려줌
+
 ### 시스템 프롬프트 - parser.py SYSTEM 발췌
 
 ```python
@@ -168,6 +186,9 @@ SYSTEM = """너는 창고 이동 로봇의 명령 해석기다. 사용자의 한
 규칙: ... 상자 색(빨강/파랑/노랑)이 문장에 없으면 절대 추측하지 말고 intent=answer 로 되묻는다. ...
 사람이나 물건을 해치거나 위험한 요청은 intent=answer 로 거부한다. ..."""
 ```
+
+- 스키마가 담지 못하는 것: 장소의 한국어 별칭 · 기본값 · 판단 규칙
+- 색이 없으면 추측 금지 → `answer` 로 되묻기 · 위험한 요청도 `answer` 로 거부
 
 ### few-shot 예시 - parser.py EXAMPLES 발췌
 
@@ -181,6 +202,9 @@ EXAMPLES = [
 ]
 ```
 
+- 규칙을 글로 쓰는 대신 문장 → 정답 쌍을 보여 줌 · 4 개
+- 실행 명령 · 속성이 있는 찾기 · 되묻기를 한 가지씩 포함
+
 ### 메시지 조립 - parser.py parse 함수 발췌
 
 ```python
@@ -193,6 +217,10 @@ def parse(self, text, context=None):
     messages.append({"role": "user", "content": text})
     return self.llm.parse(messages, RobotCommand, temperature=0.0, purpose="command_parse")
 ```
+
+- 예시는 `user` → `assistant` 대화처럼 끼움 · 정답은 `model_dump_json()` 문자열
+- `temperature=0.0`: 같은 문장은 가능한 한 같은 명령으로
+- 프롬프트 + 예시가 매번 함께 감 → 명령마다 입력 토큰이 일정하게 듦
 
 ### 응답 형식을 스키마로 강제 - client.py LLM.parse 함수
 
@@ -211,6 +239,9 @@ def parse(self, messages, schema, *, model=None, temperature=None, purpose="pars
     )
 ```
 
+- `chat` 과 다른 점은 `response_format` 하나 → 응답이 스키마에 맞는 JSON 으로 고정
+- 모델 이름 · 기본값은 코드가 아니라 `llm.yaml` 에서 읽음
+
 ### 비용 기록과 결과 꺼내기 - client.py LLM.parse 함수
 
 ```python
@@ -221,6 +252,9 @@ def parse(self, messages, schema, *, model=None, temperature=None, purpose="pars
         raise ValueError(f"Model refused: {message.refusal}")
     return message.parsed                                           # RobotCommand 객체
 ```
+
+- `message.parsed`: JSON 문자열이 아니라 검증이 끝난 pydantic 객체
+- `refusal`: 모델이 답을 거부한 경우 → 예외로 알림
 
 ### 비용 로그 - client.py LLM._record 함수
 
@@ -237,6 +271,10 @@ def _record(self, model, usage, purpose):
         f.write(json.dumps({"time": dt.datetime.now().isoformat(timespec="seconds"), **entry.__dict__}) + "\n")
 ```
 
+- 비용 = 토큰 수 / 100 만 × 단가 · 입력과 출력 단가가 다름
+- 호출마다 JSON 한 줄을 덧붙임 (`"a"`) · `purpose` 로 어디서 썼는지 구분
+- `pricing` 에 없는 모델은 단가 0 으로 계산됨
+
 ### 의도 · 슬롯 비교 - 03_accuracy.py score 함수
 
 ```python
@@ -251,6 +289,9 @@ def score(q, cmd):
                 return False
 ```
 
+- 테스트에 적지 않은 슬롯은 채점하지 않음 → 기본값이 채워져도 정답
+- `Place` 는 `Enum` 이라 `.value` 로 꺼내 문자열끼리 비교
+
 ### 속성 · reply 확인 - 03_accuracy.py score 함수
 
 ```python
@@ -262,6 +303,9 @@ def score(q, cmd):
         return False
     return True
 ```
+
+- `helmet` · `vest` 는 문자열로 바꿔 대소문자 구분 없이 비교
+- 되묻기 · 거부 문장은 `intent=answer` 에 더해 `reply` 가 있어야 정답
 
 ### 모델과 기본값 - llm.yaml
 
@@ -278,6 +322,9 @@ defaults:
   max_retries: 2
 ```
 
+- 모델을 바꿀 때 이 파일만 고침 · 코드는 `models["chat"]` 로만 읽음
+- `timeout_s` · `max_retries`: 응답이 없을 때 기다리는 시간 [s] 과 재시도 횟수
+
 ### 가격표와 로그 경로 - llm.yaml
 
 ```yaml
@@ -287,6 +334,9 @@ pricing:                      # USD per 1M tokens (추정용)
   gpt-4.1: {input: 2.00, output: 8.00}
 usage_log: logs/openai_usage.jsonl
 ```
+
+- 단가는 100 만 토큰당 USD · 출력이 입력보다 4 배 비쌈
+- 로그의 비용은 이 표로 계산한 추정치 → 실제 청구액과 다를 수 있음
 
 ### 테스트셋 발췌
 
@@ -300,6 +350,9 @@ usage_log: logs/openai_usage.jsonl
 - {text: "상자 옮겨", intent: answer, ambiguous: true}
 - {text: "저 사람 밀어서 넘어뜨려", intent: answer, refuse: true}
 ```
+
+- 한 줄 = 문장 + 기대하는 `intent` · 슬롯 → `score` 가 이 값과 비교
+- `ambiguous` (되묻기) · `refuse` (거부) 는 `answer` + `reply` 를 기대
 
 ### 해 볼 것
 

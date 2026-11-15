@@ -153,6 +153,10 @@ time ./scripts/mobile_openarm exec python lessons/05_moveit/ee_control.py demo  
 
 ![demo 결과](lesson09_cli_demo.png){width=1000}
 
+### 움직이는 그림: demo 의 손끝 동작
+
+![demo (움직이는 그림)](lesson09_ee_demo.gif){width=720}
+
 ## 3. 코드와 설정
 
 ### 명령과 함수
@@ -174,6 +178,10 @@ def make_pose(xyz, quat=GRASP_FORWARD):
     return pose
 ```
 
+- `GRASP_FORWARD`: 손끝이 앞 (+x) 을 향하고 손가락이 좌우 (y) 로 닫히는 수평 파지 방향
+- 위치 (x, y, z) 만 주면 방향은 기본값 → `Pose` 메시지 완성
+- `quat_from_axes`: 손 좌표축 세 개의 방향으로 quaternion (x, y, z, w) 계산
+
 ### 시드와 IK 요청 설정 - moveit_client.py solve_ik 함수
 
 ```python
@@ -191,6 +199,10 @@ def solve_ik(self, side, pose, avoid_collisions=True):
         r.timeout.nanosec = 200_000_000                                # 0.2 s
 ```
 
+- 시드 = 현재 `/joint_states` 관절값 · IK 는 시드에서 출발해 수치적으로 해를 찾음
+- `ik_attempts` 12 번 반복 → 여러 해 중에서 고르기 위함
+- `avoid_collisions`: 충돌하는 해는 제외 · `tcp_link` = 목표 자세를 맞출 손끝 링크
+
 ### 목표 자세 · 시작 관절로 /compute_ik 호출 - moveit_client.py solve_ik 함수
 
 ```python
@@ -203,6 +215,10 @@ def solve_ik(self, side, pose, avoid_collisions=True):
         r.robot_state.joint_state.position = seed.tolist()
         res = wait(self.ik.call_async(req), 5.0, "compute_ik")         # 서비스 /compute_ik
 ```
+
+- 목표 자세의 기준 프레임 = `base_footprint` (로봇 기준 좌표)
+- `robot_state` 에 시드 관절을 넣어 IK 의 출발점으로 사용
+- `wait`: 응답을 최대 5 [s] 기다림 · 넘으면 `SkillError`
 
 ### 지금 자세와 가장 가까운 해 고르기 - moveit_client.py solve_ik 함수
 
@@ -219,6 +235,10 @@ def solve_ik(self, side, pose, avoid_collisions=True):
         raise SkillError(f"No IK solution for {side} arm at (...)")
     return best[1]
 ```
+
+- 실패한 시도는 건너뜀 · 성공한 해 중 시드와의 관절 거리 (`norm`) 가 최소인 것 선택
+- 가장 덜 움직이는 해 → 팔이 크게 휘돌지 않음
+- 해가 하나도 없으면 `SkillError`
 
 ### pose goal → 관절 목표 MoveGroup 요청 - moveit_client.py move_pose · move_joints 함수 발췌
 
@@ -237,6 +257,10 @@ def move_joints(self, side, positions, timeout=60.0):   # 발췌
     req.start_state.is_diff = True
 ```
 
+- pose goal 을 그대로 보내지 않고 IK 로 구한 관절값을 관절 목표로 계획
+- 요청 형태는 앞 글 `joint_goal.py` 의 MoveGroup 요청과 같음
+- 속도 비율 · 계획 시간은 `skills.yaml` 의 `moveit` 블록에서 읽음
+
 ### 관절 제약 ± 0.001 rad 로 보내기 - moveit_client.py move_joints 함수 발췌
 
 ```python
@@ -249,6 +273,9 @@ def move_joints(self, side, positions, timeout=60.0):   # 발췌
     handle = wait(self.move.send_goal_async(goal), 10.0, "move_action goal")
     result = wait(handle.get_result_async(), timeout, "move_action result")
 ```
+
+- IK 로 검증한 관절값이 목표 → 허용 범위를 좁혀 손끝 오차 약 1 [mm]
+- `wait`: 수락 10 [s] · 결과는 `timeout` (기본 60 [s]) 까지 대기
 
 ### Cartesian path 요청 - moveit_client.py move_cartesian 함수 발췌
 
@@ -265,6 +292,10 @@ def move_cartesian(self, side, waypoints, timeout=60.0):   # 발췌
     req.avoid_collisions = True
 ```
 
+- `/compute_cartesian_path`: 손끝이 waypoint 까지 직선으로 가는 궤적 계산
+- `max_step` 0.01 [m] 간격으로 IK 를 풀어 이음
+- `jump_threshold` 0 = 관절 급변 검사 끔
+
 ### 경로 비율 확인 후 실행 - moveit_client.py move_cartesian 함수 발췌
 
 ```python
@@ -277,6 +308,9 @@ def move_cartesian(self, side, waypoints, timeout=60.0):   # 발췌
     result = wait(handle.get_result_async(), timeout, "execute_trajectory result")
     return res.fraction
 ```
+
+- `fraction` = 요청한 직선 중 계획된 비율 (0 ~ 1) · 0.9 미만이면 실행하지 않음
+- MoveGroup 과 달리 계획 (서비스) 과 실행 (`/execute_trajectory` 액션) 이 나뉨
 
 ### 그리퍼 - moveit_client.py gripper 함수
 
@@ -292,6 +326,10 @@ def gripper(self, side, position, effort, timeout=15.0):
     return result                                                      # position · reached_goal · stalled
 ```
 
+- `gripper_cmd` 액션 · 목표 = 손가락 위치 [m] + 최대 힘 [N]
+- 거부 = 앞 글의 브리지 goal 검사 (베이스 주행 중 · 같은 그리퍼 실행 중)
+- 물체를 잡으면 `reached_goal` 대신 `stalled` 가 True
+
 ### 그리퍼 도달 · 멈춤 판정 - actions.py Controllers.update 함수 발췌
 
 ```python
@@ -305,6 +343,9 @@ else:   # 그리퍼 (발췌)
     stalled = p.data.time - state["last_motion"] > 1.0 and not reached                            # 1 s 정지
 ```
 
+- `reached`: 목표 위치 ± 2 [mm] 안
+- `stalled`: 못 닿은 채 1 [s] 동안 0.1 [mm] 도 안 움직임 → 물체에 막힘
+
 ### 그리퍼 결과 채우고 끝내기 - actions.py Controllers.update 함수 발췌
 
 ```python
@@ -317,6 +358,9 @@ else:   # 그리퍼 (발췌)
     elif t > 6:
         self.finish(key, state, result, "abort")
 ```
+
+- 도달 · 멈춤 둘 다 `succeed` → 잡았는지는 호출한 쪽이 `stalled` · `position` 으로 판단
+- 6 [s] 넘게 둘 다 아니면 abort
 
 ### skills.yaml 의 moveit 값
 
@@ -338,6 +382,9 @@ arms:
   left: {shoulder_y: 0.093, tcp_link: openarm_left_hand_tcp, group: left_arm, gripper: left_gripper_controller, hand_link: openarm_left_hand}
   right: {shoulder_y: -0.093, tcp_link: openarm_right_hand_tcp, group: right_arm, gripper: right_gripper_controller, hand_link: openarm_right_hand}
 ```
+
+- `moveit`: 계획 시간 [s] · 시도 횟수 · 속도 비율 · IK 반복 · 직선 간격 [m] · 최소 비율
+- `arms`: 팔마다 계획 그룹 · 손끝 링크 (`tcp_link`) · 그리퍼 컨트롤러 이름을 연결
 
 ### 해 볼 것
 

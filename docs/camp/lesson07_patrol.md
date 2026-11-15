@@ -66,6 +66,10 @@ python lessons/04_navigation/patrol.py          # 기본 경로: pick_table → 
 
 ![중앙 통로(출발점)로 돌아온 로봇](lesson07_run_done.png){width=1000}
 
+### 움직이는 그림: 순찰 한 바퀴 (MuJoCo 와 RViz)
+
+![순찰 (움직이는 그림)](lesson07_patrol.gif){width=1100}
+
 ### 실측: 순찰 궤적
 
 ![로봇이 실제로 간 길 (/ground_truth)](lesson07_traj.png){width=1000}
@@ -126,6 +130,10 @@ def go(self, stop):   # 발췌
         rclpy.spin_once(self, timeout_sec=0.05)                          # 기다리는 동안에도 콜백을 돌린다
 ```
 
+- `base_goal` (x, y, yaw) → `map` 프레임의 `NavigateToPose` 목표
+- 평면 회전이라 quaternion 은 z = sin(yaw/2) · w = cos(yaw/2) 만 채움
+- `feedback_callback`: 남은 거리 · 복구 횟수 · 예상 시간을 받아 상태에 실음
+
 ### 수락 확인 · 결과 기다리기 · 취소 - Patrol.go 발췌
 
 ```python
@@ -142,6 +150,9 @@ def go(self, stop):   # 발췌
             ...
     return result.result().status                                        # 4 = SUCCEEDED
 ```
+
+- 액션은 두 단계: 목표 수락 (`accepted`) 확인 → `get_result_async` 로 결과 대기
+- 워치독 취소 (`cancel_near`) 는 `NEAR` 로 돌려 도착 처리 · [취소] 는 CANCELED
 
 ### 목표 근처 워치독
 
@@ -164,6 +175,10 @@ NEAR_DIST, NEAR_STALL_S = 0.25, 8.0
             self.command = "cancel_near"
 ```
 
+- DWB 가 목표 몇 cm 앞에서 바퀴 마찰을 못 이기고 서 버리는 경우 대비
+- `/ground_truth` 가 1 cm · 0.02 rad 넘게 변하면 정지 시계를 다시 시작
+- AMCL 기준 목표 0.25 m 안 + 8 s 정지 → `cancel_near` 로 다음 정지점 진행
+
 ### 정지마다 기록 - Patrol.run 발췌
 
 ```python
@@ -181,6 +196,10 @@ for i, stop in enumerate(self.stops):   # 발췌
     stop["status"] = "done" if status == GoalStatus.STATUS_SUCCEEDED else "near"
 ```
 
+- 정지점마다 걸린 시간 [s] 과 AMCL · odom 오차 [m] 를 `stops` 에 기록
+- 오차 = `/ground_truth` 와의 평면 거리 · 실패하면 순찰 중단 (`break`)
+- `near` = 워치독이 도착으로 처리한 정지점
+
 ### 상태 알리기 - Patrol.publish 발췌
 
 ```python
@@ -196,6 +215,10 @@ def publish(self):
     self.pub.publish(String(data=json.dumps(status, ensure_ascii=False)))
 ```
 
+- 순찰 상태 전체를 JSON 문자열 하나로 `/patrol/status` 에 0.5 s 마다 발행
+- `TRANSIENT_LOCAL`: 나중에 켠 대시보드 · `ros2 topic echo` 도 마지막 상태를 바로 받음
+- `/patrol/command` 로 `start` · `cancel` 문자열을 받음
+
 ### RotationShim 으로 제자리 회전 - nav2.yaml FollowPath 발췌
 
 ```yaml
@@ -210,6 +233,9 @@ controller_server:
       rotate_to_goal_heading: true         # 도착해서도 목표 방향으로 돈다
 ```
 
+- RotationShim 이 DWB 를 감쌈 → 제자리 회전은 Shim · 주행은 DWB
+- DWB 의 작은 회전 명령이 바퀴 마찰에 묻히는 문제를 고정 각속도 회전으로 해결
+
 ### 속도와 critic 비중 - nav2.yaml FollowPath 발췌
 
 ```yaml
@@ -222,11 +248,19 @@ controller_server:
       GoalDist.scale: 12.0
 ```
 
+- `max_vel_x`: 최대 전진 속도 0.3 [m/s]
+- `scale` = critic 점수의 가중치 · 경로 추종 (16) 이 장애물 (0.05) 보다 훨씬 큼
+- scale 은 `critics` 에 적은 이름으로 써야 적용됨 (`BaseObstacle.scale` 은 무시됨)
+
 ## 5. 웹 대시보드
 
 ### 브라우저로 보는 순찰
 
 ![순찰 대시보드 (http://localhost:8080)](lesson07_dash_done.png){width=1000}
+
+### 움직이는 그림: 순찰 중의 대시보드
+
+![대시보드 (움직이는 그림)](lesson07_dashboard.gif){width=1000}
 
 ### 화면 구성
 
@@ -291,6 +325,10 @@ google-chrome http://localhost:8080          # 또는 아무 브라우저 주소
 
 ![done: 5 곳 모두 도착 · 정지표에 시간과 오차](lesson07_dash_done.png){width=1000}
 
+### 움직이는 그림: 순찰 한 바퀴 (MuJoCo 와 RViz)
+
+![순찰 (움직이는 그림)](lesson07_patrol.gif){width=1100}
+
 ### 실행 결과: 터미널 3
 
 ![--wait 순찰의 출력](lesson07_t3_patrol_wait.png){width=1000}
@@ -337,6 +375,10 @@ class DashboardPipeline(LecturePipeline):   # 발췌
             os.replace(tmp, FRAMES / f"{name}.jpg")       # 원자적 교체: 반쯤 쓴 파일을 읽지 않는다
 ```
 
+- MuJoCo 카메라는 이미지 토픽이 없음 → 최신 프레임을 JPEG 파일 (`/dev/shm`) 로 저장
+- `super().__call__`: 기존 인식 (`/vision/*`) 을 먼저 수행 · 그 뒤 저장만 추가
+- 임시 파일에 쓰고 `os.replace` → 서버가 쓰는 도중의 파일을 읽지 않음
+
 ### 토픽 구독 등록 - RobotState.__init__ 발췌
 
 ```python
@@ -351,6 +393,10 @@ class RobotState(Node):   # 발췌
         ...                                                  # /amcl_pose /plan /scan /map /actor_states /vision/detections
 ```
 
+- 대시보드 서버도 ROS 노드 하나 · 필요한 토픽을 구독해 최신 값만 보관
+- `/patrol/status` 는 발행 쪽과 같은 `LATCHED` QoS 로 구독해야 마지막 값을 받음
+- `use_sim_time`: 노드 시계를 MuJoCo `/clock` 에 맞춤
+
 ### odom 을 상태에 넣기 - RobotState.on_odom 발췌
 
 ```python
@@ -360,6 +406,9 @@ class RobotState(Node):   # 발췌
         self.put(odom=[round(p.position.x, 3), round(p.position.y, 3), round(yaw_of(p.orientation), 3)],
                  twist=[round(m.twist.twist.linear.x, 3), round(m.twist.twist.angular.z, 3)])
 ```
+
+- `/odom` 의 pose → (x, y, yaw) · twist → (선속도, 각속도) 만 뽑아 저장
+- 소수 3 자리로 반올림 → 브라우저로 보내는 JSON 이 짧아짐
 
 ### 잠금으로 쓰고 복사하기 - RobotState.put · snapshot 발췌
 
@@ -376,6 +425,9 @@ class RobotState(Node):   # 발췌
         return s
 ```
 
+- ROS 콜백과 Flask 요청은 서로 다른 스레드 → 같은 dict 를 `lock` 으로 보호
+- `snapshot` 은 복사본을 돌려줌 → JSON 변환은 잠금 밖에서 수행
+
 ### SSE - api_stream 발췌
 
 ```python
@@ -389,6 +441,9 @@ def api_stream():
     return Response(gen(), mimetype="text/event-stream", headers={"Cache-Control": "no-cache"})
 ```
 
+- SSE: HTTP 응답 하나를 끊지 않고 `data: ...` + 빈 줄 형식으로 계속 보냄
+- 0.2 s 마다 상태 스냅숏 전체를 JSON 으로 전송 (5 Hz)
+
 ### 카메라 JPEG 파일 찾기 - camera 발췌
 
 ```python
@@ -397,6 +452,9 @@ def api_stream():
 def camera(name):
     path = FRAMES / f"{Path(name).name}.jpg"
 ```
+
+- `frame_tap` 이 저장한 `<카메라 이름>.jpg` 의 경로
+- `Path(name).name`: 파일 이름만 남김 → `../` 로 다른 폴더를 읽는 요청 차단
 
 ### 바뀐 프레임만 MJPEG 로 흘리기 - camera 발췌
 
@@ -414,6 +472,9 @@ def camera(name):
     return Response(gen(), mimetype="multipart/x-mixed-replace; boundary=frame")
 ```
 
+- MJPEG = `multipart/x-mixed-replace` · JPEG 를 `--frame` 경계로 이어 보냄
+- 파일 수정 시각 (`st_mtime_ns`) 이 바뀔 때만 전송 → 같은 프레임 중복 없음
+
 ### 명령 - api_command 발췌
 
 ```python
@@ -426,6 +487,9 @@ def api_command():
     state.cmd.publish(String(data=cmd))                      # → /patrol/command → patrol.py
     return jsonify(ok=True, cmd=cmd)
 ```
+
+- 브라우저 버튼 → HTTP POST → `/patrol/command` 토픽 발행으로 변환
+- `start` · `cancel` 외의 값은 400 으로 거절 → 임의 문자열이 ROS 로 나가지 않음
 
 ### ROS 스레드 띄우기 - main 발췌
 
@@ -440,6 +504,10 @@ def main():   # 발췌
     spinner.start()
 ```
 
+- `executor.spin` 을 별도 스레드에서 실행 → 토픽 콜백이 Flask 와 동시에 돎
+- `daemon=True`: 메인 스레드 (Flask) 가 끝나면 함께 종료
+- `SignalHandlerOptions.NO`: rclpy 가 Ctrl+C 를 가로채지 않게 함
+
 ### Flask 스레드 실행과 정리 - main 발췌
 
 ```python
@@ -452,6 +520,10 @@ def main():   # 발췌
         state.destroy_node()
         rclpy.try_shutdown()
 ```
+
+- `threaded=True`: 요청마다 스레드 → 끝나지 않는 SSE · MJPEG 응답이 다른 요청을 막지 않음
+- `use_reloader=False`: 프로세스를 하나 더 띄우지 않음 → ROS 노드 중복 방지
+- `finally`: executor 정지 → 스레드 합류 → 노드 정리 순서
 
 ### 브라우저 - app.js 발췌
 
@@ -468,6 +540,10 @@ async function command(cmd) {
   await fetch("/api/command", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cmd }) });
 }
 ```
+
+- `EventSource` 가 SSE 를 받아 메시지마다 화면 전체를 다시 그림
+- 지도 PNG 는 `map_version` 이 바뀔 때만 다시 받음
+- 브라우저는 ROS 를 모름 → HTTP (SSE · MJPEG · POST) 만 사용
 
 ### 해 볼 것
 

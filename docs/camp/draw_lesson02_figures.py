@@ -100,7 +100,7 @@ def rel_xacro():
                      ("④ include cameras.xacro", ["base · head · left_wrist · right_wrist 카메라 (cameras.yaml)"])],
                 x=0.3, w=8.6, y_top=4.85, h=0.85, gap=0.28, colors=[C["yellow"], C["green"], C["yellow"], C["green"]], tfs=10, fs=8.4)
     rbox(ax, 9.4, 1.5, 4.3, 3.35, "xacro:arg (기본값)", ["mount_x = 0.0 · mount_z = 0.13", "arm_type = body_type = v10", "bimanual = true", "ros2_control = false", "left_arm_base_xyz = 0 0.031 0.698", "right_arm_base_xyz = 0 -0.031 0.698", "ee_type = parallel_link"], fc=C["grey"], tfs=10.5, fs=8.4, align="left", dy=0.33)
-    note(ax, 0.3, 0.3, "노랑 = 상류 파일을 그대로 include · 초록 = 우리가 쓴 부분.  결과 URDF: 링크 46 · 관절 49 (그중 fixed 25)", fs=9.5)
+    note(ax, 0.3, 0.3, "노랑 = 상류 파일을 그대로 include · 초록 = 우리가 쓴 부분.  결과 URDF: 링크 47 · 관절 46 (그중 fixed 26)", fs=9.5)
     save(fig, "lesson02_rel_xacro.png")
 
 
@@ -114,9 +114,9 @@ def rel_added():
              cols=2, x0=0.5, x1=5.5, y_top=4.5, gap=0.2, h=1.75, tfs=9.8, fs=8.0)
     ax.add_patch(Rectangle((6.0, 0.5), 7.7, 4.5, fc="#F3FAF3", ec="#7CB07C", lw=1.2, zorder=1))
     note(ax, 6.2, 4.75, "MJCF 에서 새로 더하는 것 (URDF 에는 없음)", bold=True, fs=11, color="#2e7d32")
-    tiles_at(ax, [("freejoint floating_base", ["base_footprint 가 세계에서 자유롭게"], C["green"]), ("actuator 18개", ["바퀴 velocity 2 · 관절 position 16"], C["green"]),
+    tiles_at(ax, [("freejoint floating_base", ["base_footprint 가", "세계에서 자유롭게 움직임"], C["green"]), ("actuator 18개", ["바퀴 velocity 2", "관절 position 16"], C["green"]),
                   ("site lidar · camera 4", ["laser_link 에 레이 원점", "*_optical_frame 에 카메라"], C["green"]), ("option · default", ["timestep 2 ms · noslip · 마찰"], C["green"]),
-                  ("창고 · 상자 · 배우 · 마커", ["worlds/warehouse.yaml · actors.yaml", "ArUco 텍스처 평면"], C["orange"]), ("contact exclude 110", ["이웃 링크끼리 충돌 무시"], C["orange"])],
+                  ("창고 · 상자 · 배우 · 마커", ["warehouse.yaml · actors.yaml", "ArUco 텍스처 평면"], C["orange"]), ("contact exclude 110", ["이웃 링크끼리 충돌 무시"], C["orange"])],
              cols=3, x0=6.2, x1=13.5, y_top=4.5, gap=0.2, h=1.75, tfs=9.8, fs=8.0)
     note(ax, 0.3, 0.2, "실행할 때마다 다시 생성한다 (artifacts/mobile_generated/warehouse.xml).  MJCF 를 손으로 고치지 않는다.", fs=9.5)
     save(fig, "lesson02_rel_added.png")
@@ -234,7 +234,7 @@ def code_geom():
                ("box · sphere · cylinder", ["URDF size 는 전체 길이", "MJCF size 는 절반 → /2"], C["grey"])],
           cols=4, y_top=3.9, gap=0.25, h=2.3, tfs=10.5, fs=8.2)
     note(ax, 0.3, 0.9, "바퀴 · 캐스터만 예외: 마찰을 따로 주고, 바퀴 충돌 원통은 타원체로 바꾼다 (mujoco.yaml motors.contact_shape)", fs=9.2)
-    note(ax, 0.3, 0.45, "결과: geom 255개 · 변환된 메시 41개", fs=9.2)
+    note(ax, 0.3, 0.45, "결과: geom 255개 · 변환된 메시 41개 (창고 · 상자 포함)", fs=9.2)
     save(fig, "lesson02_code_geom.png")
 
 
@@ -289,7 +289,7 @@ def code_state():
     for y in (4.6, 3.0, 1.4):
         arrow(ax, (3.3, y), (5.0, y))
     rbox(ax, 10.6, 3.95, 3.1, 1.3, "AMCL · Nav2", ["odom 사용"], fc=C["purple"], tfs=10, fs=8.4)
-    rbox(ax, 10.6, 0.75, 3.1, 1.3, "robot_state_publisher", ["→ /tf 링크 46개"], fc=C["blue"], tfs=10, fs=8.4)
+    rbox(ax, 10.6, 0.75, 3.1, 1.3, "robot_state_publisher", ["→ /tf 링크 47개"], fc=C["blue"], tfs=10, fs=8.4)
     arrow(ax, (9.6, 4.6), (10.6, 4.6))
     arrow(ax, (9.6, 1.4), (10.6, 1.4))
     note(ax, 0.3, 0.3, "stamp 는 시뮬레이션 시각(/clock).  같은 함수 안에서 나가므로 odom · TF · joint_states 시각이 같다.", fs=9.2)
@@ -375,7 +375,50 @@ def code_derived():
     note(ax, 0.3, 0.15, "파생물은 매 실행마다 다시 만든다 (xacro 약 0.1 s · MJCF 약 0.3 s).  원본 xacro · YAML · launch 인자가 바뀌면 결과도 바뀌기 때문이다.  obj 만 캐시된다.", fs=9.2)
     save(fig, "lesson02_code_derived.png")
 
+def vs_arm():
+    fig, ax = fig_ax(14, 5.0)
+    note(ax, 0.3, 4.7, "앞 글의 2링크 팔과 같은 순서, 규모만 다르다", bold=True, fs=12)
+    heads = ["URDF 원본", "MJCF 로 바꾸는 방법", "더하는 것", "TF 를 내는 곳"]
+    rows = [("2링크 팔 (앞 글)", C["grey"], [("two_link_arm.urdf", ["손으로 쓴 파일 하나"]), ("MuJoCo 가 읽음 + MjSpec", ["urdf_to_mjcf.build()"]),
+                                        ("바닥 · 상자 · 카메라 1", ["액추에이터 2 · exclude 1"]), ("robot_state_publisher", ["링크 5"])]),
+            ("창고 로봇 (이 글)", C["green"], [("xacro 세 패키지 조립", ["expand_urdf() 로 펼침"]), ("직접 변환 (ElementTree)", ["model.build_model()"]),
+                                        ("창고 · 배우 · 라이다 · 카메라 4", ["액추에이터 18 · exclude 110"]), ("robot_state_publisher", ["링크 47 · odom 은 브리지"])])]
+    x0, lw, cw, gap = 0.3, 2.3, 2.7, 0.15
+    for j, h in enumerate(heads):
+        note(ax, x0 + lw + gap + j * (cw + gap) + cw / 2, 4.15, h, bold=True, fs=10, ha="center", color="#1f4e79")
+    for i, (name, fc, cells) in enumerate(rows):
+        y = 2.65 - i * 1.5
+        rbox(ax, x0, y, lw, 1.25, name, fc=fc, tfs=10.5)
+        for j, (t, sub) in enumerate(cells):
+            rbox(ax, x0 + lw + gap + j * (cw + gap), y, cw, 1.25, t, sub, fc="#FFFFFF" if i == 0 else "#F4FBF4", tfs=9.4, fs=8.2, lw=1.0)
+    note(ax, 0.3, 0.72, "직접 변환하는 이유: 메시가 DAE · STL (MuJoCo 는 STL · OBJ) · 좌우 대칭 메시의 음수 스케일 · 창고와 센서를 한 번에.", fs=9.3)
+    note(ax, 0.3, 0.3, "개념은 그대로다: link → body · joint → joint · 고정 링크 유지 · 충돌 제외 · 카메라는 optical frame 에 x 축 180°.", fs=9.3)
+    save(fig, "lesson02_vs_arm.png")
+
+
+def code_inertial():
+    fig, ax = fig_ax(14, 3.6)
+    note(ax, 0.3, 3.3, "관성: URDF <inertial> 의 rpy 를 행렬에 반영해 옮긴다", bold=True, fs=12)
+    chain(ax, [("URDF <inertial>", ["origin xyz rpy · mass", "ixx iyy izz ixy ixz iyz"]), ("3 × 3 행렬 I", ["대칭 행렬로 조립"]), ("R · I · R^T", ["rpy 만큼 회전", "→ 링크 좌표계 기준"]),
+               ("MJCF <inertial>", ["pos · mass", "fullinertia 6 개"])],
+          y=1.0, h=1.75, colors=[C["blue"], C["grey"], C["yellow"], C["green"]], tfs=10.5, fs=8.6)
+    note(ax, 0.3, 0.45, "<compiler inertiafromgeom=\"false\">: geom 모양으로 질량을 다시 계산하지 않고 URDF (CAD) 값을 그대로 쓴다.", fs=9.5)
+    save(fig, "lesson02_code_inertial.png")
+
+
+def code_exclude():
+    fig, ax = fig_ax(14, 3.6)
+    note(ax, 0.3, 3.3, "충돌 제외: 계산하지 않을 body 쌍을 적어 둔다", bold=True, fs=12)
+    chain(ax, [("collision_exclusions.json", ["108 쌍 · description 패키지", "붙어 있는 링크 · 닿을 수 없는 쌍"]), ("mujoco.yaml", ["convex_contact_exclusions", "2 쌍 (볼록 껍질이 겹치는 곳)"]),
+               ("정리", ["이름 순 정렬 · 중복 제거", "URDF 에 없는 링크는 건너뜀"]), ("<contact> <exclude>", ["body1 · body2", "110 개"])],
+          y=1.0, h=1.75, colors=[C["blue"], C["blue"], C["yellow"], C["green"]], tfs=10, fs=8.4)
+    note(ax, 0.3, 0.45, "앞 글의 add_exclude(base_link, link1) 한 줄과 같은 일.  MoveIt 의 SRDF disable_collisions 와 같은 개념이다.", fs=9.5)
+    save(fig, "lesson02_code_exclude.png")
+
+
 if __name__ == "__main__":
+    for f in (vs_arm, code_inertial, code_exclude):
+        f()
     for f in (pkg_kinds, feat_openarm, feat_vicpinky, pkg_assembly, rel_flow, rel_xacro, rel_added, rel_names, rel_tf, rel_display,
               code_derived, code_expand, code_launch, code_build, code_link, code_joint, code_geom, code_sensor, code_act, code_mimic, code_physics, code_state, code_display):
         f()

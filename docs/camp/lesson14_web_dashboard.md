@@ -103,6 +103,10 @@ LECTURE_HANDLERS="$H.aruco:ArucoDetector,$H.yolo_detector:YoloDetector3D" \
 
 ![집기 단계에서 취소: canceled · skipped](lesson14_shot_cancel.png){width=1000}
 
+### 움직이는 그림: 지령부터 취소까지의 대시보드
+
+![작업 지령 대시보드 (움직이는 그림)](lesson14_dashboard.gif){width=900}
+
 ## 3. 코드
 
 ### 04 대시보드 불러오기 - server.py 앞부분
@@ -114,6 +118,9 @@ spec = importlib.util.spec_from_file_location("nav_dashboard", HERE.parent / "04
 nav_dashboard = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(nav_dashboard)          # RobotState (구독 9 개) · make_app (SSE · 지도 · MJPEG)
 ```
+
+- 폴더 이름이 숫자로 시작해 `import` 가 안 됨 → `importlib` 로 파일 경로에서 직접 불러옴
+- 앞에서 만든 04 대시보드의 `RobotState` · `make_app` 을 복사 없이 그대로 재사용
 
 ### 작업 지령 상태 - DeskState.__init__ 발췌
 
@@ -131,6 +138,10 @@ class DeskState(nav_dashboard.RobotState):
         threading.Thread(target=self.work, daemon=True).start()
 ```
 
+- `RobotState` 상속 → 04 의 구독은 그대로, `/execute_plan` 클라이언트와 `task` 만 추가
+- `task` = 브라우저로 보낼 작업 지령 상태 (단계 `phase` · 대화 · 단계 목록 · 비용)
+- 앞 글의 `PlanDialogManager` 재사용 · `executor` · `speak` 만 이 클래스 함수로 연결
+
 ### 로봇의 대답 - DeskState.speak
 
 ```python
@@ -141,6 +152,9 @@ def speak(self, text):
     if self.dialog.pending is not None:                  # 확인을 기다리는 계획이 있으면
         self.set_task(phase="confirm", steps=self.step_rows(self.dialog.pending))
 ```
+
+- 터미널의 `print` 자리에 들어가는 함수 → 로봇의 모든 대답이 대화 창 한 줄이 됨
+- 확인 질문일 때는 계획의 단계 목록을 먼저 화면에 올림 (`phase="confirm"`)
 
 ### 대화 스레드 - DeskState.work
 
@@ -157,6 +171,9 @@ def work(self):
         ...                                              # 비용 갱신, phase 를 idle 로
 ```
 
+- LLM 호출과 계획 실행은 오래 걸림 → Flask 요청과 분리된 스레드 하나가 `inbox` 를 차례로 처리
+- 예외는 로봇 대화 줄로 보여 줌 → 서버는 죽지 않고 다음 문장을 받음
+
 ### 계획 보내기 - DeskState.execute 발췌
 
 ```python
@@ -170,6 +187,9 @@ def execute(self, plan, text):
                                      feedback_callback=on_feedback).add_done_callback(on_goal)
     done.wait()                                          # 콜백은 ROS 스레드가 돌린다
 ```
+
+- 대화 관리자의 `executor` 자리 · 계획을 Task Manager(`/execute_plan`)로 보냄
+- 액션 콜백은 ROS 스레드에서 실행 → 대화 스레드는 `threading.Event` 로 결과를 기다림
 
 ### 피드백 · 결과 콜백 - DeskState.execute 발췌
 
@@ -187,6 +207,10 @@ def on_result(future):
     done.set()
 ```
 
+- 피드백의 `step` 기준으로 앞은 done · 지금은 active · 뒤는 pending 으로 표시
+- `self.lock`: SSE 스레드가 같은 `task` 를 읽고 있어 잠그고 고침
+- `on_result` 가 `done.set()` → 기다리던 대화 스레드가 깨어남
+
 ### 단계 상태 정리 - DeskState.execute 발췌
 
 ```python
@@ -203,6 +227,9 @@ with self.lock:
     self.task["result"] = dict(success=r.success, steps_done=r.steps_done, failed_step=r.failed_step, spoken=r.spoken)
 ```
 
+- 결과의 `steps_done` · `failed_step` 으로 단계 표시를 최종 확정
+- 멈춘 단계는 [실행 취소] 를 눌렀으면 canceled, 아니면 failed · 그 뒤 단계는 skipped
+
 ### SSE 에 task 싣기 - DeskState.snapshot
 
 ```python
@@ -213,6 +240,9 @@ def snapshot(self):
         s["task"] = dict(self.task, chat=list(self.task["chat"]), steps=[dict(r) for r in self.task["steps"]])
     return s
 ```
+
+- 04 의 snapshot 에 `task` 만 더함 → 같은 SSE 한 줄기로 로봇 상태와 지령 상태가 함께 감
+- `chat` · `steps` 는 복사해서 넣음 → 전송 중에 다른 스레드가 고쳐도 안전
 
 ### 지령 받기 - make_app /api/say
 
@@ -230,6 +260,10 @@ def api_say():
     return jsonify(ok=True)
 ```
 
+- 문장을 `inbox` 에 넣고 바로 응답 → LLM · 실행을 기다리지 않음
+- 400 = 빈 문장 · 409 = 이전 지령 처리 중 (`thinking` · `running`)
+- `confirm` 단계에서는 받음 → "응" · "아니" 대답이 들어올 수 있음
+
 ### 실행 취소 - make_app /api/task_cancel
 
 ```python
@@ -245,6 +279,10 @@ def api_task_cancel():
     return jsonify(ok=True)
 ```
 
+- `state.goal` = 실행 중인 계획의 goal handle · 없으면 409
+- `cancel_goal_async` 는 요청만 보냄 → 실제로 멈춘 결과는 `execute` 의 결과 콜백으로 옴
+- `cancelled` 표시 → 멈춘 단계를 failed 가 아닌 canceled 로 보여 줌
+
 ### 브라우저: 문장 보내기 - desk.js
 
 ```javascript
@@ -259,6 +297,10 @@ $("say").onsubmit = (e) => { e.preventDefault(); say($("text").value); $("text")
 $("quick").onclick = (e) => { if (e.target.tagName === "BUTTON") say(e.target.textContent); };
 $("task-cancel").onclick = () => fetch("/api/task_cancel", { method: "POST" });
 ```
+
+- 입력 폼 · 빠른 지령 버튼 모두 같은 `say` 함수 → `/api/say` 로 POST
+- 응답은 접수 여부뿐 · 로봇의 대답은 SSE 의 `task.chat` 으로 따로 옴
+- 거부(400 · 409)되면 이유를 이벤트 로그에 표시
 
 ### 브라우저: 같은 SSE 에 올라타기 - desk.js 발췌
 
@@ -276,6 +318,9 @@ function renderTask() {
 }
 ```
 
+- 연결을 새로 열지 않고 04 의 `es` 에 리스너만 추가 → 메시지마다 `renderTask` 실행
+- 처리 중에는 입력을 막음 (서버의 409 와 같은 조건) · [실행 취소] 는 `running` 일 때만 켬
+
 ### 브라우저: 지도에 계획의 장소 - desk.js 발췌
 
 ```javascript
@@ -292,6 +337,9 @@ drawMap = function () {
 };
 ```
 
+- 04 의 `drawMap` 을 고치지 않고 감쌈: 원래 함수를 먼저 부르고 그 위에 덧그림
+- `st.goal` = 서버가 단계마다 넣어 준 장소 좌표 (map 기준) → 캔버스 픽셀로 바꿔 표시
+
 ### 취소를 하위 액션으로 - executor.py on_cancel · call 발췌
 
 ```python
@@ -307,6 +355,9 @@ def relay(msg):                                # call() 안: 피드백 콜백은
         self.cancel_flag = True
 ```
 
+- 취소 요청은 깃발(`cancel_flag`)만 세움 → `call` 의 대기 루프가 보고 하위 액션을 취소
+- 피드백 콜백 안의 예외는 호출한 스레드에 닿지 않음 → 예외 대신 같은 깃발로 바꿔 전달
+
 ### 스킬 쪽 취소 - pick_place_server.py · nav_client.py 발췌
 
 ```python
@@ -321,6 +372,10 @@ while self.now() < deadline and time.monotonic() < guard:
         self.stop()
         raise SkillError("turn cancelled")
 ```
+
+- PickPlace 서버도 깃발 하나(`cancel_requested`)로 받아 베이스 이동 루프에 전달
+- 루프마다 깃발 확인 → `stop` 으로 베이스를 세운 뒤 `SkillError` 로 빠져나옴
+- 팔 동작은 중간에 끊지 않음 · 하던 동작은 끝까지 감
 
 ### 해 볼 것
 

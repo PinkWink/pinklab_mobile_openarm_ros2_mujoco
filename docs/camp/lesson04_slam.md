@@ -93,6 +93,10 @@ python docs/camp/slam_tour.py        # 가장자리 통로를 한 바퀴 돌고 
 
 ![출발 → 한 바퀴: 실제 /map 기록](lesson04_map_growth.png){width=1000}
 
+### 움직이는 그림: 지도가 자라는 모습
+
+![지도가 자라는 모습 (움직이는 그림)](lesson04_map_growth.gif){width=900}
+
 ### 실행 결과: 한 바퀴 뒤의 화면
 
 ![한 바퀴 뒤 RViz2 의 지도](lesson04_final_screen.png){width=1000}
@@ -174,6 +178,9 @@ def setup(context):   # 발췌
         )
 ```
 
+- `mode:=drive` 면 SLAM · Nav2 쪽 launch 를 아예 부르지 않음
+- `mode` · `map` 인자를 그대로 넘김 → 갈라지는 곳은 `navigation.launch.py` 한 군데
+
 ### RViz 띄우기와 Fixed Frame 고르기 - warehouse.launch.py setup 함수 발췌
 
 ```python
@@ -186,6 +193,9 @@ def setup(context):   # 발췌
                                        "-f", "odom" if mode == "drive" else "map"],   # slam 이면 Fixed Frame = map
                             parameters=[{"use_sim_time": True}]))
 ```
+
+- drive 는 `map` 프레임이 없어서 Fixed Frame = `odom` · slam · nav 는 `map`
+- `-f` 로 Fixed Frame 만 바꿈 → RViz 설정 파일은 하나를 함께 씀
 
 ### slam_toolbox launch 포함하기 - navigation.launch.py setup 함수 발췌
 
@@ -204,6 +214,9 @@ def setup(context):   # 발췌
                 ),
 ```
 
+- slam 모드이거나, nav 모드인데 지도 파일이 없으면 SLAM 을 띄움
+- `online_async` = 달리면서 실시간으로 · 계산이 밀리면 스캔을 건너뜀
+
 ### slam_toolbox 에 넘기는 인자 - navigation.launch.py setup 함수 발췌
 
 ```python
@@ -218,6 +231,10 @@ def setup(context):   # 발췌
     ...                                                                      # nav: map_server · amcl · Nav2 (⑥)
     return actions
 ```
+
+- `use_sim_time`: `/clock` (시뮬레이션 시각) 기준으로 동작
+- `autostart`: lifecycle 노드를 띄우자마자 active 로
+- 나머지 설정은 모두 `slam.yaml`
 
 ### slam.yaml 주요 파라미터
 
@@ -238,6 +255,10 @@ slam_toolbox:
     scan_topic: /scan
 ```
 
+- 프레임 이름 셋은 브리지 · URDF 가 내는 TF 이름과 같아야 함
+- `scan_topic` = 앞 글의 `/scan`
+- `mode: mapping` = 지도를 새로 만듦 (만든 지도 위에서 위치만 찾는 `localization` 도 있음)
+
 ### 지도 해상도 · 갱신 주기 · 루프 클로징 - slam.yaml 발췌
 
 ```yaml
@@ -252,6 +273,10 @@ slam_toolbox:
     use_scan_matching: true
     do_loop_closing: true
 ```
+
+- `resolution: 0.05` → 지도 한 칸 = 5 cm
+- `minimum_travel_distance` · `heading`: 이만큼 움직여야 새 스캔을 그래프에 추가
+- `do_loop_closing`: 왔던 곳을 다시 알아보고 쌓인 오차를 한꺼번에 바로잡음
 
 ### 해 볼 것
 

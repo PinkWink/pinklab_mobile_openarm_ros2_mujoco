@@ -30,6 +30,26 @@
 - 도식 · 주석 그림: `python3 docs/camp/draw_intro_mj_figures.py artifacts/dev/intro`.
 - 겹치는 내용: URDF 글 1장 (Gazebo vs MuJoCo 그림 4장) 과 소개 글 2장 비교 — 정리 여부는 사용자 결정.
 
+**2026-11-15 밤: ③ Description 글 3697442817 을 새 세 글의 방식으로 갱신 (v16)**
+- 코드 절 순서를 그림 → 코드로 바꾸고 코드마다 설명 bullet ≤ 3 (h3 60 → 67, 기존 그림 · 코드 발췌는 그대로).
+- 새 절: "앞 글의 2링크 팔과 무엇이 같고 다른가" (`lesson02_vs_arm.png`), 관성 → inertial, 충돌 제외 → exclude (그림 + 코드), "슬라이더로 관절 움직이기" GIF (`lesson02_display_slider.gif`, record_viewer_ui.py 의 display_slider 시나리오: RViz 1090x900 + JSP 290x900 을 나란히).
+- 숫자 바로잡음: grep 으로 세던 요소 수는 주석 · equality 의 `<joint` 까지 세어 틀렸음 (관절 49/fixed 25 → 실제 46/26, MJCF joint 22 → 24). 명령을 ElementTree + MjModel 로 세는 python 한 덩어리로 교체, `lesson02_cli_counts.png` 다시 그림. 그림 속 "링크 46 · 관절 49" 도 47 · 46 으로.
+- 재작성 스크립트는 scratchpad 에만 (rewrite02.py) — md 가 원본.
+- ③ "슬라이더로 관절 움직이기" 절의 bullet 3 줄은 사용자가 지우라고 함 (v17) → GIF 절에는 bullet 을 달지 않는다.
+
+**2026-11-15 심야: ④ 센서·Odom 3696820239 (v28) · ⑤ SLAM 3701112888 (v3) · ⑥ Navigation 3701866498 (v4) · 충돌 회피 3701145683 (v4) 를 같은 방식으로 갱신**
+- 코드 발췌(py · yaml) 아래에 설명 bullet ≤ 3 (④ 9 곳 · ⑤ 6 · ⑥ 12 · 회피 7). 기존 그림 · 코드 · 사용자가 쓴 bullet 은 그대로. 코드 발췌는 현재 소스와 대조해 값이 같은 것 확인.
+- GIF 6 개 (bullet 없음): `lesson03_square.gif` · `lesson04_map_growth.gif` · `lesson05_goal_run.gif` · `lesson05_amcl.gif` · `lesson06_crossing.gif` · `lesson06_headon.gif` — 시뮬레이터를 다시 돌리지 않고 예전 기록 (artifacts/dev 의 odom_square1.csv · slam_maps · nav_run_bt2.pkl · nav_amcl.pkl · avoid_frames_v2) 으로 `python3 docs/camp/make_nav_gifs.py [이름]`.
+- 수정 스크립트는 scratchpad 에만 (update_03_06.py) — md 가 원본. 실행 절의 명령 · 캡처는 안 건드림.
+
+**2026-11-16 새벽: 순찰 데모 ~ Final Mission 아홉 글도 같은 방식으로 갱신 (모두 게시 · 본문 SAME · 첨부 확인)**
+- 3707076612 v4 · 3706617877 v3 · 3706552350 v4 · 3719692425 v3 · 3719299331 v5 · 3719496070 v4 · 3719430326 v4 · 3721003209 v2 · 3779067905 v2.
+- 코드 발췌 134 곳에 설명 bullet 329 줄 (서브에이전트 셋이 소스와 대조하며 작성 → scratchpad 의 bullets_A/B/C.json → update_07_15.py 로 적용). 본문 · 그림 · 코드는 그대로, 추가만.
+- GIF 9 개 (bullet 없음, ⑪ LLM 글은 움직임이 없어 GIF 없음): `MUJOCO_GL=egl python docs/camp/make_task_gifs.py [이름]`.
+  - 기록 재생 (pick_record · arm_record pickle 의 관절 · base · 상자 자세를 오프스크린 MuJoCo 로 다시 그림, 추적 카메라, 자막 = PickPlace feedback phase): lesson08_ready · lesson09_ee_demo · lesson10_pick_place · lesson11_transport · lesson13_mission · lesson15_final. 배우(사람)는 기록에 없어 기본 자리에 서 있음.
+  - 화면 캡처 묶음: lesson07_patrol (patrol_frames) · lesson07_dashboard (dash_frames) · lesson14_dashboard (l13dash/final, 3 장마다).
+- 발췌가 소스보다 뒤처진 곳 (값은 같고 나중에 더해진 분기가 빠짐, 고치지 않음): ⑫ dialog.py handle 두 절 (`world=` · `world.check` · "그대로는 실행할 수 없습니다" 분기), task_manager.py execute_plan 의 취소 분기. 소스 쪽 눈에 띈 것: SRDF 왼쪽 그리퍼 상태 이름 "half closed" (공백) vs 오른쪽 "half_closed"; moveit_client.gripper() 거절 문구가 실제 조건과 다름.
+
 **다음 (사용자 결정 대기)**: 새 글 검토 · 수정, 비교용 사본 3782279338 정리 여부, ① 본문과의 중복 정리 (Gazebo 비교 · XML 요소 설명은 ① 에 남김), 커밋 · push (전부 미커밋), `two_link_arm_from_urdf.xml` 을 저장소에 둘지.
 
 ## 0-000000000000000000000000000. 2026-11-12 밤: ⑥ 목표에서 좌우로 오가는 현상 — BT 교체 — 다음 세션은 여기부터

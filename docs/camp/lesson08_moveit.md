@@ -88,6 +88,10 @@ time ./scripts/mobile_openarm arm both ready          # arm <left|right|both> <t
 
 ![arm both ready 전과 뒤 (MuJoCo)](lesson08_arm_motion.png){width=1000}
 
+### 움직이는 그림: transport → ready
+
+![ready 자세로 (움직이는 그림)](lesson08_ready.gif){width=720}
+
 ### 실행 결과: 터미널 1 로그
 
 ![move_group 로그: 계획 → 실행](lesson08_t1_arm_log.png){width=1000}
@@ -155,6 +159,10 @@ def main(args=None):   # 발췌
     req.start_state.is_diff = True                         # 시작 = 현재 관절
 ```
 
+- `/move_action` (MoveGroup 액션) 에 계획 그룹 · 계획 시간 · 속도 비율을 담아 요청
+- `is_diff = True`: 시작 상태를 적지 않음 → 현재 `/joint_states` 자세에서 출발
+- 계획 제한 8 [s] · 시도 5 회
+
 ### SRDF 이름 자세를 관절 목표로 - joint_goal.py main 함수 발췌
 
 ```python
@@ -168,6 +176,10 @@ def main(args=None):   # 발췌
                 tolerance_above=0.01, tolerance_below=0.01, weight=1.0))
 ```
 
+- SRDF 의 `group_state` (이름 자세) 를 XML 로 읽어 관절별 `JointConstraint` 로 변환
+- `both` 면 왼팔 · 오른팔 자세를 한 `Constraints` 에 모음 → 14 관절 동시 목표
+- 목표 허용 범위 ± 0.01 [rad]
+
 ### 계획 · 실행 요청과 결과 코드 - joint_goal.py main 함수 발췌
 
 ```python
@@ -178,6 +190,9 @@ def main(args=None):   # 발췌
     ...
     code = result.result().result.error_code.val           # 1 = SUCCESS, -4 = CONTROL_FAILED
 ```
+
+- `plan_only` True = 계획만 · False = 계획 후 컨트롤러로 실행까지
+- `error_code` 가 1 (SUCCESS) 이 아니면 종료 코드 1 로 끝남
 
 ### 계획 그룹 - mobile_openarm.srdf 발췌
 
@@ -195,6 +210,10 @@ def main(args=None):   # 발췌
 </group>
 ```
 
+- 계획 그룹 = MoveIt 이 함께 계획하는 관절 묶음 · 팔마다 7 관절
+- `both_arms` 는 두 팔 그룹을 묶은 그룹 → 14 관절을 한 번에 계획
+- 그리퍼는 손가락 관절 1 개짜리 별도 그룹
+
 ### 이름 자세 · 엔드이펙터 · 충돌 제외 - mobile_openarm.srdf 발췌
 
 ```xml
@@ -207,6 +226,10 @@ def main(args=None):   # 발췌
 <disable_collisions link1="openarm_left_hand" link2="openarm_left_link7" reason="Adjacent" />  <!-- 110 줄 -->
 ```
 
+- `group_state`: 관절값에 이름을 붙인 자세 · `ready` = joint4 만 1.65 [rad]
+- `virtual_joint`: `odom` → `base_footprint` 를 평면 이동 (planar) 관절로 선언
+- `disable_collisions`: 충돌 검사에서 제외할 링크 쌍 (인접 링크 등) · 110 쌍
+
 ### 로봇 모델 · 운동학 파라미터 - config.py parameters 함수 발췌
 
 ```python
@@ -218,6 +241,10 @@ def parameters(urdf=None):   # 발췌
         "robot_description_kinematics": load("kinematics.yaml"),          # KDL
         "robot_description_planning": load("joint_limits.yaml"),          # 속도 · 가속 한계
 ```
+
+- `robot_description` = URDF · `robot_description_semantic` = SRDF
+- `expand_urdf()`: 앞에서 본 `xacro.process_file` 로 펼친 URDF 를 그대로 사용
+- kinematics = IK 풀이기 (KDL) · joint_limits = 계획용 속도 · 가속 한계
 
 ### 플래너 · 컨트롤러 · 실행 파라미터 - config.py parameters 함수 발췌
 
@@ -232,6 +259,10 @@ def parameters(urdf=None):   # 발췌
         "publish_planning_scene": True,
     }
 ```
+
+- `**load(...)`: 컨트롤러 yaml 의 키를 최상위 파라미터로 펼쳐 넣음
+- `moveit_manage_controllers` False: 컨트롤러를 켜고 끄지 않음 · 브리지 액션을 그대로 사용
+- `allowed_start_tolerance` 0.05 [rad]: 현재 관절과 궤적 첫 점의 허용 차이
 
 ### 컨트롤러 이름 = 브리지 액션 이름
 
@@ -250,6 +281,9 @@ moveit_simple_controller_manager:
   - right_gripper_controller
 ```
 
+- MoveIt 이 궤적을 보낼 컨트롤러 이름 목록 · 팔 2 + 그리퍼 2
+- `MoveItSimpleControllerManager`: 액션 클라이언트로 궤적만 전달하는 단순 관리자
+
 ### 팔 · 그리퍼 컨트롤러 정의 - moveit_controllers.yaml 발췌
 
 ```yaml
@@ -265,6 +299,10 @@ moveit_simple_controller_manager:
     joints: [openarm_left_finger_joint1]
 ```
 
+- 컨트롤러 이름 + `action_ns` = 브리지가 여는 액션 이름과 같아야 연결됨
+- 팔 = `FollowJointTrajectory` (궤적) · 그리퍼 = `GripperCommand` (위치 + 힘)
+- `joints` 가 일치하는 궤적을 이 컨트롤러로 보냄
+
 ### 브리지 액션 서버
 
 ![브리지 액션 서버: goal 검사 → update](lesson08_bridge_goal.png){width=1000}
@@ -278,6 +316,9 @@ def goal(self, key, request):   # 발췌
     if key in self.reserved or np.max(np.abs(p.twist)) > 0.04 or np.max(np.abs(p.command)) > 0.04:
         return GoalResponse.REJECT                                  # 실행 중 · 베이스가 움직이는 중
 ```
+
+- 같은 컨트롤러가 이미 실행 중 (`reserved`) 이면 새 목표 거부
+- 베이스 속도 (`twist`) · 명령 (`command`) 이 0.04 넘으면 거부 → 주행 중 팔 금지
 
 ### 궤적 검사 후 받기 - actions.py Controllers.goal 함수 발췌
 
@@ -295,6 +336,10 @@ def goal(self, key, request):   # 발췌
     return GoalResponse.ACCEPT
 ```
 
+- `validate_trajectory`: 관절 이름 · 시간 순서 · 관절 한계 (`jnt_range`) 검사
+- 문제가 있으면 `ValueError` → 경고 로그를 남기고 거부
+- 수락하면 `reserved` 에 등록 + 베이스 명령 0 → 팔이 움직이는 동안 주행 정지
+
 ### 궤적 점을 목표로 보내기 - actions.py Controllers.update 함수 발췌
 
 ```python
@@ -306,6 +351,9 @@ def update(self):   # 발췌: 물리 루프가 매 스텝 부른다
         desired = traj.sample(t)                                    # 궤적 점 사이 보간
         p.set_targets(state["names"], desired)                      # position 액추에이터 목표
 ```
+
+- 시뮬레이션 시간 (`data.time`) 기준 경과 시간 `t` 로 궤적을 샘플링
+- `set_targets` → 앞 글의 `data.ctrl` (position 액추에이터 목표) 에 기록
 
 ### 성공 · 시간 초과 판정 - actions.py Controllers.update 함수 발췌
 
@@ -319,6 +367,10 @@ def update(self):   # 발췌: 물리 루프가 매 스텝 부른다
             result.error_string = "Measured joints did not reach the goal"
             self.finish(key, state, result, "abort")
 ```
+
+- 궤적 시간이 끝나고 실측 관절이 목표 ± 0.035 [rad] 안이면 SUCCESSFUL
+- 3 [s] 더 기다려도 못 들어오면 `GOAL_TOLERANCE_VIOLATED` 로 abort
+- 요청에 `goal_tolerance` · `goal_time_tolerance` 가 있으면 그 값이 우선
 
 ### 궤적 점 사이 보간
 
@@ -335,6 +387,9 @@ def sample(self, t):
         return self.positions[-1].copy()
 ```
 
+- 궤적 시작 전은 첫 점 · 끝난 뒤는 마지막 점을 유지 → 범위 밖 `t` 도 안전
+- `copy()`: 궤적 원본 배열이 바깥에서 바뀌지 않게 복사본 반환
+
 ### 구간 찾기와 직선 · Hermite 보간 - trajectory.py Trajectory.sample 함수
 
 ```python
@@ -349,6 +404,10 @@ def sample(self, t):
     return ((2 * u**3 - 3 * u**2 + 1) * a + (u**3 - 2 * u**2 + u) * dt * va
             + (-2 * u**3 + 3 * u**2) * b + (u**3 - u**2) * dt * vb)  # Hermite 3 차
 ```
+
+- MoveIt 궤적 점은 드문드문 → 물리 스텝마다 그 사이 값을 계산
+- 속도가 있으면 Hermite 3 차: 점마다 위치 · 속도가 이어져 부드러움
+- 속도가 없으면 직선 보간
 
 ### 팔과 바퀴의 인터록
 
@@ -366,6 +425,10 @@ def receive_command(self, msg):
         return
 ```
 
+- 팔 액션 실행 중 (`reserved`) 이거나 팔이 주행 자세가 아니면 `/cmd_vel` 을 0 으로
+- `transport_ready()`: 두 팔이 주행 자세 ± 0.15 [rad] 안인지 확인
+- NaN · inf 가 섞인 명령은 버림
+
 ### 속도 한계로 자르기 - bridge.py receive_command 함수
 
 ```python
@@ -377,6 +440,9 @@ def receive_command(self, msg):
     )
     self.command_time = time.monotonic()
 ```
+
+- `/cmd_vel` 을 ± 0.35 [m/s] · ± 0.7 [rad/s] 로 자름 (`mujoco.yaml`)
+- `command_time` 기록 → 0.5 [s] 동안 새 명령이 없으면 물리 루프가 정지시킴
 
 ### 해 볼 것
 
